@@ -1,7 +1,9 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Moon, Sun, X } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { GsapEntrance } from '../../components/motion/GsapEntrance';
+import type { GsapEntranceVariant } from '../../lib/motion';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
@@ -61,7 +63,8 @@ export function PracticeTopBar({
   kicker = true,
 }: PracticeTopBarProps) {
   const { _ } = useLingui();
-  const { mode: themeMode, setMode } = useTheme();
+  const { family, mode: themeMode, setMode } = useTheme();
+  const crystal = family === 'crystal';
   return (
     <header className="practice-topbar" data-practice-topbar>
       <div className="practice-topbar__start">
@@ -70,7 +73,7 @@ export function PracticeTopBar({
           onClick={onClose}
           disabled={closeDisabled}
           aria-label={closeAriaLabel}
-          className="practice-topbar__close crystal-chamfer-sm min-h-11 min-w-11 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-10 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-w-10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+          className={`practice-topbar__close${crystal ? '' : ' fx-press'} crystal-chamfer-sm min-h-11 min-w-11 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-10 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-w-10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
         >
           <X size={18} aria-hidden="true" />
           <span className="sr-only">{closeLabel}</span>
@@ -88,7 +91,7 @@ export function PracticeTopBar({
       </div>
       {segments ? (
         <div
-          className="practice-topbar__segments"
+          className={crystal ? 'practice-topbar__segments' : 'practice-topbar__segments fx-stagger'}
           role="progressbar"
           aria-label={progressLabel}
           aria-valuemin={0}
@@ -99,6 +102,7 @@ export function PracticeTopBar({
           {segments.map((state, index) => (
             <i key={index} data-state={state} data-complete={state === 'correct' || state === 'wrong' || state === 'done' ? 'true' : undefined} />
           ))}
+          {!crystal && <span className="practice-topbar__run sf-grow" aria-hidden="true" />}
         </div>
       ) : <div className="practice-topbar__segments" aria-hidden="true" />}
       <div className="practice-topbar__end">
@@ -110,7 +114,7 @@ export function PracticeTopBar({
           onClick={() => setMode(themeMode === 'dark' ? 'light' : 'dark')}
           aria-pressed={themeMode === 'dark'}
           aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}
-          className="practice-topbar__theme crystal-chamfer-sm min-h-11 min-w-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+          className={`practice-topbar__theme${crystal ? '' : ' fx-press'} crystal-chamfer-sm min-h-11 min-w-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
         >
           {themeMode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
         </button>
@@ -166,3 +170,32 @@ export function LumiCoach({ pose, heading, children, label, className = '' }: Lu
     </div>
   );
 }
+
+interface PracticeEntranceProps extends HTMLAttributes<HTMLDivElement> {
+  animationKey?: string | number | boolean;
+  children: ReactNode;
+  direction?: 1 | -1;
+  onEntered?: () => void;
+  variant?: GsapEntranceVariant;
+}
+
+/** Crystal uses GsapEntrance; Classic lets CSS board entrances play without a double entrance. */
+export const PracticeEntrance = forwardRef<HTMLDivElement, PracticeEntranceProps>(function PracticeEntrance(
+  { animationKey, direction = 1, onEntered, variant = 'view', ...props },
+  ref,
+) {
+  const crystal = useTheme().family === 'crystal';
+  if (!crystal) {
+    return <div key={animationKey === undefined ? undefined : String(animationKey)} ref={ref} {...props} />;
+  }
+  return (
+    <GsapEntrance
+      ref={ref}
+      animationKey={animationKey}
+      direction={direction}
+      onEntered={onEntered}
+      variant={variant}
+      {...props}
+    />
+  );
+});

@@ -535,7 +535,6 @@ html:not([data-theme-family='crystal']) .language-practice-drill__primary-action
   color: var(--sf-on-primary);
   font-weight: 650;
 }
-html:not([data-theme-family='crystal']) .language-practice-drill__primary-action:hover:not(:disabled) { filter: brightness(1.06); }
 /* LangPractice.dc.html lines 5, 16, 68: the exit sits on the chip fill without a shadow, the dark play button is the
    board's lit cyan sphere, and the physical-keyboard note is 12px text3 on a normal line box. */
 html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit { box-shadow: none; }
@@ -782,4 +781,10 @@ html[data-theme-family='crystal'] .language-practice-drill__results .language-pr
   html[data-theme-family='crystal'] .language-practice-drill__hangul-keys > button:is(:first-child, :last-child) { position: static; }
   html[data-theme-family='crystal'] .language-practice-drill__tone-grid { flex-wrap: wrap; }
   html[data-theme-family='crystal'] .language-practice-drill__form > .language-practice-drill__actions { position: static; height: auto; margin-top: 16px; padding: 0 0 16px; }
+}
+
+html:is(.dark, :not(.dark)):not([data-theme-family='crystal']) .language-practice-drill :is(button:disabled, [aria-disabled='true']).fx-press {
+  transform: none;
+  filter: none;
+  transition: none;
 }

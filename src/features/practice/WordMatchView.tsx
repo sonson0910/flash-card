@@ -8,6 +8,7 @@ import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { useFocusModePreference } from '../settings/focus-mode-preference';
+import { useTheme } from '../theme/ThemeProvider';
 import { PracticeTopBar } from './practice-board-parts';
 import { WORD_MATCH_DURATION_SECONDS } from './practiceModel';
 import './practice-board.css';
@@ -51,6 +52,7 @@ function shuffleArray<T>(items: T[]): T[] {
 
 export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMatchViewProps) {
   const { _, i18n } = useLingui();
+  const crystal = useTheme().family === 'crystal';
   const { focusModeEnabled } = useFocusModePreference();
   const [roundKey, setRoundKey] = useState(0);
   const deadlineRef = useRef(Date.now() + GAME_DURATION_SECONDS * 1000);
@@ -280,10 +282,10 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         aria-pressed={isSelected}
         data-kind={tile.type}
         data-state={state}
-        className={`practice-match__tile transition-[border-color,background-color,box-shadow,transform] [html[data-theme-family=crystal]_&]:active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+        className={`practice-match__tile ${crystal ? 'transition-[border-color,background-color,box-shadow,transform] [html[data-theme-family=crystal]_&]:active:scale-[.98]' : 'fx-press'} focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
           isMismatched
             ? 'sf-shake [html[data-theme-family=crystal]_&]:motion-safe:animate-shake'
-            : isSelected ? '[html[data-theme-family=crystal]_&]:ring-2' : 'sf-press'
+            : isSelected ? '[html[data-theme-family=crystal]_&]:ring-2' : ''
         }`}
       >
         <span className="practice-match__text">{tile.text}</span>
@@ -332,25 +334,38 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
                   <polygon className="practice-match__hex" points="110,6.6 199.1,58.3 199.1,161.7 110,213.4 20.9,161.7 20.9,58.3" />
                   <g className="practice-match__dial">
                     <circle className="practice-match__ring-track" cx="110" cy="110" r={TIMER_RADIUS} />
-                    <circle
-                      className="practice-match__ring"
-                      cx="110"
-                      cy="110"
-                      r={TIMER_RADIUS}
-                      strokeDasharray={`${ringLength * timeFraction} ${ringLength}`}
-                      transform="rotate(-90 110 110)"
-                    />
+                    {crystal ? (
+                      <circle
+                        className="practice-match__ring"
+                        cx="110"
+                        cy="110"
+                        r={TIMER_RADIUS}
+                        strokeDasharray={`${ringLength * timeFraction} ${ringLength}`}
+                        transform="rotate(-90 110 110)"
+                      />
+                    ) : (
+                      <circle
+                        className="practice-match__ring sf-draw-to"
+                        cx="110"
+                        cy="110"
+                        r={TIMER_RADIUS}
+                        pathLength={1}
+                        strokeDasharray={1}
+                        strokeDashoffset={1 - timeFraction}
+                        transform="rotate(-90 110 110)"
+                      />
+                    )}
                   </g>
                 </svg>
                 <span className="practice-match__clock" aria-hidden="true">{clock}</span>
                 <span className="practice-match__clock-label" aria-hidden="true"><Trans {...msg({ context: 'practice.match.left', message: 'left' })} /></span>
               </div>
               <p className="practice-match__pairs">
-                <span className="practice-match__pairs-count">{matchesCount} / {pairCount}</span>
+                <span className={crystal ? 'practice-match__pairs-count' : 'practice-match__pairs-count sf-tick'}>{matchesCount} / {pairCount}</span>
                 <span className="practice-match__pairs-label"><Trans {...msg({ context: 'practice.match.pairs-matched', message: 'pairs matched' })} /></span>
               </p>
               {!focusModeEnabled && matchesCount >= 2 && (
-                <span data-practice-combo={matchesCount} className="practice-match__combo">
+                <span data-practice-combo={matchesCount} className={crystal ? 'practice-match__combo' : 'practice-match__combo fx-reward'}>
                   <span className="practice-match__combo-text">
                     <Flame size={14} aria-hidden="true" />
                     <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: matchesCount }} />
@@ -398,7 +413,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               <button
                 type="button"
                 onClick={() => void submitCompletion(completionPairsRef.current)}
-                className={retryActionClass}
+                className={`${retryActionClass}${crystal ? '' : ' fx-press'}`}
               >
                 <Trans {...msg({ context: 'practice.match.retry-verification', message: 'Retry verification' })} />
               </button>
@@ -417,7 +432,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               <button
                 type="button"
                 onClick={() => void restartGame()}
-                className={retryActionClass}
+                className={`${retryActionClass}${crystal ? '' : ' fx-press'}`}
               >
                 <Trans {...msg({ context: 'practice.match.retry-new-round', message: 'Retry new round' })} />
               </button>
@@ -429,7 +444,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               type="button"
               onClick={() => void restartGame()}
               disabled={isStartingNewRound || completionStatus === 'verifying'}
-              className={primaryActionClass}
+              className={`${primaryActionClass}${crystal ? '' : ' fx-press'}`}
             >
               <RotateCcw size={16} aria-hidden="true" />
               <span>{isStartingNewRound
@@ -441,7 +456,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               type="button"
               onClick={onClose}
               disabled={completionStatus === 'verifying'}
-              className={secondaryActionClass}
+              className={`${secondaryActionClass}${crystal ? '' : ' fx-press'}`}
             >
               <span><Trans {...msg({ context: 'practice.match.back', message: 'Back' })} /></span>
             </button>
@@ -463,7 +478,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             <button
               type="button"
               onClick={() => void restartGame()}
-              className={primaryActionClass}
+              className={`${primaryActionClass}${crystal ? '' : ' fx-press'}`}
             >
               <RotateCcw size={16} aria-hidden="true" />
               <span><Trans {...msg({ context: 'practice.match.try-again', message: 'Try again' })} /></span>
@@ -471,7 +486,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             <button
               type="button"
               onClick={onClose}
-              className={secondaryActionClass}
+              className={`${secondaryActionClass}${crystal ? '' : ' fx-press'}`}
             >
               <span><Trans {...msg({ context: 'practice.match.back', message: 'Back' })} /></span>
             </button>

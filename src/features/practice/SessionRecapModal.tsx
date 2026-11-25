@@ -159,7 +159,22 @@ function useRecapReminder(port: SessionRecapReminderPort | null, locale: 'en' | 
   return [view, toggle];
 }
 
-function ReminderSwitch({ view, onToggle, describedBy }: { view: ReminderView; onToggle: () => void; describedBy: string }) {
+function RecapBoardFrame({ crystal, children }: { crystal: boolean; children: ReactNode }) {
+  if (crystal) {
+    return (
+      <GsapEntrance variant="result" data-session-recap="true" data-family="crystal" className="practice-recap-board">
+        {children}
+      </GsapEntrance>
+    );
+  }
+  return (
+    <div data-session-recap="true" data-family="classic" className="practice-recap-board">
+      {children}
+    </div>
+  );
+}
+
+function ReminderSwitch({ view, onToggle, describedBy, crystal }: { view: ReminderView; onToggle: () => void; describedBy: string; crystal: boolean }) {
   const { _ } = useLingui();
   if (view.status !== 'ready') return null;
   const { value, saving } = view;
@@ -168,7 +183,7 @@ function ReminderSwitch({ view, onToggle, describedBy }: { view: ReminderView; o
       type="button"
       role="switch"
       data-recap-reminder
-      className="practice-recap-switch"
+      className={crystal ? 'practice-recap-switch' : 'practice-recap-switch sf-ease'}
       aria-checked={value.enabled}
       aria-busy={saving || undefined}
       aria-label={_(msg({ id: 'recap.reminder-switch', message: 'Daily reminder' }))}
@@ -230,7 +245,7 @@ function PromotedCard({ promotion, crystal, deal }: { promotion: SessionRecapPro
             <span className="practice-recap-card-to" aria-hidden="true"><TierLabel tier={to} crystal={crystal} /></span>
           </span>
         </span>
-        {to === 'mastered' && <span className="practice-recap-card-foil" aria-hidden="true" />}
+        {to === 'mastered' && <span className={crystal ? 'practice-recap-card-foil' : 'practice-recap-card-foil sf-sheen'} aria-hidden="true" />}
       </div>
       {!crystal && <span className="practice-recap-card-level"><Trans {...msg({ context: 'recap.card-levels', message: '{count, plural, one {+# level} other {+# levels}}' })} values={{ count: levels }} /></span>}
     </li>
@@ -238,11 +253,11 @@ function PromotedCard({ promotion, crystal, deal }: { promotion: SessionRecapPro
 }
 
 // holo, crimson and gold are the Crystal tile bars; warm is the Classic RecapNext XP tile.
-function StatTile({ label, value, children, tone }: { label: ReactNode; value: ReactNode; children?: ReactNode; tone?: 'holo' | 'crimson' | 'gold' | 'warm' }) {
+function StatTile({ label, value, children, tone, valueClassName }: { label: ReactNode; value: ReactNode; children?: ReactNode; tone?: 'holo' | 'crimson' | 'gold' | 'warm'; valueClassName?: string }) {
   return (
     <div className="practice-recap-stat" data-tone={tone}>
       <dt>{label}</dt>
-      <dd className="practice-recap-stat-value">{value}</dd>
+      <dd className={valueClassName ? `practice-recap-stat-value ${valueClassName}` : 'practice-recap-stat-value'}>{value}</dd>
       {/* A definition list group may only hold dt and dd, so the detail line or meter sits in its own dd. */}
       {children && <dd>{children}</dd>}
     </div>
@@ -365,12 +380,12 @@ export function SessionRecapModal({
     ? <Trans {...msg({ context: 'recap.back-today', message: 'Back to Today' })} />
     : <Trans {...msg({ context: 'recap.continue', message: 'Continue learning' })} />;
   const themeToggle = (
-    <button type="button" className="practice-recap-icon-button practice-recap-theme" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-pressed={mode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>
+    <button type="button" className={isCrystal ? 'practice-recap-icon-button practice-recap-theme' : 'practice-recap-icon-button practice-recap-theme fx-press'} onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-pressed={mode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>
       {mode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
     </button>
   );
   const closeButton = (
-    <Dialog.Close className="practice-recap-icon-button practice-recap-close" aria-label={_(msg({ id: 'recap.close', message: 'Close recap' }))}>
+    <Dialog.Close className={isCrystal ? 'practice-recap-icon-button practice-recap-close' : 'practice-recap-icon-button practice-recap-close fx-press'} aria-label={_(msg({ id: 'recap.close', message: 'Close recap' }))}>
       <X size={18} aria-hidden="true" />
     </Dialog.Close>
   );
@@ -393,13 +408,13 @@ export function SessionRecapModal({
     ? <Trans {...msg({ context: 'recap.tomorrow-cards', message: 'Tomorrow · {count, plural, one {# card} other {# cards}}' })} values={{ count: tomorrow.count ?? 0 }} />
     : <Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />;
   const tomorrowDetail = reminderReady ? <ReminderNote view={reminderView} /> : <TomorrowDueText result={tomorrow} msPerReview={msPerReview} />;
-  const reminderSwitch = <ReminderSwitch view={reminderView} onToggle={toggleReminder} describedBy="practice-recap-reminder-note" />;
+  const reminderSwitch = <ReminderSwitch view={reminderView} onToggle={toggleReminder} describedBy="practice-recap-reminder-note" crystal={isCrystal} />;
   const whatNext = isNext && (
-    <section className="practice-recap-whatnext" aria-labelledby="practice-recap-whatnext-heading">
+    <section className={isCrystal ? 'practice-recap-whatnext' : 'practice-recap-whatnext fx-enter-4'} aria-labelledby="practice-recap-whatnext-heading">
       <h2 id="practice-recap-whatnext-heading" className="practice-recap-whatnext-heading"><Trans {...msg({ context: 'recap.what-next-question', message: 'What next?' })} /></h2>
       <div className="practice-recap-whatnext-grid">
         {offerWordMatch && (
-          <button type="button" data-recap-next="match" className="practice-recap-next-card" onClick={onPlayWordMatch}>
+          <button type="button" data-recap-next="match" className={isCrystal ? 'practice-recap-next-card' : 'practice-recap-next-card fx-press'} onClick={onPlayWordMatch}>
             <span className="practice-recap-next-icon" aria-hidden="true"><Zap size={18} strokeWidth={2.2} /></span>
             <span className="practice-recap-next-text">
               <strong><Trans {...msg({ context: 'recap.word-match', message: 'Play Word Match · {seconds} s' })} values={{ seconds: WORD_MATCH_DURATION_SECONDS }} /></strong>
@@ -416,7 +431,7 @@ export function SessionRecapModal({
           {reminderSwitch}
         </div>
         {onViewWeeklyRecap && (
-          <button type="button" data-recap-next="share" className="practice-recap-next-card" onClick={onViewWeeklyRecap}>
+          <button type="button" data-recap-next="share" className={isCrystal ? 'practice-recap-next-card' : 'practice-recap-next-card fx-press'} onClick={onViewWeeklyRecap}>
             <span className="practice-recap-next-icon" aria-hidden="true"><Share size={18} strokeWidth={2.2} /></span>
             <span className="practice-recap-next-text"><strong>{shareTitle}</strong><small>{shareDetail}</small></span>
           </button>
@@ -434,11 +449,11 @@ export function SessionRecapModal({
             inline style while it animates (see GsapEntrance.tsx), so the fixed full-screen frame
             stays a separate, non-animated element and GSAP only moves the board inside it. */}
         <div className="practice-recap-frame">
-        <GsapEntrance variant="result" data-session-recap="true" data-family={isCrystal ? 'crystal' : 'classic'} className="practice-recap-board">
+        <RecapBoardFrame crystal={isCrystal}>
           {!isCrystal && (
             <div className="practice-recap-confetti" aria-hidden="true">
               {confetti.map((piece, index) => (
-                <span key={index} data-tone={piece.tone} style={{ left: `${piece.left}%`, width: piece.width, height: piece.height, animationDelay: `${piece.delay}ms`, animationDuration: `${piece.duration}ms`, '--recap-confetti-rotate': `${piece.rotate}deg` } as CSSProperties} />
+                <span key={index} className="sf-fall-once" data-tone={piece.tone} style={{ left: `${piece.left}%`, width: piece.width, height: piece.height, animationDelay: `${piece.delay}ms`, animationDuration: `${piece.duration}ms`, '--recap-confetti-rotate': `${piece.rotate}deg` } as CSSProperties} />
               ))}
             </div>
           )}
@@ -557,11 +572,11 @@ export function SessionRecapModal({
                 // RecapNext: one rising column of the session line, the headline and the stat tiles beside
                 // the goal card; the sentence summary stays the dialog's description for assistive tech,
                 // its figures are on the tiles and the promoted cards.
-                <div className="practice-recap-lead sf-rise">
-                  <Dialog.Title className="practice-recap-overline">{classicTitle}</Dialog.Title>
-                  <p className="practice-recap-headline">{classicHeadline}</p>
+                <div className="practice-recap-lead">
+                  <Dialog.Title className="practice-recap-overline fx-enter">{classicTitle}</Dialog.Title>
+                  <p className="practice-recap-headline fx-title">{classicHeadline}</p>
                   <Dialog.Description id="session-recap-description" className="sr-only">{description}</Dialog.Description>
-                  <dl data-recap-stats className="practice-recap-stats">
+                  <dl data-recap-stats className="practice-recap-stats fx-stagger">
                     <StatTile tone="warm" label={<Trans {...msg({ context: 'recap.xp-earned', message: 'XP earned' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /></>}>
                       <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.xp-session', message: 'This session' })} /></p>
                     </StatTile>
@@ -582,31 +597,31 @@ export function SessionRecapModal({
                 </div>
               ) : (
                 <>
-                  <Dialog.Title className="practice-recap-pill sf-rise"><Check size={14} strokeWidth={2.4} aria-hidden="true" />{classicTitle}</Dialog.Title>
-                  <p className="practice-recap-headline sf-rise-2">{classicHeadline}</p>
-                  <Dialog.Description id="session-recap-description" className="practice-recap-sub sf-rise-2">{description}</Dialog.Description>
+                  <Dialog.Title className="practice-recap-pill fx-reward"><Check size={14} strokeWidth={2.4} aria-hidden="true" />{classicTitle}</Dialog.Title>
+                  <p className="practice-recap-headline fx-title">{classicHeadline}</p>
+                  <Dialog.Description id="session-recap-description" className="practice-recap-sub fx-enter-2">{description}</Dialog.Description>
                 </>
               )}
               {goalPanel}
 
               {shownPromotions.length > 0 && (
-                <ul className="practice-recap-cards" aria-label={_(msg({ id: 'recap.cards-up-label', message: 'Words that moved up a level' }))}>
-                  {shownPromotions.map((promotion, index) => <PromotedCard key={promotion.card.id} promotion={promotion} crystal={false} deal={index + 1} />)}
+                <ul className={isNext ? 'practice-recap-cards fx-stagger' : 'practice-recap-cards'} aria-label={_(msg({ id: 'recap.cards-up-label', message: 'Words that moved up a level' }))}>
+                  {shownPromotions.map((promotion, index) => <PromotedCard key={promotion.card.id} promotion={promotion} crystal={false} deal={isNext ? undefined : index + 1} />)}
                 </ul>
               )}
 
-              {!isNext && <dl data-recap-stats className="practice-recap-stats sf-rise-3">
-                <StatTile label={<Trans {...msg({ context: 'recap.recall', message: 'Recall' })} />} value={<><CountUp to={accuracy} suffix="%" /><span className="practice-recap-pct" aria-hidden="true">%</span></>}>
+              {!isNext && <dl data-recap-stats className="practice-recap-stats fx-enter-3">
+                <StatTile label={<Trans {...msg({ context: 'recap.recall', message: 'Recall' })} />} valueClassName="sf-tick" value={<><CountUp to={accuracy} suffix="%" /><span className="practice-recap-pct" aria-hidden="true">%</span></>}>
                   <span className="practice-recap-bar" role="img" aria-label={_({ ...msg({ id: 'recap.recall-split', message: '{good} remembered, {again} to revisit' }), values: { good: goodCount, again: againCount } })}>
                     {againCount > 0 && <span data-part="again" style={{ width: `${100 - goodShare}%` }} />}
                     {goodCount > 0 && <span data-part="good" style={{ width: `${goodShare}%` }} />}
                   </span>
                 </StatTile>
-                <StatTile label={<Trans {...msg({ context: 'recap.experience', message: 'Experience' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /> <small className="practice-recap-unit"><Trans {...msg({ context: 'recap.xp-unit', message: 'XP' })} /></small></>}>
+                <StatTile label={<Trans {...msg({ context: 'recap.experience', message: 'Experience' })} />} valueClassName="sf-tick" value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /> <small className="practice-recap-unit"><Trans {...msg({ context: 'recap.xp-unit', message: 'XP' })} /></small></>}>
                   <p className="practice-recap-stat-sub">{remembered} · {toRevisit}</p>
                 </StatTile>
                 {showStreak && (
-                  <StatTile label={<Trans {...msg({ context: 'recap.streak', message: 'Streak' })} />} value={<>{formatNumber(streakDays)} <span className="practice-recap-chip-today"><Trans {...msg({ context: 'recap.streak-today', message: '+1 today' })} /></span></>}>
+                  <StatTile label={<Trans {...msg({ context: 'recap.streak', message: 'Streak' })} />} value={<><span className="sf-tick">{formatNumber(streakDays)}</span> <span className="practice-recap-chip-today"><Trans {...msg({ context: 'recap.streak-today', message: '+1 today' })} /></span></>}>
                     <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts after one review.' })} /></p>
                   </StatTile>
                 )}
@@ -617,15 +632,15 @@ export function SessionRecapModal({
               {progressLine}
               {whatNext}
 
-              <div className="practice-recap-actions sf-rise-3">
+              <div className="practice-recap-actions fx-enter-4">
                 {/* The Word Match card leads the row when it is offered, so closing steps back to a secondary button. */}
-                <button type="button" className={`${offerWordMatch ? 'practice-recap-secondary' : 'practice-recap-primary'} sf-press`} onClick={onClose}>{closeLabel}</button>
-                {canRetry && <button type="button" className="practice-recap-secondary sf-press" onClick={onRetryWeak} disabled={retryDisabled}>{retryLabel}</button>}
-                {!isNext && onViewWeeklyRecap && <button type="button" className="practice-recap-link" onClick={onViewWeeklyRecap}><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /> <ArrowRight size={15} aria-hidden="true" /></button>}
+                <button type="button" className={`${offerWordMatch ? 'practice-recap-secondary' : 'practice-recap-primary'} fx-press`} onClick={onClose}>{closeLabel}</button>
+                {canRetry && <button type="button" className="practice-recap-secondary fx-press" onClick={onRetryWeak} disabled={retryDisabled}>{retryLabel}</button>}
+                {!isNext && onViewWeeklyRecap && <button type="button" className="practice-recap-link fx-press" onClick={onViewWeeklyRecap}><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /> <ArrowRight size={15} aria-hidden="true" /></button>}
               </div>
             </div>
           )}
-        </GsapEntrance>
+        </RecapBoardFrame>
         </div>
         </Dialog.Content>
       </Dialog.Portal>

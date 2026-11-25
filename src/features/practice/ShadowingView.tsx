@@ -254,7 +254,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
       />
 
       <section className="practice-shadowing" aria-labelledby="shadowing-sentence">
-        <p className="practice-shadowing__focus">
+        <p className={crystal ? 'practice-shadowing__focus' : 'practice-shadowing__focus fx-enter'}>
           <span className="practice-shadowing__focus-text">
             <span><Trans {...msg({ context: 'practice.shadowing.focus-word', message: 'Focus word' })} /></span>{' '}
             <span lang={targetLanguage} className="practice-shadowing__focus-word">
@@ -263,13 +263,13 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
             {card.phonetic && <span lang={targetLanguage} className="practice-shadowing__ipa">{card.phonetic}</span>}
           </span>
         </p>
-        <h2 id="shadowing-sentence" lang={targetLanguage} className="practice-shadowing__sentence" data-spaced={spaced || undefined}>
+        <h2 id="shadowing-sentence" lang={targetLanguage} className={crystal ? 'practice-shadowing__sentence' : 'practice-shadowing__sentence fx-title'} data-spaced={spaced || undefined}>
           {words.map((word, index) => (
             <SentenceWord key={index} word={word} space={index > 0 && spaced} />
           ))}
         </h2>
         {!practiceWord && !practiceContext && card.exampleTranslation && (
-          <p lang={nativeLanguage} className="practice-shadowing__translation">
+          <p lang={nativeLanguage} className={crystal ? 'practice-shadowing__translation' : 'practice-shadowing__translation fx-enter'}>
             {card.exampleTranslation}
           </p>
         )}
@@ -296,13 +296,13 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           )}
         </div>
 
-        <section className="practice-shadowing__waves crystal-chamfer surface-glass" aria-label={_(msg({ id: 'practice.shadowing.waves', message: 'Model and your take' }))}>
+        <section className={crystal ? 'practice-shadowing__waves crystal-chamfer surface-glass' : 'practice-shadowing__waves fx-enter-2 crystal-chamfer surface-glass'} aria-label={_(msg({ id: 'practice.shadowing.waves', message: 'Model and your take' }))}>
           <div className="practice-shadowing__track">
             <div className="practice-shadowing__track-head">
               <button
                 type="button"
                 onClick={playPronunciation}
-                className="practice-shadowing__play focus-visible:outline-2 focus-visible:outline-offset-2"
+                className={`practice-shadowing__play${crystal ? '' : ' fx-press'} focus-visible:outline-2 focus-visible:outline-offset-2`}
                 aria-label={t(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }), { word: card.word })}
               >
                 <span><Play size={crystal ? 12 : 11} fill="currentColor" aria-hidden="true" /></span>
@@ -319,7 +319,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           </div>
           <div className="practice-shadowing__track">
             <div className="practice-shadowing__track-head">
-              <span className="practice-shadowing__rec" data-live={isListening || undefined} aria-hidden="true" />
+              <span className={`practice-shadowing__rec${isListening && !crystal ? ' sf-pulse' : ''}`} data-live={isListening || undefined} aria-hidden="true" />
               <span className="practice-shadowing__track-label">
                 {takeNumber === 0
                   ? <Trans {...msg({ context: 'practice.shadowing.your-take', message: 'Your take' })} />
@@ -329,7 +329,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               </span>
               {takeSamples > 0 && <span className="practice-shadowing__clock">{formatTakeClock((takeSamples * MIC_LEVEL_INTERVAL_MS) / 1000)}</span>}
             </div>
-            <Waveform levels={takeLevels} kind="take" live={isListening} />
+            <Waveform levels={takeLevels} kind="take" live={isListening} crystal={crystal} />
             {hasTake && (micStatus === 'denied' || micStatus === 'unavailable') && (
               <p className="practice-shadowing__wave-note" data-mic-status={micStatus}>
                 {micStatus === 'denied'
@@ -340,12 +340,12 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           </div>
         </section>
 
-        <div className="practice-shadowing__controls">
+        <div className={crystal ? 'practice-shadowing__controls' : 'practice-shadowing__controls fx-enter-3'}>
           <div className="practice-shadowing__score">
             {matchResult ? (
               <>
                 <p className="practice-shadowing__score-line">
-                  <span className="practice-shadowing__score-value">{matchResult.score}</span>
+                  <span className={crystal ? 'practice-shadowing__score-value' : 'practice-shadowing__score-value sf-tick'}>{matchResult.score}</span>
                   <span>
                     <Trans {...msg({ context: 'practice.shadowing.match-take', message: '% match · take {take}' })} values={{ take: takeNumber }} />
                   </span>
@@ -380,7 +380,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
             type="button"
             onClick={isListening ? stopListening : startListening}
             data-listening={isListening || undefined}
-            className={`practice-shadowing__mic sf-press${isListening ? ' sf-pulse' : ''} focus-visible:outline-2 focus-visible:outline-offset-4`}
+            className={`practice-shadowing__mic${crystal ? '' : ' fx-press'} focus-visible:outline-2 focus-visible:outline-offset-4`}
             aria-label={isListening ? _(msg({ id: 'practice.shadowing.stop-recording', message: 'Stop recording' })) : _(msg({ id: 'practice.shadowing.start-reading', message: 'Start reading' }))}
           >
             {crystal && <span className="practice-shadowing__mic-ring" aria-hidden="true"><span className="practice-shadowing__mic-ring-spin" /></span>}
@@ -394,13 +394,13 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               type="button"
               onClick={() => move(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
-              className="practice-shadowing__prev practice-secondary sf-press crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
+              className={`practice-shadowing__prev practice-secondary${crystal ? '' : ' fx-press'} crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2`}
               aria-label={_(msg({ id: 'practice.shadowing.previous', message: 'Previous word' }))}
             >
               <ChevronLeft size={20} aria-hidden="true" />
             </button>
             {(matchResult || transcript) && !isListening && (
-              <button type="button" onClick={startListening} className="practice-secondary sf-press crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2">
+              <button type="button" onClick={startListening} className={`practice-secondary${crystal ? '' : ' fx-press'} crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2`}>
                 <RotateCcw size={16} aria-hidden="true" />
                 <Trans {...msg({ context: 'practice.shadowing.try-again', message: 'Try again' })} />
               </button>
@@ -409,7 +409,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               type="button"
               onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
               disabled={isLast}
-              className="practice-primary sf-press crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
+              className={`practice-primary${crystal ? '' : ' fx-press'} crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2`}
               aria-label={_(msg({ id: 'practice.shadowing.next', message: 'Next word' }))}
             >
               {crystal && <span aria-hidden="true" className="practice-shadowing__shine crystal-shine" />}
@@ -433,7 +433,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
         </div>
         {speechError && <p role="alert" className="practice-shadowing__error">{speechError}</p>}
 
-        <div className="practice-shadowing__notes">
+        <div className={crystal ? 'practice-shadowing__notes' : 'practice-shadowing__notes fx-enter-4'}>
           <p><Trans {...msg({ context: 'shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-', message: 'The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.' })} /></p>
           <p data-assessment="unavailable"><Trans {...msg({ context: 'shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra', message: 'Pronunciation assessment is unavailable in this build; browser transcript matching remains available.' })} /></p>
         </div>
@@ -471,13 +471,24 @@ interface WaveformProps {
 }
 
 /** A row of bars from real loudness samples; unrecorded room is drawn as a dotted rest line. */
-function Waveform({ levels, kind, live = false }: WaveformProps) {
+function Waveform({ levels, kind, live = false, crystal = false }: WaveformProps & { crystal?: boolean }) {
   const rest = Math.max(0, WAVE_BARS - levels.length);
+  const waveStart = Math.max(0, levels.length - 4);
   return (
     <div className="practice-shadowing__wave" data-kind={kind} data-live={live || undefined} aria-hidden="true">
-      {levels.map((level, index) => (
-        <span key={index} className="practice-shadowing__wave-bar" style={{ height: `${Math.round(8 + Math.min(1, level) * 92)}%` }} />
-      ))}
+      {levels.map((level, index) => {
+        const pulsing = live && !crystal && kind === 'take' && index >= waveStart;
+        return (
+          <span
+            key={index}
+            className={pulsing ? 'practice-shadowing__wave-bar sf-wave' : 'practice-shadowing__wave-bar'}
+            style={{
+              height: `${Math.round(8 + Math.min(1, level) * 92)}%`,
+              animationDelay: pulsing ? `${(index - waveStart) * 120}ms` : undefined,
+            }}
+          />
+        );
+      })}
       {rest > 0 && <span className="practice-shadowing__wave-rest" style={{ flexGrow: rest }} />}
     </div>
   );
