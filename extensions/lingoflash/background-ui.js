@@ -380,8 +380,10 @@
       '.frame[data-family="crystal"] .caret{top:-9px;width:20px;height:12px;transform:none;border:0;background:#ff8fb6;clip-path:polygon(50% 0,100% 100%,0 100%)}',
       '.caret[hidden]{display:none}',
       '.c{position:relative;border:var(--border);border-radius:var(--radius);background:var(--bg);box-shadow:var(--shadow);color:var(--text);font:400 13px/1.45 var(--sf-font-body);-webkit-font-smoothing:antialiased;animation:sf-fade .18s cubic-bezier(0.16,1,0.3,1) forwards;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}',
+      '.frame:not([data-family="crystal"]) .c{animation:sf-pop 380ms cubic-bezier(.16,1,.3,1) both;transform-origin:31px 0}',
       '.frame[data-family="crystal"] .c{clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px)}',
       '@keyframes sf-fade{from{opacity:0;transform:translateY(4px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}',
+      '@keyframes sf-pop{from{opacity:0;transform:translate3d(0,-6px,0) scale(.96)}to{opacity:1;transform:none}}',
       '.body{padding:18px 20px 16px}.frame[data-family="crystal"] .body{padding:16px 20px 14px}',
       '.h{display:flex;align-items:center;gap:10px}.info{min-width:0;flex:1 1 auto}',
       '.source-line,.example-line{display:flex;align-items:center;gap:10px}.example-line{align-items:flex-start;gap:8px}.example-line .e{min-width:0;flex:1 1 auto;margin-top:0}',
@@ -399,6 +401,12 @@
       '.speech-help{color:var(--warn);font-size:11.5px;margin-top:6px}',
       '.x{flex:none;margin-left:auto;align-self:flex-start;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font:700 16px/1 var(--sf-font-body);transition:background-color .15s ease,color .15s ease}',
       '.x:hover{background:var(--chip);color:var(--strong)}',
+      '.frame:not([data-family="crystal"]) :is(.speak,.x){transition:transform 180ms cubic-bezier(.16,1,.3,1),filter 180ms ease,background-color .15s ease,color .15s ease}',
+      '.frame:not([data-family="crystal"])[data-scheme="light"] :is(.speak,.x){transition:transform 160ms cubic-bezier(.16,1,.3,1),filter 160ms ease,background-color .15s ease,color .15s ease}',
+      '@media (hover:hover) and (pointer:fine){.frame:not([data-family="crystal"]) :is(.speak,.x):not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.08) drop-shadow(0 10px 18px rgb(40 211 244/.35))}.frame:not([data-family="crystal"])[data-scheme="light"] :is(.speak,.x):not(:disabled):hover{transform:translateY(-2px);filter:drop-shadow(0 8px 8px rgb(60 40 20/.2))}}',
+      '.frame:not([data-family="crystal"]) :is(.speak,.x):not(:disabled):active{transform:translateY(0) scale(.97);filter:brightness(.98)}',
+      '.frame:not([data-family="crystal"])[data-scheme="light"] :is(.speak,.x):not(:disabled):active{transform:translateY(1px) scale(.98);filter:none}',
+      '.frame:not([data-family="crystal"]) .speak:disabled:is(:hover,:active){transform:none;filter:none}',
       '.frame[data-family="crystal"] .x{width:30px;height:30px;border-radius:0;background:var(--chip);color:var(--text2);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}',
       '.p{margin-top:6px;color:var(--text2);font-family:var(--sf-font-mono);font-size:12.5px}',
       '.t{margin-top:12px;color:var(--accent-text);font-family:var(--sf-font-display);font-size:26px;font-weight:var(--display-weight);line-height:1.15;overflow-wrap:anywhere}',
@@ -441,7 +449,7 @@
       '.load{margin-top:12px;display:flex;align-items:center;color:var(--text2);font-size:13px}',
       '.spin{display:inline-block;width:14px;height:14px;margin-right:8px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:r .8s linear infinite}',
       '@keyframes r{to{transform:rotate(360deg)}}',
-      '@media (prefers-reduced-motion: reduce){.spin{animation:none}.c{animation:none}.x{transition:none}.speak{transition:none}}',
+      '@media (prefers-reduced-motion: reduce){.spin{animation:none}.c,.frame:not([data-family="crystal"]) .c{animation:none}.x,.speak,.frame:not([data-family="crystal"]) :is(.speak,.x){transition:none}.frame:not([data-family="crystal"]) :is(.speak,.x):is(:hover,:active){transform:none;filter:none}}',
     ].join('');
     const frame = document.createElement('div'); frame.className = 'frame';
     frame.dataset.family = family; frame.dataset.scheme = scheme;
