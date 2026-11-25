@@ -5,6 +5,7 @@ import { I18nProvider } from './i18n/I18nProvider';
 import { ThemeProvider } from './features/theme/ThemeProvider';
 import './index.css';
 import './styles/themes/crystal-motion.css';
+import './styles/themes/classic-motion.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Missing #root');

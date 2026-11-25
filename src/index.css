@@ -923,13 +923,12 @@ html:not([data-theme-family="crystal"]) .practice-bento-card {
 @keyframes au-laser { 0%, 100% { opacity: .75; transform: scaleX(.92); } 50% { opacity: 1; transform: scaleX(1); } }
 @keyframes ip-star { 0%, 100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.25) rotate(-10deg); } }
 @keyframes ip-reveal { from { opacity: 0; transform: translate3d(0, 8px, 0); letter-spacing: .02em; } to { opacity: 1; transform: none; } }
-@keyframes ip-ink { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes ip-deal-a { from { opacity: 0; transform: translate3d(-60px, -20px, 0) rotate(-5deg); } to { opacity: 1; transform: none; } }
 @keyframes ip-rule { 0%, 100% { transform: scaleX(.6); } 50% { transform: scaleX(1); } }
 @keyframes sf-rise-k { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
 @keyframes sf-deal-k { from { opacity: 0; transform: translate3d(0, 60px, 0) scale(.9) rotate(-8deg); } to { opacity: 1; transform: none; } }
 @keyframes sf-sheen-k { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
-@keyframes sf-grow-k { from { transform: scaleX(.2); } to { transform: scaleX(1); } }
+@keyframes sf-grow-k { from { scale: .2 1; } }
 @keyframes sf-pop-k { from { opacity: 0; transform: translate3d(0, -6px, 0) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes sf-pulse-k { 0%, 100% { box-shadow: 0 0 0 0 var(--sf-pulse, rgb(40 211 244 / 0.45)); } 50% { box-shadow: 0 0 0 14px transparent; } }
 @keyframes sf-wave-k { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
@@ -946,7 +945,7 @@ html:not([data-theme-family="crystal"]) .sf-deal-1 { animation: sf-deal-k 700ms 
 html:not([data-theme-family="crystal"]) .sf-deal-2 { animation: sf-deal-k 700ms cubic-bezier(.16, 1, .3, 1) 380ms backwards; }
 html:not([data-theme-family="crystal"]) .sf-sheen { animation: sf-sheen-k 3.6s ease-in-out infinite; }
 html:not([data-theme-family="crystal"]) .sf-grow,
-html:not([data-theme-family="crystal"]) .achievements-board--classic .ach-meter-fill { transform-origin: left; animation: sf-grow-k 1.1s cubic-bezier(.16, 1, .3, 1) 800ms backwards; }
+html:not([data-theme-family="crystal"]) .achievements-board--classic .ach-meter-fill { transform-origin: left; animation: sf-grow-k 900ms cubic-bezier(.16, 1, .3, 1) 400ms backwards; }
 html:not([data-theme-family="crystal"]) .sf-pop { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) backwards; transform-origin: 120px 0; }
 html:not([data-theme-family="crystal"]) .sf-pulse { animation: sf-pulse-k 1.6s ease-out infinite; }
 html:not([data-theme-family="crystal"]) .sf-wave { transform-origin: center; animation: sf-wave-k 900ms ease-in-out infinite; }
