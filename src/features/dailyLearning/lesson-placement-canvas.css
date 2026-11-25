@@ -840,7 +840,7 @@ html:not([data-theme-family='crystal']):not(.dark) .placement-rung[data-rung-sta
   background: var(--lp-accent);
   content: '';
   transform-origin: left;
-  animation: sf-grow-k 1.1s cubic-bezier(.16, 1, .3, 1) 800ms backwards;
+  animation: sf-grow-k 900ms cubic-bezier(.16, 1, .3, 1) 400ms backwards;
 }
 :where(html:not([data-theme-family=crystal])) .placement-confidence-track[data-steps='1']::before { width: calc(100% / 3); }
 :where(html:not([data-theme-family=crystal])) .placement-confidence-track[data-steps='2']::before { width: calc(200% / 3); }
@@ -888,8 +888,8 @@ html:not([data-theme-family='crystal']):not(.dark) .placement-rung[data-rung-sta
 :where(html:not([data-theme-family=crystal])) .placement-action-row .lesson-primary { min-height: 54px; padding: 0 26px; font-size: 15.5px; }
 :where(html:not([data-theme-family=crystal])) .placement-action-row .lesson-link { color: var(--sf-text-muted); }
 :where(html:not([data-theme-family=crystal])) .placement-action-row .lesson-link:hover { color: var(--sf-text); }
-/* The board's buttons press with .sf-press; a disabled submit does not lift on hover. */
-:where(html:not([data-theme-family=crystal])) :is(.placement-submit, .lesson-submit).sf-press:disabled:hover { filter: none; transform: none; }
+/* The board's buttons press with .fx-press; a disabled control does not lift on hover or press. */
+html:not([data-theme-family="crystal"]) :is(.placement-submit, .lesson-submit, .lesson-primary, .lesson-secondary, .lesson-choice, .lesson-token, .lesson-rating).fx-press:disabled:is(:hover, :active) { filter: none; transform: none; }
 :where(html:not([data-theme-family=crystal])) .placement-ladder-note { font-size: 12.5px; }
 :where(html:not([data-theme-family=crystal])) .placement-rungs { margin-top: 20px; }
 :where(html:not([data-theme-family=crystal])) .placement-confidence { gap: 8px; margin-top: 16px; color: var(--sf-text-muted); font-size: 12.5px; }

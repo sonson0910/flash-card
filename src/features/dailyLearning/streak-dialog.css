@@ -207,6 +207,7 @@
 :where(html:not([data-theme-family=crystal])) .streak-dialog-secondary { padding: 0 18px; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); font-weight: 600; }
 .streak-dialog-primary:hover, .streak-dialog-secondary:hover { filter: brightness(1.05); }
 .streak-dialog-primary:active, .streak-dialog-secondary:active { transform: scale(.98); }
+html:not([data-theme-family="crystal"]) :is(.streak-dialog-primary, .streak-dialog-secondary, .streak-dialog-close).fx-press:disabled:is(:hover, :active) { transform: none; filter: none; }
 
 /* DlgStreak values the shared rules above do not carry. The board's badge, empty freeze slot and gold chip are
    content-box, so their edges add to the stated size; its light gold chip text is the board's #f3d58a, the repair
@@ -218,19 +219,21 @@
 :where(html:not([data-theme-family=crystal])) .streak-dialog-gold-chip { color: #f3d58a; }
 :root.dark:not([data-theme-family="crystal"]) .streak-dialog-gold-chip { color: #2a1a02; }
 :where(html:not([data-theme-family=crystal])) .streak-dialog-repair { border-color: var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 35%, transparent)); }
-/* The dialog pops in as the board's .sf-pop does (from 6 px higher at 96% around a point 120 px from its left
-   edge, over 380 ms). The centring transform stays put, so the pop uses the separate translate and scale. */
-:where(html:not([data-theme-family=crystal])) .streak-dialog {
-  transform-origin: 120px 0;
-  transition: opacity 380ms cubic-bezier(.16, 1, .3, 1), translate 380ms cubic-bezier(.16, 1, .3, 1), scale 380ms cubic-bezier(.16, 1, .3, 1);
+/* The Classic dialog centres with translate(-50%, -50%), so fx-dialog keeps that offset across both frames. */
+@keyframes streak-dialog-au-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 14px, 0) scale(.97); filter: blur(8px); }
+  to { opacity: 1; transform: translate(-50%, -50%); filter: none; }
 }
-@starting-style {
-  :where(html:not([data-theme-family=crystal])) .streak-dialog { opacity: 0; translate: 0 -6px; scale: .96; }
+@keyframes streak-dialog-ip-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 22px, 0) rotate(-.8deg); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
 }
+html.dark:not([data-theme-family="crystal"]) .streak-dialog.fx-dialog { animation: streak-dialog-au-k 340ms cubic-bezier(.16, 1, .3, 1) both; }
+html:not(.dark):not([data-theme-family="crystal"]) .streak-dialog.fx-dialog { animation: streak-dialog-ip-k 380ms cubic-bezier(.16, 1, .3, 1) both; }
 @media (prefers-reduced-motion: reduce) {
-  :where(html:not([data-theme-family=crystal])) .streak-dialog { transition: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .streak-dialog.fx-dialog { animation: none; }
 }
-:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .streak-dialog { transition: none; }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .streak-dialog.fx-dialog { animation: none; }
 
 /* Crystal Star (AnimeStreak). The board's values per mode: the ice set for an active or frozen streak, then
    the state rules pick from it. Small text the board sets in a tone under AA on the light card (text3, holoText)

@@ -46,10 +46,10 @@ function PlacementLadder({ estimate, mode, ascending = false }: { readonly estim
       ? _(msg({ id: 'daily.placement.ladder.note', message: 'Sharpens with every answer' }))
       : _(msg({ id: 'daily.placement.ladder.pending-note', message: 'An estimate appears after six answers' }));
   const steps = estimate ? confidenceSteps[estimate.confidence] : 0;
-  return <aside className="placement-ladder" aria-labelledby="placement-ladder-title">
+  return <aside className="placement-ladder fx-enter-3" aria-labelledby="placement-ladder-title">
     <p id="placement-ladder-title" className="placement-ladder-title">{title}</p>
     <p className="placement-ladder-note">{note}</p>
-    <ol className="placement-rungs">
+    <ol className="placement-rungs fx-stagger">
       {(ascending ? [...ladder].reverse() : ladder).map(rung => {
         const state = !estimate ? 'idle' : rung.tier === estimate.tier ? 'likely' : tierRank[rung.tier] < tierRank[estimate.tier] ? 'below' : 'above';
         return <li key={rung.tier} className="placement-rung" data-rung-state={state}>
@@ -73,7 +73,7 @@ function Shell({ children, model, actions, crystal }: { readonly children: React
   return <section aria-labelledby="daily-placement-heading" className="daily-canvas placement-canvas" data-session-shell="placement" data-learning-canvas="placement" data-placement-status={model.status}>
     {crystal && <><span className="lesson-shard lesson-shard--left crystal-wing crystal-wing-art crystal-ornament" aria-hidden="true" /><span className="lesson-shard lesson-shard--right crystal-wing crystal-wing-art crystal-ornament" aria-hidden="true" /></>}
     <header className="placement-header lesson-topbar">
-      <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.placement.exit', message: 'Exit placement check' }).id)} className="lesson-round placement-exit"><X size={18} aria-hidden="true" /></button>
+      <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.placement.exit', message: 'Exit placement check' }).id)} className="lesson-round placement-exit fx-press"><X size={18} aria-hidden="true" /></button>
       <div className="lesson-topbar-title min-w-0"><h1 id="daily-placement-heading" ref={model.headingRef} tabIndex={-1} className="lesson-title placement-title">
         <span className="placement-title-kicker" aria-hidden="true">{_(msg({ id: 'daily.placement.title-kicker', message: 'Level check' }))}<span className="lesson-title-sep"> // </span></span>
         <span>{_(msg({ id: 'daily.placement.title', message: 'Placement check' }))}</span>
@@ -91,7 +91,7 @@ function Progress({ current, total }: { readonly current: number; readonly total
   const safeTotal = Math.max(1, total);
   const safeCurrent = Math.min(safeTotal, Math.max(0, current));
   return <div className="placement-progress lesson-progress" role="progressbar" aria-label={i18n._(msg({ id: 'daily.placement.progress-label', message: 'Placement progress' }).id)} aria-valuemin={0} aria-valuemax={safeTotal} aria-valuenow={safeCurrent}>
-    <span className="lesson-segments" aria-hidden="true">{Array.from({ length: safeTotal }, (_, index) => <span key={index} data-segment-state={index < safeCurrent - 1 ? 'complete' : index === safeCurrent - 1 ? 'current' : 'upcoming'} />)}</span>
+    <span className="lesson-segments fx-stagger" aria-hidden="true">{Array.from({ length: safeTotal }, (_, index) => <span key={index} data-segment-state={index < safeCurrent - 1 ? 'complete' : index === safeCurrent - 1 ? 'current' : 'upcoming'} />)}</span>
     <span className="placement-progress-copy sr-only">{_({ ...msg({ id: 'daily.placement.question-progress', message: 'Question {current} of {total}' }), values: { current: safeCurrent, total: safeTotal } })}</span>
   </div>;
 }
@@ -113,7 +113,7 @@ function SideColumn({ ladder, lumi }: { readonly ladder: ReactNode; readonly lum
 
 function Headline({ id }: { readonly id?: string }) {
   const { _ } = useLingui();
-  return <h2 id={id} className="placement-question-title">
+  return <h2 id={id} className="placement-question-title fx-title">
     <span className="placement-title-lead">{_(msg({ id: 'daily.placement.headline.lead', message: 'Find your' }))}</span>{' '}<em className="placement-accent">{_(msg({ id: 'daily.placement.headline.accent', message: 'starting level.' }))}</em>
   </h2>;
 }
@@ -127,28 +127,28 @@ function Question({ model, actions, showLumi, crystal }: { readonly model: Extra
     <span className="placement-word-mark" aria-hidden="true">{crystal ? '?' : <CircleHelp size={18} />}</span>
     <h3 className="placement-word" lang={model.promptLanguage}>{model.word ?? model.prompt}</h3>
     {model.word && model.phonetic && <span className="placement-phonetic font-mono">{model.phonetic}</span>}
-    {model.canPlayAudio && actions.playAudio && <button type="button" onClick={actions.playAudio} className="placement-play" aria-label={i18n._(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }).id)}>{crystal ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg> : <Play size={12} fill="currentColor" aria-hidden="true" />}</button>}
+    {model.canPlayAudio && actions.playAudio && <button type="button" onClick={actions.playAudio} className="placement-play fx-press" aria-label={i18n._(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }).id)}>{crystal ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg> : <Play size={12} fill="currentColor" aria-hidden="true" />}</button>}
   </>;
   return <>
     <div className="placement-layout">
       <div className="placement-question-card">
-        <p className="placement-card-kicker">{_({ ...msg({ id: 'daily.placement.question-progress', message: 'Question {current} of {total}' }), values: { current: model.current, total: model.total } })}</p>
+        <p className="placement-card-kicker fx-enter">{_({ ...msg({ id: 'daily.placement.question-progress', message: 'Question {current} of {total}' }), values: { current: model.current, total: model.total } })}</p>
         <Headline />
-        <p className="placement-question-note">{_(msg({ id: 'daily.placement.question-note', message: 'No score, no pressure. Your answers only shape where your learning starts.' }))}</p>
-        <div className="placement-word-block">
+        <p className="placement-question-note fx-enter">{_(msg({ id: 'daily.placement.question-note', message: 'No score, no pressure. Your answers only shape where your learning starts.' }))}</p>
+        <div className="placement-word-block fx-enter">
           {crystal ? <div className="placement-word-face"><span className="placement-word-beam" aria-hidden="true" />{wordContent}</div> : wordContent}
         </div>
         <fieldset className="placement-choices">
-          <legend className="placement-field-label">{model.word ? model.prompt : _(msg({ id: 'daily.placement.choose-answer', message: 'Choose one answer' }))}</legend>
-          <div className="placement-choice-grid">
+          <legend className="placement-field-label fx-enter">{model.word ? model.prompt : _(msg({ id: 'daily.placement.choose-answer', message: 'Choose one answer' }))}</legend>
+          <div className="placement-choice-grid fx-stagger">
             {model.options.map((option, index) => {
               const selected = model.selectedId === option.id;
-              return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="placement-choice lesson-choice sf-press" data-selected={selected ? 'true' : 'false'}><span className="lesson-choice-index font-mono" aria-hidden="true">{index + 1}</span><span className="min-w-0">{option.label}</span></button>;
+              return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="placement-choice lesson-choice fx-press" data-selected={selected ? 'true' : 'false'}><span className="lesson-choice-index font-mono" aria-hidden="true">{index + 1}</span><span className="min-w-0">{option.label}</span></button>;
             })}
           </div>
         </fieldset>
-        <div className="placement-action-row">
-          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit sf-press">{crystal && <span className="placement-submit-shine crystal-shine" aria-hidden="true" />}{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
+        <div className="placement-action-row fx-enter-4">
+          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit fx-press">{crystal && <span className="placement-submit-shine crystal-shine" aria-hidden="true" />}{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
           {actions.markUnsure && <button type="button" onClick={actions.markUnsure} className="lesson-link">{_(msg({ id: 'daily.placement.unsure', message: 'I’m not sure' }))}</button>}
         </div>
         {!showLumi && <p className="placement-guidance-copy">{lumiCopy}</p>}
@@ -164,16 +164,16 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
   const { family } = useTheme();
   const crystal = family === 'crystal';
   const showLumi = crystal && readLumiEnabled();
-  const backToToday = <button type="button" onClick={actions.exit} className="lesson-secondary">{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button>;
+  const backToToday = <button type="button" onClick={actions.exit} className="lesson-secondary fx-press">{_(msg({ id: 'daily.placement.back-to-today', message: 'Back to Today' }))}</button>;
   if (model.status === 'loading') return <Shell model={model} actions={actions} crystal={crystal}><div className="placement-layout"><div aria-busy="true" className="placement-status-panel skeleton-sheen" role="status"><span className="sr-only">{model.message}</span></div></div></Shell>;
   if (model.status === 'intro') return <Shell model={model} actions={actions} crystal={crystal}>
     <div className="placement-layout">
       <div className="placement-question-card placement-intro-panel">
-        <p className="placement-card-kicker">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
+        <p className="placement-card-kicker fx-enter">{_(msg({ id: 'daily.placement.diagnostic', message: 'Diagnostic' }))}</p>
         <Headline />
-        <p className="placement-question-note">{model.message}</p>
-        <p className="placement-count-note"><strong>{_({ ...msg({ id: 'daily.placement.eligible-count', message: '{count, plural, one {# eligible word} other {# eligible words}}' }), values: { count: model.eligibleCount } })}</strong>{' '}{_(msg({ id: 'daily.placement.intro-note', message: 'are available. This check is diagnostic and does not change learning history.' }))}</p>
-        <div className="placement-action-row"><button type="button" onClick={actions.start} className="lesson-primary">{_(msg({ id: 'daily.placement.start', message: 'Start placement check' }))}</button>{backToToday}</div>
+        <p className="placement-question-note fx-enter">{model.message}</p>
+        <p className="placement-count-note fx-enter-2"><strong>{_({ ...msg({ id: 'daily.placement.eligible-count', message: '{count, plural, one {# eligible word} other {# eligible words}}' }), values: { count: model.eligibleCount } })}</strong>{' '}{_(msg({ id: 'daily.placement.intro-note', message: 'are available. This check is diagnostic and does not change learning history.' }))}</p>
+        <div className="placement-action-row fx-enter-4"><button type="button" onClick={actions.start} className="lesson-primary fx-press">{_(msg({ id: 'daily.placement.start', message: 'Start placement check' }))}</button>{backToToday}</div>
       </div>
       <SideColumn ladder={<PlacementLadder mode="preview" ascending={crystal} />} lumi={showLumi && <LumiNote show pose="hint">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</LumiNote>} />
     </div>
@@ -189,7 +189,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
           <p className="placement-status-count tabular-nums">{_({ ...msg({ id: 'daily.placement.insufficient-count', message: '{eligible} of {required} eligible words' }), values: { eligible: model.eligibleCount, required: model.requiredCount } })}</p>
           <p className="placement-guidance-copy">{_(msg({ id: 'daily.placement.insufficient-note', message: 'No learning path has been inferred.' }))}</p>
         </div>
-        <div className="placement-action-row"><button type="button" onClick={actions.openPaths} className="lesson-primary">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
+        <div className="placement-action-row fx-enter-4"><button type="button" onClick={actions.openPaths} className="lesson-primary fx-press">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
       </div>
     </div>
   </Shell>;
@@ -199,7 +199,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
         <div className="placement-status-panel placement-error" role="alert">
           <h2 className="placement-status-title">{_(msg({ id: 'daily.placement.error-title', message: 'Placement check needs attention' }))}</h2>
           <p className="placement-question-note">{model.message}</p>
-          <button type="button" onClick={actions.retry} className="lesson-primary mt-5">{_(msg({ id: 'daily.placement.retry', message: 'Try again' }))}</button>
+          <button type="button" onClick={actions.retry} className="lesson-primary fx-press mt-5">{_(msg({ id: 'daily.placement.retry', message: 'Try again' }))}</button>
         </div>
       </div>
     </div>
@@ -207,12 +207,12 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
   return <Shell model={model} actions={actions} crystal={crystal}>
     <div className="placement-layout placement-result-layout">
       <div className="placement-question-card placement-result-panel" role="status">
-        <p className="placement-card-kicker">{_(msg({ id: 'daily.placement.result-kicker', message: 'Recommended path' }))}</p>
-        <h2 className="placement-question-title placement-result-title"><em className="placement-accent">{model.recommendationLabel}</em></h2>
-        <div className="placement-result-facts"><span className="placement-fact">{_(confidenceLabels[model.confidence])}</span><span className="placement-fact tabular-nums">{_({ ...msg({ id: 'daily.placement.correct-count', message: '{correct} of {answered} correct' }), values: { correct: model.correctCount, answered: model.answeredCount } })}</span></div>
-        <p className="placement-result-message">{model.message}</p>
+        <p className="placement-card-kicker fx-enter">{_(msg({ id: 'daily.placement.result-kicker', message: 'Recommended path' }))}</p>
+        <h2 className="placement-question-title placement-result-title fx-title"><em className="placement-accent">{model.recommendationLabel}</em></h2>
+        <div className="placement-result-facts fx-enter-2"><span className="placement-fact">{_(confidenceLabels[model.confidence])}</span><span className="placement-fact tabular-nums">{_({ ...msg({ id: 'daily.placement.correct-count', message: '{correct} of {answered} correct' }), values: { correct: model.correctCount, answered: model.answeredCount } })}</span></div>
+        <p className="placement-result-message fx-enter-2">{model.message}</p>
         <p className="placement-guidance-copy">{_(msg({ id: 'daily.placement.result-note', message: 'This is a diagnostic guide, not an official exam score. It does not change your review history, mastery, XP, or path access.' }))}</p>
-        <div className="placement-action-row"><button type="button" onClick={actions.openPaths} className="lesson-primary">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
+        <div className="placement-action-row fx-enter-4"><button type="button" onClick={actions.openPaths} className="lesson-primary fx-press">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
       </div>
       <SideColumn ladder={<PlacementLadder estimate={{ tier: model.recommendation, confidence: model.confidence }} mode="result" ascending={crystal} />} lumi={showLumi && <LumiNote show pose="happy">{_(msg({ id: 'today.placement.result', message: 'Your answers suggest starting here.' }))}</LumiNote>} />
     </div>

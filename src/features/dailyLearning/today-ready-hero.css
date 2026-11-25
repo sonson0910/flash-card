@@ -174,9 +174,7 @@
 :where(html:not([data-theme-family=crystal])) .today-stage-rail--classic .today-stage--current .today-stage-icon { border: 0; }
 :where(html:not([data-theme-family=crystal])) .today-stage-rail--classic .today-stage-sub { line-height: normal; }
 :where(html:not([data-theme-family=crystal])) .today-primary kbd { font-weight: inherit; }
-:where(html:not([data-theme-family=crystal])) .today-primary.sf-pulse { --sf-pulse: color-mix(in srgb, var(--sf-text-strong) 20%, transparent); }
-:root.dark:not([data-theme-family="crystal"]) .today-primary.sf-pulse { --sf-pulse: color-mix(in srgb, var(--sf-brand) 40%, transparent); }
-:where(html:not([data-theme-family=crystal])) .today-primary.sf-pulse:disabled { animation: none; }
+html:not([data-theme-family="crystal"]) .today-primary.fx-press:disabled:is(:hover, :active) { transform: none; filter: none; }
 :where(html:not([data-theme-family=crystal])) .today-words-head h2 { line-height: normal; }
 :where(html:not([data-theme-family=crystal])) .today-words-foot { display: flex; flex-direction: column; }
 :where(html:not([data-theme-family=crystal])) .today-words-link { box-sizing: content-box; width: auto; }

@@ -154,7 +154,7 @@ function StageRail({ model, facts, variant }: { readonly model: TodayScreenModel
   const { _ } = useLingui();
   const currentId = facts.stages.find(stage => !stage.skipped)?.id;
   return (
-    <ol className={`today-stage-rail today-stage-rail--${variant}`} aria-label={_(msg({ id: 'today.plan.order', message: 'Daily plan order' }))}>
+    <ol className={`today-stage-rail today-stage-rail--${variant}${variant === 'classic' ? ' fx-stagger' : ''}`} aria-label={_(msg({ id: 'today.plan.order', message: 'Daily plan order' }))}>
       {facts.stages.map((stage, index) => {
         const Icon = stageIcons[stage.id];
         const minutes = stageMinutes(stage);
@@ -251,7 +251,7 @@ function LevelRow({ model, actions, facts }: { readonly model: TodayScreenModel;
   if (!level && facts.reviewCount === 0) return null;
   const number = new Intl.NumberFormat(i18n.locale);
   return (
-    <div className="today-level-row">
+    <div className="today-level-row fx-enter-4">
       {level && (
         <div className="today-level">
           <div className="today-level-copy">
@@ -259,7 +259,7 @@ function LevelRow({ model, actions, facts }: { readonly model: TodayScreenModel;
             {facts.sessionsToLevel !== null && <span>{_({ ...msg({ id: 'today.hero.level-eta', message: 'Level {level} after ≈ {sessions, plural, one {# session} other {# sessions}}' }), values: { level: level.level + 1, sessions: facts.sessionsToLevel } })}</span>}
           </div>
           <div className="today-level-track" role="progressbar" aria-label={_(msg({ id: 'today.hero.level-progress', message: 'Level progress' }))} aria-valuemin={0} aria-valuemax={100} aria-valuenow={level.percent}>
-            <span className="sf-grow" style={{ width: `${level.percent}%` }} />
+            <span className="sf-grow fx-glint" style={{ width: `${level.percent}%` }} />
           </div>
         </div>
       )}
@@ -278,7 +278,7 @@ function siteBadge(site: string | null): string {
 
 function WebWordRows({ items }: { readonly items: readonly CardData[] }) {
   return (
-    <ul className="today-words-list">
+    <ul className="today-words-list fx-stagger">
       {items.map(card => {
         const site = sourceSite(card.source?.url);
         return (
@@ -302,7 +302,7 @@ function SessionWordRows({ words }: { readonly words: readonly TodaySessionWord[
       ? _(msg({ id: 'today.words.reason.weak', message: 'Needs another pass' }))
       : _(msg({ id: 'today.words.reason.due', message: 'Due for review' }));
   return (
-    <ul className="today-words-list">
+    <ul className="today-words-list fx-stagger">
       {words.map(word => {
         const site = sourceSite(word.sourceUrl);
         const Icon = word.reason === 'new' ? Plus : RefreshCw;
@@ -343,7 +343,7 @@ function SessionWordsPanel({ model, actions }: { readonly model: TodayScreenMode
     <WordsPanelFrame
       title={_(msg({ id: 'today.words.session.title', message: "In today's session" }))}
       subtitle={_({ ...msg({ id: 'today.words.session.subtitle', message: '{shown} of {total, plural, one {# planned word} other {# planned words}}' }), values: { shown: words.length, total } })}
-      footer={<button type="button" className="today-words-link" onClick={actions.openVocabulary}>{_(msg({ id: 'today.words.session.open', message: 'Open vocabulary' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
+      footer={<button type="button" className="today-words-link fx-press" onClick={actions.openVocabulary}>{_(msg({ id: 'today.words.session.open', message: 'Open vocabulary' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
     >
       {words.length > 0
         ? <SessionWordRows words={words} />
@@ -362,7 +362,7 @@ function WebWordsPanel({ preview, model }: { readonly preview: WebWordsPreview; 
       subtitle={preview.isAtCap
         ? _({ ...msg({ id: 'today.words.web.subtitle-cap', message: 'Your {count} newest saves · {inSession} in today’s session' }), values: { count, inSession } })
         : _({ ...msg({ id: 'today.words.web.subtitle', message: '{count, plural, one {# saved word} other {# saved words}} · {inSession} in today’s session' }), values: { count, inSession } })}
-      footer={<button type="button" className="today-words-link" onClick={openWebWordsRoute}>{_(msg({ id: 'today.words.web.open', message: 'See all with their sentences' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
+      footer={<button type="button" className="today-words-link fx-press" onClick={openWebWordsRoute}>{_(msg({ id: 'today.words.web.open', message: 'See all with their sentences' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
     >
       <WebWordRows items={preview.items} />
     </WordsPanelFrame>
@@ -398,18 +398,18 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
   return (
     <section aria-labelledby="daily-today-heading" className="today-hero" data-today-ready="true">
       <div className="today-hero-main">
-        <div className="today-hero-chips">
+        <div className="today-hero-chips fx-enter">
           <GoalChip model={model} />
           {streakChip}
         </div>
-        <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title sf-rise">
+        <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title fx-title">
           <span className="today-hero-line">{greeting}</span>
           <span className="today-hero-line">
             <Trans {...msg({ id: 'today.hero.minutes', message: '<0>{minutes, plural, one {# minute} other {# minutes}}</0> today.' })} values={{ minutes: facts.minutes }} components={{ 0: <em /> }} />
           </span>
         </h1>
         <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
-        <div className="today-session-card sf-rise-2">
+        <div className="today-session-card fx-enter-2">
           <div className="today-session-head">
             <h2>{_(msg({ id: 'today.hero.session', message: "Today's session" }))}</h2>
             <span>{_({ ...msg({ id: 'today.hero.session-size', message: '{count, plural, one {# card} other {# cards}} planned' }), values: { count: facts.readyCount } })}</span>
@@ -421,7 +421,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
               actions={actions}
               facts={facts}
               shortcut="Space"
-              className="today-primary sf-press sf-pulse"
+              className="today-primary fx-press"
               label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
             />
             <p className="today-session-reward">
@@ -433,7 +433,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
         </div>
         <LevelRow model={model} actions={actions} facts={facts} />
       </div>
-      <aside className="today-words sf-rise-2" aria-labelledby="today-words-heading" data-today-words="true">
+      <aside className="today-words fx-enter-3" aria-labelledby="today-words-heading" data-today-words="true">
         <WordsPanel
           model={model}
           actions={actions}
@@ -461,15 +461,15 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
   return (
     <section aria-labelledby="daily-today-heading" className="today-hero today-hero--compact" data-today-ready="true">
       <div className="today-compact-top">
-        <p className="today-compact-date">{dateLabel}</p>
+        <p className="today-compact-date fx-enter">{dateLabel}</p>
         {streakChip}
       </div>
-      <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title sf-rise">
+      <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title fx-title">
         <Trans {...msg({ id: 'today.hero.ready-words', message: '{count, plural, one {# word ready to <0>remember.</0>} other {# words ready to <0>remember.</0>}}' })} values={{ count: facts.readyCount }} components={{ 0: <em /> }} />
       </h1>
       <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
       {card && (
-        <div className="today-stack">
+        <div className="today-stack sf-deal-1">
           <span className="today-stack-ghost today-stack-ghost--back" aria-hidden="true" />
           <span className="today-stack-ghost today-stack-ghost--mid" aria-hidden="true" />
           <article className="today-stack-card" data-today-preview="true" aria-label={`${card.word}: ${card.translation}`}>
@@ -488,13 +488,13 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
         actions={actions}
         facts={facts}
         shortcut={null}
-        className="today-primary today-primary--wide sf-press"
+        className="today-primary today-primary--wide fx-press fx-enter-3"
         label={startLabel}
       >
         {/* The phone board's start button carries no play glyph. */}
         <span>{startLabel}</span>
       </PrimaryAction>
-      <div className="today-tiles">
+      <div className="today-tiles fx-enter-4">
         <div className="today-tile">
           <span>{_(msg({ id: 'today.tile.review', message: 'To review' }))}</span>
           <strong>{facts.reviewCount}<small> / {facts.readyCount}</small></strong>
