@@ -6048,6 +6048,16 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   margin-top: 12px;
 }
 
+/* The language card has no photo behind its corner buttons, so they take the chip fill instead of the photo scrim. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]:where([data-card-kind="language"][data-card-side="front"]) .flashcard-chrome-button {
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-strong);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]:where([data-card-kind="language"]) .flashcard-chrome-button[data-selected="true"]:where(:not(.flashcard-reward-button)) {
+  color: #031820;
+}
+
 .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-say {
   background: var(--lang-chip-bg);
   box-shadow: inset 0 0 0 1px var(--lang-chip-line);
