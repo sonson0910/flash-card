@@ -703,6 +703,11 @@ jobs:
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
 
+          # The Firebase CLI does not fall back to a parameter's default in non-interactive mode, so every
+          # parameter the Functions declare needs a line here. The weekly email digest stays off until the
+          # Trigger Email transport is configured and verified.
+          printf '%s\n' 'REMINDER_EMAIL_ENABLED=false' >> "$parameter_file"
+
           # A storage trigger cannot deploy without a default bucket and would fail every function
           # with it, so the sealed Functions leave it out when the parameter file says so.
           if [[ "$STORAGE_STATE" == "not-enabled" ]]; then
