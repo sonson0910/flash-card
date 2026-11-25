@@ -7,23 +7,23 @@
       <span style="font-family: Fraunces, Georgia, serif; font-size: 23px; font-weight: 450;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
     </a>
     <nav aria-label="Site" style="display: flex; gap: 28px; font-size: 14.5px; font-weight: 500;">
-      <a href="#" style="color: {{t.text2}}; text-decoration: none;">How it works</a>
-      <a href="#" style="color: {{t.text2}}; text-decoration: none;">Languages</a>
-      <a href="#" style="color: {{t.text2}}; text-decoration: none;">Chrome extension</a>
-      <a href="#" style="color: {{t.text2}}; text-decoration: none;">Pricing</a>
+      <a href="#" class="sf-ease" style="color: {{t.text2}}; text-decoration: none;">How it works</a>
+      <a href="#" class="sf-ease" style="color: {{t.text2}}; text-decoration: none;">Languages</a>
+      <a href="#" class="sf-ease" style="color: {{t.text2}}; text-decoration: none;">Chrome extension</a>
+      <a href="#" class="sf-ease" style="color: {{t.text2}}; text-decoration: none;">Pricing</a>
     </nav>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
       <div style="position: relative;">
-        <button onClick="{{togglePicker}}" aria-haspopup="listbox" aria-expanded="{{pickerOpen}}" aria-label="Interface language: {{ui.name}}" style="height: 40px; padding: 0 12px 0 11px; border-radius: 999px; border: 1px solid {{pickerLine}}; background: {{t.chipBg}}; color: {{t.text}}; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer;">
+        <button onClick="{{togglePicker}}" class="sf-ease" aria-haspopup="listbox" aria-expanded="{{pickerOpen}}" aria-label="Interface language: {{ui.name}}" style="height: 40px; padding: 0 12px 0 11px; border-radius: 999px; border: 1px solid {{pickerLine}}; background: {{t.chipBg}}; color: {{t.text}}; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: {{t.text2}};"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>
           <span style="font-family: {{ui.font}};">{{ui.name}}</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color: {{t.text3}};"><path d="m6 9 6 6 6-6"></path></svg>
         </button>
         <sc-if value="{{pickerOpen}}" hint-placeholder-val="{{false}}">
-          <div role="listbox" aria-label="Interface language" class="sf-pop" style="position: absolute; right: 0; top: 48px; width: 250px; box-sizing: border-box; padding: 8px; border-radius: 18px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
+          <div role="listbox" aria-label="Interface language" class="sf-pop" style="position: absolute; right: 0; top: 48px; transform-origin: right top; width: 250px; box-sizing: border-box; padding: 8px; border-radius: 18px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
             <div style="padding: 6px 10px 8px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {{t.text3}};">Interface language</div>
             <sc-for list="{{uiList}}" as="u" hint-placeholder-count="8">
-              <button role="option" aria-selected="{{u.selected}}" onClick="{{u.pick}}" style="width: 100%; height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: {{u.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left;">
+              <button role="option" aria-selected="{{u.selected}}" onClick="{{u.pick}}" class="sf-ease" style="width: 100%; height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: {{u.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left;">
                 <span style="font-family: {{u.font}}; font-size: 14px; font-weight: 600;">{{u.name}}</span>
                 <span style="font-size: 12px; color: {{t.text3}};">{{u.en}}</span>
                 <span style="margin-left: auto; color: {{t.accentText}}; opacity: {{u.check}};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
@@ -33,28 +33,28 @@
           </div>
         </sc-if>
       </div>
-      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <button onClick="{{toggleTheme}}" class="sf-ease" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
         <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
       </button>
-      <a href="#" style="height: 44px; padding: 0 14px; display: flex; align-items: center; font-size: 14.5px; font-weight: 600; color: {{t.text}}; text-decoration: none;">Sign in</a>
-      <a href="#" class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; font-size: 14.5px; font-weight: 650; text-decoration: none;">Start free</a>
+      <a href="#" class="sf-ease" style="height: 44px; padding: 0 14px; display: flex; align-items: center; font-size: 14.5px; font-weight: 600; color: {{t.text}}; text-decoration: none;">Sign in</a>
+      <a href="#" class="{{t.fx.press}}" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; font-size: 14.5px; font-weight: 650; text-decoration: none;">Start free</a>
     </div>
   </header>
 
   <main style="position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) 560px; gap: 40px; padding: 26px 64px 0 96px; height: 610px; box-sizing: border-box;">
     <section style="display: flex; flex-direction: column; justify-content: center;">
-      <span style="align-self: flex-start; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>7 languages to learn · meanings in 20+</span>
-      <h1 style="margin: 22px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 92px; line-height: 0.96; letter-spacing: -0.04em; color: {{t.textStrong}};">Read the web.<br>Keep <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">every word.</span></h1>
-      <p style="margin: 24px 0 0; max-width: 560px; font-size: 18px; line-height: 1.6; color: {{t.body}};">Highlight a word on any page — Korean news, a Spanish recipe, a German forum. SonFlash turns it into a card with native audio and a meaning in your own language, then brings it back just before you’d forget.</p>
-      <div style="margin-top: 32px; display: flex; align-items: center; gap: 12px;">
-        <a href="#" class="sf-press" style="height: 58px; padding: 0 28px; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; font-size: 16px; font-weight: 650; text-decoration: none;">Start learning free</a>
-        <a href="#" class="sf-press" style="height: 58px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; box-shadow: {{t.secondaryShadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; text-decoration: none;">
+      <span class="{{t.fx.enter}}" style="align-self: flex-start; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>7 languages to learn · meanings in 20+</span>
+      <h1 class="{{t.fx.title}}" style="margin: 22px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 92px; line-height: 0.96; letter-spacing: -0.04em; color: {{t.textStrong}};">Read the web.<br>Keep <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">every word.</span></h1>
+      <p class="{{t.fx.enter2}}" style="margin: 24px 0 0; max-width: 560px; font-size: 18px; line-height: 1.6; color: {{t.body}};">Highlight a word on any page — Korean news, a Spanish recipe, a German forum. SonFlash turns it into a card with native audio and a meaning in your own language, then brings it back just before you’d forget.</p>
+      <div class="{{t.fx.enter3}}" style="margin-top: 32px; display: flex; align-items: center; gap: 12px;">
+        <a href="#" class="{{t.fx.press}}" style="height: 58px; padding: 0 28px; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; font-size: 16px; font-weight: 650; text-decoration: none;">Start learning free</a>
+        <a href="#" class="{{t.fx.press}}" style="height: 58px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; box-shadow: {{t.secondaryShadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; text-decoration: none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4v3a2 2 0 1 0 4 0V3h3v7h-3a2 2 0 1 0 0 4h3v7h-7v-3a2 2 0 1 0-4 0v3H3v-7h3a2 2 0 1 0 0-4H3V3h7z"></path></svg>
           Add to Chrome
         </a>
       </div>
-      <div style="margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <div class="{{t.fx.enter4}}" style="margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         <span style="height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>
           Pro from <span style="font-family: 'Geist Mono', ui-monospace, monospace;">US$4.99</span>/mo
@@ -63,10 +63,10 @@
       </div>
     </section>
 
-    <section aria-label="Try a card in any language" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;">
+    <section aria-label="Try a card in any language" class="{{t.fx.enter2}}" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;">
       <div role="tablist" aria-label="Language to learn" style="display: flex; gap: 6px; padding: 5px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
         <sc-for list="{{tabs}}" as="g" hint-placeholder-count="7">
-          <button role="tab" aria-selected="{{g.selected}}" onClick="{{g.pick}}" title="{{g.en}}" style="height: 34px; padding: 0 11px; border-radius: 999px; border: 0; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; font-family: {{g.font}}; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">{{g.name}}</button>
+          <button role="tab" aria-selected="{{g.selected}}" class="sf-ease" onClick="{{g.pick}}" title="{{g.en}}" style="height: 34px; padding: 0 11px; border-radius: 999px; border: 0; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; font-family: {{g.font}}; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">{{g.name}}</button>
         </sc-for>
       </div>
 
@@ -106,7 +106,7 @@
     </section>
   </main>
 
-  <section aria-label="Learners around the world" style="position: relative; z-index: 2; margin: 14px 64px 0 96px; padding-top: 26px; border-top: 1px solid {{t.line}}; display: grid; grid-template-columns: 1.1fr repeat(3, minmax(0, 1fr)); gap: 36px;">
+  <section aria-label="Learners around the world" class="{{t.fx.enter4}}" style="position: relative; z-index: 2; margin: 14px 64px 0 96px; padding-top: 26px; border-top: 1px solid {{t.line}}; display: grid; grid-template-columns: 1.1fr repeat(3, minmax(0, 1fr)); gap: 36px;">
     <div>
       <div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">140+ <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">countries</span></div>
       <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: {{t.text2}};">Any language you speak, any of 7 you learn. Switch courses in one tap.</p>

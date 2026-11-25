@@ -12,20 +12,20 @@
       <div style="margin: 26px auto 0; width: 230px; height: 190px; border-radius: 22px; border: {{ghost.border}}; background: {{ghost.bg}}; box-shadow: {{ghost.shadow}};"></div>
     </div>
   </div>
-  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 2; background: {{t.scrim}};"></div>
+  <div aria-hidden="true" class="sf-scrim" style="position: absolute; inset: 0; z-index: 2; background: {{t.scrim}};"></div>
 
-  <div role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="sf-rise" style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; box-sizing: border-box; padding: 10px 16px 26px; border-radius: 28px 28px 0 0; border-top: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
+  <div role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="sf-sheet-b" style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; box-sizing: border-box; padding: 10px 16px 26px; border-radius: 28px 28px 0 0; border-top: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}};">
     <div aria-hidden="true" style="margin: 0 auto; width: 40px; height: 5px; border-radius: 5px; background: {{t.lineStrong}};"></div>
     <div style="padding: 16px 6px 12px; display: flex; align-items: flex-end;">
       <div>
         <h2 id="sheet-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 30px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">Practice</h2>
         <div style="margin-top: 5px; font-size: 13px; color: {{t.text2}};">From IELTS · 120 cards</div>
       </div>
-      <button style="margin-left: auto; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">IELTS <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+      <button class="sf-ease" style="margin-left: auto; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">IELTS <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div class="{{t.fx.stagger}}" style="display: flex; flex-direction: column; gap: 8px;">
       <sc-for list="{{modes}}" as="m" hint-placeholder-count="5">
-        <button aria-disabled="{{m.disabled}}" style="height: 70px; box-sizing: border-box; padding: 0 14px 0 10px; border-radius: 18px; border: 1px solid {{m.line}}; background: {{m.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left; opacity: {{m.opacity}};">
+        <button aria-disabled="{{m.disabled}}" class="{{m.cls}}" style="height: 70px; box-sizing: border-box; padding: 0 14px 0 10px; border-radius: 18px; border: 1px solid {{m.line}}; background: {{m.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left; opacity: {{m.opacity}};">
           <span style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px; background: {{m.iconBg}}; color: {{m.iconFg}}; box-shadow: {{m.iconGlow}}; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg></span>
           <span style="flex-grow: 1; min-width: 0;">
             <span style="display: block; font-size: 15.5px; font-weight: 650; color: {{t.textStrong}};">{{m.name}}</span>
@@ -64,7 +64,7 @@ class Component extends DCLogic {
       modes: modes.map(([name, desc, icon], i) => {
         const locked = i === 4;
         return {
-          name, desc, icon, locked, open: !locked, disabled: locked ? 'true' : 'false',
+          name, desc, icon, locked, open: !locked, disabled: locked ? 'true' : 'false', cls: locked ? '' : t.fx.lift,
           iconBg: palette[i][0], iconFg: palette[i][1],
           iconGlow: dark && i === 0 ? '0 0 20px -6px rgb(40 211 244 / 0.6)' : 'none',
           line: i === 0 ? t.accentLine : t.line,

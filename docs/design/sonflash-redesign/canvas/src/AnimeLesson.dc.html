@@ -7,12 +7,12 @@
 
   <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
     <button class="nk-lift" aria-label="Leave lesson" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
-    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">TODAY'S LESSON <span style="color: {{t.crimsonText}};">//</span> UNIT 4 · WORK AND AMBITION</div>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">TODAY'S LESSON <span style="color: {{t.crimsonText}};">//</span> UNIT 4 · WORK AND AMBITION</div>
     <div role="progressbar" aria-label="Exercise 4 of 9" aria-valuemin="0" aria-valuemax="9" aria-valuenow="4" style="margin: 0 auto; display: flex; align-items: center; gap: 4px;">
       <sc-for list="{{segments}}" as="seg" hint-placeholder-count="9">
         <span style="width: 36px; height: 10px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
       </sc-for>
-      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">4<span style="font-size: 15px; color: {{t.text3}};"> / 9</span></span>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">4<span style="font-size: 15px; color: {{t.text3}};"> / 9</span></span>
     </div>
     <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
       <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
@@ -21,21 +21,25 @@
     <span style="height: 44px; padding: 0 16px 0 12px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12</span>
   </header>
 
-  <nav aria-label="Exercise types in this lesson" style="position: relative; z-index: 4; flex-shrink: 0; display: flex; justify-content: center; gap: 10px;">
+  <nav aria-label="Exercise types in this lesson" class="nk-rise" style="position: relative; z-index: 4; flex-shrink: 0; display: flex; justify-content: center; gap: 10px;">
     <sc-for list="{{types}}" as="x" hint-placeholder-count="6">
       <span aria-current="{{x.current}}" style="height: 32px; padding: 0 16px; transform: skewX(-16deg); background: {{x.bg}}; box-shadow: {{x.edge}}; display: flex; align-items: center; opacity: {{x.opacity}};">
-        <span style="transform: skewX(16deg); display: flex; align-items: center; gap: 7px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.06em; color: {{x.color}};"><span style="width: 7px; height: 7px; transform: rotate(45deg); background: {{x.dot}};"></span>{{x.label}}</span>
+        <span style="transform: skewX(16deg); display: flex; align-items: center; gap: 7px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.06em; color: {{x.color}}; text-shadow: {{x.halo}};"><span style="width: 7px; height: 7px; transform: rotate(45deg); background: {{x.dot}};"></span>{{x.label}}</span>
       </span>
     </sc-for>
   </nav>
 
   <main style="position: relative; z-index: 3; flex-grow: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 30px;">
     <div style="position: relative; width: 940px;">
-      <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -330px; top: 60px; width: 470px; height: 320px; pointer-events: none; opacity: {{wingOpacity}}; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
+      <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -330px; top: 60px; width: 470px; height: 320px; pointer-events: none;">
+        <div style="height: 100%; opacity: {{wingOpacity}}; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
 <!--#WINGS-->
+        </div>
       </div>
-      <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -330px; top: 60px; width: 470px; height: 320px; pointer-events: none; transform: scaleX(-1); opacity: {{wingOpacity}}; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
+      <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -330px; top: 60px; width: 470px; height: 320px; pointer-events: none;">
+        <div style="height: 100%; transform: scaleX(-1); opacity: {{wingOpacity}}; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
 <!--#WINGS-->
+        </div>
       </div>
 
       <div class="nk-rise" style="position: relative; filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.35)) drop-shadow(0 0 26px {{rimSoft}});">
@@ -62,7 +66,7 @@
           <p style="position: relative; margin: 14px 0 0; font-size: 17px; color: {{t.text2}};">Meaning: <span style="color: {{t.body}};">Hội đồng hứa sẽ có phản hồi <b style="color: {{t.textStrong}}; font-weight: 900;">ngay lập tức</b> với trận lũ.</span></p>
 
           <sc-if value="{{isWrong}}" hint-placeholder-val="{{false}}">
-            <div class="nk-pop" style="position: relative; margin-top: 22px; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; display: flex; align-items: center; gap: 16px;">
+            <div class="nk-pop" style="position: relative; margin-top: 22px; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; display: flex; align-items: center; gap: 16px;">
               <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">ANSWER</span>
               <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; color: {{t.textStrong}};">im<span style="color: {{t.crimsonText}};">me</span>diate</span>
               <span style="font-family: {{t.fMono}}; font-size: 14px; color: {{t.text2}};">/ɪˈmiːdiət/ · adjective</span>
@@ -70,7 +74,7 @@
             </div>
           </sc-if>
 
-          <div style="position: relative; margin-top: 24px; display: flex; align-items: center; gap: 12px;">
+          <div class="{{rowCls}}" style="position: relative; margin-top: 24px; display: flex; align-items: center; gap: 12px;">
             <span role="textbox" aria-label="Your answer" style="flex-grow: 1; height: 62px; box-sizing: border-box; padding: 0 8px 0 22px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 2px {{inputEdge}}; display: flex; align-items: center; gap: 12px;">
               <span style="flex-grow: 1; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">{{typed}}</span>
               <span style="font-family: {{t.fMono}}; font-size: 12px; color: {{t.text3}};">{{letters}} / 9 letters</span>
@@ -90,12 +94,12 @@
               <sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></sc-if>
               Hear the sentence
             </button>
-            <button onClick="{{giveUp}}" style="margin-left: auto; border: 0; background: transparent; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.04em; color: {{t.text3}}; cursor: pointer;">I don't know — show me</button>
+            <button class="nk-lift" onClick="{{giveUp}}" style="margin-left: auto; border: 0; background: transparent; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.04em; color: {{t.text3}}; cursor: pointer;">I don't know — show me</button>
           </div>
         </div>
       </div>
 
-      <div style="margin-top: 18px; display: flex; justify-content: space-between; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.06em; color: {{t.text3}};">
+      <div class="nk-rise-2" style="margin-top: 18px; display: flex; justify-content: space-between; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.06em; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">
         <span>NEXT <span style="color: {{t.crimsonText}};">//</span> <span style="color: {{t.text2}};">Spelling · “recharge”</span></span>
         <span>ABOUT 3 MIN LEFT · <span style="color: {{t.goldText}};">+40 XP</span> ON FINISH</span>
       </div>
@@ -103,7 +107,7 @@
   </main>
 
   <aside style="position: absolute; z-index: 4; left: 20px; bottom: 14px; width: 214px;">
-    <div class="nk-rise-3" style="position: relative; box-sizing: border-box; padding: 12px 14px 14px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+    <div class="nk-rise-3" style="position: relative; box-sizing: border-box; padding: 12px 14px 14px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
       <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
       <div style="margin-top: 3px; font-weight: 900; font-size: 15px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
@@ -156,6 +160,7 @@ class Component extends DCLogic {
       typed: s.typed, letters: s.typed.length,
       isTyping: typing, isCorrect: correct, isWrong: wrong,
       rim: tier.rim, rimSoft: tier.soft, rimCls: correct ? 'nk-rim-spin' : '',
+      rowCls: wrong ? 'sf-shake' : '',
       wingOpacity: correct ? t.wingOpacity + 0.3 : 0,
       blankLine: correct ? '#ffd166' : wrong ? '#ff2a4d' : '#ff5470',
       blankInk: correct ? 'linear-gradient(180deg, #fff3c4, #ffd166 50%, #ff8a3d)' : wrong ? 'linear-gradient(180deg, #ff8fa3, #ff2a4d)' : 'linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33)',
@@ -174,9 +179,9 @@ class Component extends DCLogic {
       giveUp: () => this.setState({ result: 'wrong' }),
       types: labels.map((label, i) => {
         const st = state[i];
-        if (st === 'current') return { label, current: 'step', bg: t.primaryBg, edge: '0 0 18px rgb(255 42 77 / 0.6)', color: '#ffffff', dot: '#ffd166', opacity: 1 };
-        if (st === 'done') return { label, current: 'false', bg: t.chip, edge: 'inset 0 0 0 1px ' + t.panelEdge2, color: t.text2, dot: '#5ef2ff', opacity: 1 };
-        return { label, current: 'false', bg: 'transparent', edge: 'inset 0 0 0 1px ' + t.line, color: t.text3, dot: t.track, opacity: 0.85 };
+        if (st === 'current') return { label, current: 'step', bg: t.primaryBg, edge: '0 0 18px rgb(255 42 77 / 0.6)', color: '#ffffff', dot: '#ffd166', opacity: 1, halo: 'none' };
+        if (st === 'done') return { label, current: 'false', bg: t.chip, edge: 'inset 0 0 0 1px ' + t.panelEdge2, color: t.text2, dot: '#5ef2ff', opacity: 1, halo: 'none' };
+        return { label, current: 'false', bg: 'transparent', edge: 'inset 0 0 0 1px ' + t.line, color: t.text3, dot: t.track, opacity: 0.85, halo: t.onArtHalo };
       }),
       segments: Array.from({ length: 9 }, (_, i) => ({
         bg: i < 3 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 3 ? '#ff2a4d' : t.track,

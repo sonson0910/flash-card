@@ -4,8 +4,8 @@
   <header style="position: relative; z-index: 5; flex-shrink: 0; height: 76px; padding: 0 26px; display: flex; align-items: center; gap: 12px;">
     <button class="nk-lift" aria-label="End practice" style="width: 40px; height: 40px; flex-shrink: 0; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
     <div style="min-width: 0;">
-      <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.text3}};">
-        <span style="height: 20px; padding: 0 8px; clip-path: {{t.chamferSm}}; background: linear-gradient(90deg, #5ef2ff, #1aa7c9); color: #031820; display: flex; align-items: center; letter-spacing: 0.06em;">{{m.code}}</span>{{m.pack}}
+      <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">
+        <span style="height: 20px; padding: 0 8px; clip-path: {{t.chamferSm}}; background: linear-gradient(90deg, #5ef2ff, #1aa7c9); color: #031820; display: flex; align-items: center; letter-spacing: 0.06em; text-shadow: none;">{{m.code}}</span>{{m.pack}}
       </div>
       <h2 style="margin: 3px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 25px; line-height: 1.05; letter-spacing: 0.02em;"><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent;">{{m.title}}</span></h2>
     </div>
@@ -22,17 +22,17 @@
   <main style="position: relative; z-index: 3; flex-grow: 1; min-height: 0; padding: 6px 30px 8px; display: flex; flex-direction: column; justify-content: center;">
 
     <sc-if value="{{isHangul}}" hint-placeholder-val="{{true}}">
-      <div style="display: flex; align-items: center; gap: 14px;">
+      <div class="nk-rise" style="display: flex; align-items: center; gap: 14px;">
         <button class="nk-lift" aria-label="Play the word" style="width: 58px; height: 58px; flex-shrink: 0; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
-          <sc-for list="{{bars}}" as="b" hint-placeholder-count="5"><span class="sf-wave" style="width: 3.5px; height: {{b.h}}px; background: currentColor; animation-delay: {{b.d}}ms;"></span></sc-for>
+          <sc-for list="{{bars}}" as="b" hint-placeholder-count="5"><span style="width: 3.5px; height: {{b.h}}px; background: currentColor;"></span></sc-for>
         </button>
         <div>
-          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">NGHĨA · NOUN · 2 BLOCKS</div>
-          <div style="margin-top: 2px; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">quyết tâm <span style="font-family: 'Noto Sans KR', sans-serif; font-weight: 700; font-size: 15px; color: {{t.text3}};">· 決心</span></div>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">NGHĨA · NOUN · 2 BLOCKS</div>
+          <div style="margin-top: 2px; font-weight: 900; font-size: 22px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">quyết tâm <span style="font-family: 'Noto Sans KR', sans-serif; font-weight: 700; font-size: 15px; color: {{t.text3}};">· 決心</span></div>
         </div>
       </div>
 
-      <div style="margin-top: 16px; display: flex; justify-content: center; gap: 26px;">
+      <div class="nk-rise-2" style="margin-top: 16px; display: flex; justify-content: center; gap: 26px;">
         <sc-for list="{{blocks}}" as="b" hint-placeholder-count="2">
           <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;">
             <span style="height: 18px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.06em; color: {{b.fixColor}};">{{b.fix}}</span>
@@ -47,15 +47,15 @@
           </div>
         </sc-for>
       </div>
-      <div style="margin-top: 8px; text-align: center; font-size: 12px; font-weight: 700; color: {{t.text3}};">Block = <span style="font-family: 'Noto Sans KR', sans-serif;">초성</span> initial + <span style="font-family: 'Noto Sans KR', sans-serif;">중성</span> vowel + <span style="font-family: 'Noto Sans KR', sans-serif;">종성</span> final</div>
+      <div class="nk-rise-2" style="margin-top: 8px; text-align: center; font-size: 12px; font-weight: 700; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">Block = <span style="font-family: 'Noto Sans KR', sans-serif;">초성</span> initial + <span style="font-family: 'Noto Sans KR', sans-serif;">중성</span> vowel + <span style="font-family: 'Noto Sans KR', sans-serif;">종성</span> final</div>
 
-      <div style="margin-top: 14px; position: relative; padding: 11px 16px 11px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{hangul.edge}}; display: flex; align-items: center; gap: 12px;">
+      <div class="nk-rise-3" style="margin-top: 14px; position: relative; padding: 11px 16px 11px 18px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{hangul.edge}}; display: flex; align-items: center; gap: 12px;">
         <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: {{hangul.bar}};"></span>
         <span style="font-family: 'Noto Sans KR', sans-serif; font-size: 20px; font-weight: 900; color: {{t.textStrong}}; white-space: nowrap;">ㅅ + ㅣ + <span style="color: {{t.holoText}};">ㅁ</span> → 심</span>
         <span style="font-size: 13px; line-height: 1.45; color: {{t.body}};">{{hangul.note}}</span>
       </div>
 
-      <div role="group" aria-label="Hangul keyboard, 2-set layout" style="margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <div role="group" aria-label="Hangul keyboard, 2-set layout" class="nk-rise-3" style="margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 5px;">
         <sc-for list="{{keyRows}}" as="r" hint-placeholder-count="3">
           <div style="display: flex; gap: 5px; padding-left: {{r.indent}}px;">
             <sc-for list="{{r.keys}}" as="k" hint-placeholder-count="10">
@@ -63,34 +63,34 @@
             </sc-for>
           </div>
         </sc-for>
-        <div style="margin-top: 3px; font-size: 12px; font-weight: 700; color: {{t.text3}};">Physical keyboard works — 2-set <span style="font-family: 'Noto Sans KR', sans-serif;">두벌식</span> · <span style="font-family: {{t.fMono}};">Shift</span> for <span style="font-family: 'Noto Sans KR', sans-serif;">ㄲ ㄸ ㅃ ㅆ ㅉ</span></div>
+        <div style="margin-top: 3px; font-size: 12px; font-weight: 700; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">Physical keyboard works — 2-set <span style="font-family: 'Noto Sans KR', sans-serif;">두벌식</span> · <span style="font-family: {{t.fMono}};">Shift</span> for <span style="font-family: 'Noto Sans KR', sans-serif;">ㄲ ㄸ ㅃ ㅆ ㅉ</span></div>
       </div>
     </sc-if>
 
     <sc-if value="{{isKana}}" hint-placeholder-val="{{false}}">
-      <div style="display: flex; align-items: flex-end; gap: 22px;">
+      <div class="nk-rise" style="display: flex; align-items: flex-end; gap: 22px;">
         <div style="font-family: 'Noto Sans JP', sans-serif; font-weight: 900; line-height: 1; filter: drop-shadow(0 4px 0 {{t.kanjiShadow}});">
           <ruby style="font-size: 88px; color: {{t.textStrong}}; ruby-position: over;">学校<rt style="font-size: 20px; font-weight: 700; letter-spacing: 0.2em; color: {{t.holoText}};">{{kana.ruby}}</rt></ruby>
         </div>
         <div style="padding-bottom: 8px;">
-          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">NGHĨA · NOUN · JLPT N5</div>
-          <div style="margin-top: 3px; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">trường học</div>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">NGHĨA · NOUN · JLPT N5</div>
+          <div style="margin-top: 3px; font-weight: 900; font-size: 22px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">trường học</div>
         </div>
       </div>
 
-      <div style="margin-top: 18px; position: relative; height: 66px; clip-path: {{t.chamfer}}; background: {{kana.fieldEdge}};">
+      <div class="nk-rise-2" style="margin-top: 18px; position: relative; height: 66px; clip-path: {{t.chamfer}}; background: {{kana.fieldEdge}};">
         <div style="position: absolute; inset: 2px; clip-path: {{t.chamfer}}; background: {{t.panelSolid}}; padding: 0 16px 0 22px; display: flex; align-items: center; gap: 14px;">
           <span style="font-family: 'Noto Sans JP', sans-serif; font-size: 30px; font-weight: 900; color: {{t.textStrong}}; letter-spacing: 0.06em;">がっこう</span>
           <span style="font-family: {{t.fMono}}; font-size: 13px; color: {{t.text3}};">g·a·<b style="color: {{t.holoText}};">kk</b>·o·<b style="color: {{t.holoText}};">u</b></span>
           <span style="margin-left: auto; height: 30px; padding: 0 12px; transform: skewX(-14deg); background: {{kana.verdictBg}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.06em; color: {{kana.verdictColor}};">{{kana.verdict}}</span></span>
         </div>
       </div>
-      <div style="margin-top: 10px; display: flex; gap: 8px;">
+      <div class="nk-rise-2" style="margin-top: 10px; display: flex; gap: 8px;">
         <span style="padding: 7px 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-size: 12.5px; font-weight: 700; color: {{t.body}};"><b style="font-family: 'Noto Sans JP', sans-serif; color: {{t.crimsonText}};">っ</b> small tsu doubles the consonant — kk</span>
         <span style="padding: 7px 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-size: 12.5px; font-weight: 700; color: {{t.body}};"><b style="font-family: 'Noto Sans JP', sans-serif; color: {{t.crimsonText}};">こう</b> long ō is written with う</span>
       </div>
 
-      <div style="margin-top: 16px; position: relative; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; opacity: {{kana.pitchOpacity}};">
+      <div class="nk-rise-3" style="margin-top: 16px; position: relative; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; opacity: {{kana.pitchOpacity}};">
         <div style="display: flex; align-items: baseline; gap: 10px;">
           <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">PITCH ACCENT</span>
           <span style="font-weight: 900; font-size: 14px; color: {{t.textStrong}};">Heiban [0]</span>
@@ -106,21 +106,21 @@
         </div>
       </div>
 
-      <p style="margin: 14px 0 0; font-family: 'Noto Sans JP', sans-serif; font-weight: 700; font-size: 19px; line-height: 2.1; color: {{t.textStrong}};"><ruby>毎朝<rt style="font-size: 10px; color: {{t.text3}};">まいあさ</rt></ruby>、<b style="color: {{t.crimsonText}};"><ruby>学校<rt style="font-size: 10px;">がっこう</rt></ruby></b>まで<ruby>歩<rt style="font-size: 10px; color: {{t.text3}};">ある</rt></ruby>きます。<span style="margin-left: 10px; font-family: {{t.fBody}}; font-size: 13.5px; color: {{t.text2}};">Sáng nào tôi cũng đi bộ đến trường.</span></p>
+      <p class="nk-rise-3" style="margin: 14px 0 0; font-family: 'Noto Sans JP', sans-serif; font-weight: 700; font-size: 19px; line-height: 2.1; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};"><ruby>毎朝<rt style="font-size: 10px; color: {{t.text3}};">まいあさ</rt></ruby>、<b style="color: {{t.crimsonText}};"><ruby>学校<rt style="font-size: 10px;">がっこう</rt></ruby></b>まで<ruby>歩<rt style="font-size: 10px; color: {{t.text3}};">ある</rt></ruby>きます。<span style="margin-left: 10px; font-family: {{t.fBody}}; font-size: 13.5px; color: {{t.text2}};">Sáng nào tôi cũng đi bộ đến trường.</span></p>
     </sc-if>
 
     <sc-if value="{{isTone}}" hint-placeholder-val="{{false}}">
-      <div style="display: flex; align-items: center; gap: 14px;">
+      <div class="nk-rise" style="display: flex; align-items: center; gap: 14px;">
         <button class="nk-lift" aria-label="Play the word" style="width: 58px; height: 58px; flex-shrink: 0; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
-          <sc-for list="{{bars}}" as="b" hint-placeholder-count="5"><span class="sf-wave" style="width: 3.5px; height: {{b.h}}px; background: currentColor; animation-delay: {{b.d}}ms;"></span></sc-for>
+          <sc-for list="{{bars}}" as="b" hint-placeholder-count="5"><span style="width: 3.5px; height: {{b.h}}px; background: currentColor;"></span></sc-for>
         </button>
         <div>
-          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">NGHĨA · NOUN · HSK 1</div>
-          <div style="margin-top: 2px; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">tiếng Hán, tiếng Trung</div>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">NGHĨA · NOUN · HSK 1</div>
+          <div style="margin-top: 2px; font-weight: 900; font-size: 22px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">tiếng Hán, tiếng Trung</div>
         </div>
       </div>
 
-      <div style="margin-top: 16px; display: flex; justify-content: center; gap: 22px;">
+      <div class="nk-rise-2" style="margin-top: 16px; display: flex; justify-content: center; gap: 22px;">
         <sc-for list="{{syllables}}" as="s" hint-placeholder-count="2">
           <div style="position: relative; width: 280px; height: 244px; clip-path: {{t.chamfer}}; background: {{s.edge}};">
             <div style="position: absolute; inset: 2px; clip-path: {{t.chamfer}}; background: {{t.panelSolid}}; padding: 12px 14px 14px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
@@ -138,9 +138,9 @@
           </div>
         </sc-for>
       </div>
-      <p style="margin: 12px 0 0; text-align: center; font-size: 14px; font-weight: 700; color: {{t.body}};">{{toneNote}}</p>
+      <p class="nk-rise-2" style="margin: 12px 0 0; text-align: center; font-size: 14px; font-weight: 700; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">{{toneNote}}</p>
 
-      <div style="margin-top: 14px; position: relative; padding: 12px 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 12px;">
+      <div class="nk-rise-3" style="margin-top: 14px; position: relative; padding: 12px 16px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 12px;">
         <div style="width: 140px; flex-shrink: 0;">
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">MINIMAL PAIR</div>
           <div style="margin-top: 2px; font-size: 13.5px; font-weight: 800; color: {{t.textStrong}};">Which one did you hear?</div>
@@ -152,32 +152,32 @@
           </button>
         </sc-for>
       </div>
-      <div style="margin-top: 10px; display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; color: {{t.text2}};">
+      <div class="nk-rise-3" style="margin-top: 10px; display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">
         <sc-for list="{{toneKey}}" as="k" hint-placeholder-count="5"><span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 6px; transform: skewX(-24deg); background: {{k.c}};"></span>{{k.label}}</span></sc-for>
       </div>
     </sc-if>
 
     <sc-if value="{{isArticle}}" hint-placeholder-val="{{false}}">
-      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">GERMAN · NOUN · A2 · GOETHE</div>
-      <div style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1; letter-spacing: 0.01em; color: {{t.textStrong}};"><span style="color: {{art.chosenColor}}; filter: drop-shadow(0 0 14px {{art.chosenColor}});">{{art.shown}}</span> Entschei<span style="color: {{t.crimsonText}};">dung</span></div>
-      <div style="margin-top: 8px; font-size: 14px; font-weight: 700; color: {{t.text2}};">quyết định · plural <b style="color: {{t.textStrong}};">die Entscheidungen</b></div>
+      <div class="nk-rise" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">GERMAN · NOUN · A2 · GOETHE</div>
+      <div class="nk-rise" style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1; letter-spacing: 0.01em; color: {{t.textStrong}};"><span style="color: {{art.chosenColor}}; filter: drop-shadow(0 0 14px {{art.chosenColor}});">{{art.shown}}</span> Entschei<span style="color: {{t.crimsonText}};">dung</span></div>
+      <div class="nk-rise" style="margin-top: 8px; font-size: 14px; font-weight: 700; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">quyết định · plural <b style="color: {{t.textStrong}};">die Entscheidungen</b></div>
 
-      <div style="margin-top: 18px; display: flex; gap: 12px;">
+      <div class="nk-rise-2" style="margin-top: 18px; display: flex; gap: 12px;">
         <sc-for list="{{articles}}" as="a" hint-placeholder-count="3">
-          <button onClick="{{a.pick}}" class="nk-press {{a.cls}}" aria-pressed="{{a.pressed}}" style="flex: 1; height: 92px; border: 0; transform: skewX(-8deg); clip-path: {{t.chamfer}}; background: {{a.bg}}; box-shadow: {{a.edge}}; color: {{a.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer;">
+          <span class="{{a.cls}}" style="flex: 1; display: flex;"><span class="nk-press" style="flex: 1; display: flex;"><button onClick="{{a.pick}}" aria-pressed="{{a.pressed}}" style="flex: 1; height: 92px; border: 0; transform: skewX(-8deg); clip-path: {{t.chamfer}}; background: {{a.bg}}; box-shadow: {{a.edge}}; color: {{a.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer;">
             <span style="transform: skewX(8deg); font-family: {{t.fDisplay}}; font-style: italic; font-size: 36px; font-weight: 900;">{{a.word}}</span>
             <span style="transform: skewX(8deg); font-size: 12px; font-weight: 800; color: {{a.sub}};">{{a.gender}} · {{a.key}}</span>
-          </button>
+          </button></span></span>
         </sc-for>
       </div>
 
-      <div style="margin-top: 14px; position: relative; padding: 12px 16px 12px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; display: flex; gap: 12px; align-items: flex-start;">
+      <div class="nk-rise-3" style="margin-top: 14px; position: relative; padding: 12px 16px 12px 18px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; display: flex; gap: 12px; align-items: flex-start;">
         <span style="flex-shrink: 0; height: 24px; padding: 0 9px; transform: skewX(-12deg); background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fMono}}; font-size: 12px; display: flex; align-items: center;">-ung</span>
         <span style="font-size: 13.5px; line-height: 1.5; color: {{t.body}};">Nouns ending in <b style="color: {{t.textStrong}};">-ung, -heit, -keit, -schaft</b> are always feminine → <b style="color: {{art.dieColor}};">die</b>. Same family: die Zeitung, die Wohnung, die Freiheit.</span>
       </div>
 
-      <div style="margin-top: 14px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.text3}};">SAME WORD IN YOUR OTHER PACKS</div>
-      <div style="margin-top: 8px; display: flex; gap: 10px;">
+      <div class="nk-rise-3" style="margin-top: 14px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">SAME WORD IN YOUR OTHER PACKS</div>
+      <div class="nk-rise-3" style="margin-top: 8px; display: flex; gap: 10px;">
         <sc-for list="{{cousins}}" as="c" hint-placeholder-count="2">
           <div style="flex: 1; height: 56px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 10px;">
             <span style="font-family: {{t.fMono}}; font-size: 12px; color: {{t.text3}};">{{c.code}}</span>
@@ -192,12 +192,12 @@
     <div class="nk-float" style="width: 86px; height: 96px; flex-shrink: 0;">
 <!--#MASCOT $-->
     </div>
-    <div style="position: relative; margin-bottom: 4px; min-width: 0; flex: 1; padding: 9px 14px 10px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+    <div class="nk-rise-2" style="position: relative; margin-bottom: 4px; min-width: 0; flex: 1; padding: 9px 14px 10px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
       <div style="margin-top: 2px; font-weight: 900; font-size: 14px; color: {{t.textStrong}};">{{lumi.line}}</div>
       <div style="font-size: 12px; color: {{t.text2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{lumi.sub}}</div>
     </div>
-    <button class="nk-press" onClick="{{primary}}" style="margin-bottom: 4px; height: 52px; padding: 0 24px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.08em;">{{m.cta}}</span></button>
+    <span class="nk-press" style="margin-bottom: 4px; display: flex;"><button onClick="{{primary}}" style="height: 52px; padding: 0 24px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.08em;">{{m.cta}}</span></button></span>
   </footer>
 </div>
 </x-dc>
@@ -214,7 +214,7 @@ class Component extends DCLogic {
     const s = this.state;
     const t = { ...nkTokens(dark), pitch: dark ? '#5ef2ff' : '#0a8fb0', kanjiShadow: dark ? '#7a0820' : 'rgb(255 84 112 / 0.35)' };
     // Tone and gender colours stay fixed per language pack inside this theme.
-    const tone = dark ? ['#aab3c5', '#ff5470', '#ffd166', '#5ef2ff', '#8fb8ff'] : ['#627392', '#c40f35', '#8a5a00', '#0a7d99', '#2a56c6'];
+    const tone = dark ? ['#aab3c5', '#ff5470', '#ffd166', '#5ef2ff', '#8fb8ff'] : ['#58698a', '#c40f35', '#8a5a00', '#08708a', '#2a56c6'];
     const gender = dark ? { der: '#5ef2ff', die: '#ff5470', das: '#ffd166' } : { der: '#0a7d99', die: '#c40f35', das: '#8a5a00' };
     const chip = (state) => ({
       ok: { bg: t.panelSolid, edge: 'inset 0 0 0 1px ' + t.lineStrong, color: t.textStrong },
@@ -307,7 +307,7 @@ class Component extends DCLogic {
         bg: i < done ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === done ? '#ff2a4d' : t.track,
         glow: i < done ? '0 0 8px rgb(94 242 255 / 0.5)' : i === done ? '0 0 14px rgb(255 42 77 / 0.9)' : 'none',
       })),
-      bars: [12, 22, 30, 20, 12].map((h, i) => ({ h, d: i * 110 })),
+      bars: [12, 22, 30, 20, 12].map((h) => ({ h })),
       blocks, keyRows,
       hangul: s.hangulFixed
         ? { note: 'Right — 결심 (gyeolsim) is ㄱㅕㄹ + ㅅㅣㅁ.', edge: t.panelEdge2, bar: '#5ef2ff' }

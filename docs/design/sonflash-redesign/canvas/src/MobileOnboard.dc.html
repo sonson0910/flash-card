@@ -4,21 +4,21 @@
   <div style="position: relative; z-index: 3; height: 44px; flex-shrink: 0; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 600; color: {{t.textStrong}};"><span>9:41</span><span style="display: flex; gap: 5px; align-items: center;"><span style="width: 17px; height: 10px; border-radius: 2px; background: {{t.textStrong}}; opacity: 0.85;"></span><span style="width: 24px; height: 11px; box-sizing: border-box; border-radius: 3px; border: 1.5px solid {{t.textStrong}}; padding: 1px;"><span style="display: block; width: 70%; height: 100%; border-radius: 1px; background: {{t.textStrong}};"></span></span></span></div>
 
   <header style="position: relative; z-index: 3; height: 52px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 12px;">
-    <button aria-label="Back" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <button aria-label="Back" class="{{t.fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
     <div role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1" aria-label="Step 1 of 5" style="flex-grow: 1; display: flex; gap: 6px;">
-      <sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><span style="flex: 1; height: 5px; border-radius: 5px; background: {{d.bg}}; box-shadow: {{d.glow}};"></span></sc-for>
+      <sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><span class="{{d.cls}}" style="flex: 1; height: 5px; border-radius: 5px; background: {{d.bg}}; box-shadow: {{d.glow}};"></span></sc-for>
     </div>
-    <button style="height: 40px; padding: 0 6px; border: 0; background: transparent; color: {{t.text2}}; font-size: 14px; font-weight: 600;">Skip</button>
+    <button class="{{t.fx.press}}" style="height: 40px; padding: 0 6px; border: 0; background: transparent; color: {{t.text2}}; font-size: 14px; font-weight: 600;">Skip</button>
   </header>
 
   <main style="position: relative; z-index: 2; flex-grow: 1; padding: 18px 20px 0; display: flex; flex-direction: column;">
-    <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">Step 1 of 5 · Your goal</p>
-    <h1 style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 36px; line-height: 1.05; letter-spacing: -0.03em; color: {{t.textStrong}};">What are you learning <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">for?</span></h1>
-    <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: {{t.text2}};">We’ll shape your daily session around it.</p>
+    <p class="{{t.fx.enter}}" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">Step 1 of 5 · Your goal</p>
+    <h1 class="{{t.fx.title}}" style="margin: 10px 0 -0.2em; padding-bottom: 0.2em; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 36px; line-height: 1.05; letter-spacing: -0.03em; color: {{t.textStrong}};">What are you learning <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">for?</span></h1>
+    <p class="{{t.fx.enter}}" style="margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: {{t.text2}};">We’ll shape your daily session around it.</p>
 
-    <div role="radiogroup" aria-label="Goal" style="margin-top: 20px; display: flex; flex-direction: column; gap: 9px;">
+    <div role="radiogroup" aria-label="Goal" class="{{t.fx.stagger}}" style="margin-top: 20px; display: flex; flex-direction: column; gap: 9px;">
       <sc-for list="{{goals}}" as="g" hint-placeholder-count="5">
-        <button role="radio" aria-checked="{{g.checked}}" style="box-sizing: border-box; width: 100%; padding: 12px 14px; border-radius: {{t.rr}}px; border: {{g.border}}; background: {{g.bg}}; box-shadow: {{g.shadow}}; color: {{t.text}}; text-align: left; display: flex; flex-direction: column; gap: 10px;">
+        <button role="radio" aria-checked="{{g.checked}}" class="{{t.fx.lift}}" style="box-sizing: border-box; width: 100%; padding: 12px 14px; border-radius: {{t.rr}}px; border: {{g.border}}; background: {{g.bg}}; box-shadow: {{g.shadow}}; color: {{t.text}}; text-align: left; display: flex; flex-direction: column; gap: 10px;">
           <span style="display: flex; align-items: center; gap: 12px; width: 100%;">
             <span style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: {{g.iconBg}}; color: {{g.iconFg}}; display: flex; align-items: center; justify-content: center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{g.icon}}"></path></svg></span>
             <span style="flex-grow: 1;"><span style="display: block; font-size: 15px; font-weight: 650; color: {{t.textStrong}};">{{g.label}}</span><span style="display: block; margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">{{g.sub}}</span></span>
@@ -27,7 +27,7 @@
           <sc-if value="{{g.checked}}" hint-placeholder-val="{{false}}">
             <span style="display: flex; align-items: center; gap: 6px; padding-left: 50px;">
               <span style="font-size: 12px; color: {{t.text2}}; margin-right: 2px;">Target band</span>
-              <sc-for list="{{bands}}" as="b" hint-placeholder-count="4"><span style="height: 28px; padding: 0 10px; border-radius: 999px; border: {{b.border}}; background: {{b.bg}}; color: {{b.fg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; display: flex; align-items: center;">{{b.v}}</span></sc-for>
+              <sc-for list="{{bands}}" as="b" hint-placeholder-count="4"><span class="sf-ease" style="height: 28px; padding: 0 10px; border-radius: 999px; border: {{b.border}}; background: {{b.bg}}; color: {{b.fg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; display: flex; align-items: center;">{{b.v}}</span></sc-for>
             </span>
           </sc-if>
         </button>
@@ -36,8 +36,8 @@
   </main>
 
   <footer style="position: relative; z-index: 3; flex-shrink: 0; padding: 14px 20px 10px; display: flex; flex-direction: column; gap: 10px;">
-    <button class="sf-press" style="height: 56px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 8px;">Continue<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
-    <div style="text-align: center; font-size: 12px; color: {{t.text3}};">Takes about 60 seconds · you can change this later</div>
+    <button class="{{t.fx.press}} {{t.fx.enter4}}" style="height: 56px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 8px;">Continue<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+    <div class="{{t.fx.enter4}}" style="text-align: center; font-size: 12px; color: {{t.text3}};">Takes about 60 seconds · you can change this later</div>
     <div style="margin: 6px auto 0; width: 134px; height: 5px; border-radius: 5px; background: {{t.textStrong}}; opacity: 0.8;"></div>
   </footer>
 </div>
@@ -65,7 +65,7 @@ class Component extends DCLogic {
     ];
     return {
       t, grainId: 'monb-grain-' + (dark ? 'd' : 'l'), amb: { ax: -220, ay: -200, bx: 120, by: 520 },
-      dots: [0, 1, 2, 3, 4].map(i => ({ bg: i === 0 ? accent : t.track, glow: i === 0 && dark ? '0 0 10px rgb(40 211 244 / 0.7)' : 'none' })),
+      dots: [0, 1, 2, 3, 4].map(i => ({ cls: i === 0 ? 'sf-grow' : '', bg: i === 0 ? accent : t.track, glow: i === 0 && dark ? '0 0 10px rgb(40 211 244 / 0.7)' : 'none' })),
       goals: G.map(([icon, label, sub, on]) => ({
         icon: I[icon], label, sub, checked: !!on,
         border: on ? (dark ? '1.5px solid transparent' : '1.5px solid #1d1a16') : '1px solid ' + t.line,

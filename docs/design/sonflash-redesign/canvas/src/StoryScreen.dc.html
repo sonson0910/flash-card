@@ -2,18 +2,18 @@
 <div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 3; height: 80px; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
-    <a href="#" aria-label="Close story" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+    <a href="#" aria-label="Close story" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
     </a>
     <span style="font-size: 14px; font-weight: 600; color: {{t.text2}};">Story <span style="color: {{t.text3}};">· written from your words</span></span>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-      <button class="sf-press" style="height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <button class="{{t.fx.press}}" style="height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg>Listen · 2:10
       </button>
-      <button class="sf-press" style="height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <button class="{{t.fx.press}}" style="height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"></path></svg>Regenerate
       </button>
-      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
         <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
       </button>
@@ -22,19 +22,19 @@
 
   <main style="position: relative; z-index: 2; padding: 12px 120px 0 180px; display: grid; grid-template-columns: 720px 320px; gap: 100px;">
     <article style="position: relative;">
-      <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; color: {{t.text3}};">
+      <div class="{{t.fx.enter}}" style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; color: {{t.text3}};">
         <span style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center;">B1 · Intermediate</span>
         <span>6 of your words · 3 min read</span>
       </div>
-      <h1 style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 60px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">A morning in <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">Hà Nội</span></h1>
-      <div style="margin-top: 26px; font-family: Fraunces, Georgia, serif; font-size: 21px; line-height: 1.72; color: {{t.body}};">
+      <h1 class="{{t.fx.title}}" style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 60px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">A morning in <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">Hà Nội</span></h1>
+      <div class="{{t.fx.enter2}}" style="margin-top: 26px; font-family: Fraunces, Georgia, serif; font-size: 21px; line-height: 1.72; color: {{t.body}};">
         <p style="margin: 0;">Linh woke before the city did. Her <span style="color: {{t.hlColor}}; background: {{t.hlBg}}; padding: 0 2px; border-radius: 3px;">ambition</span> that year was simple: speak English at work without freezing. She made coffee, opened her flashcards, and gave herself ten quiet minutes.</p>
         <p style="margin: 18px 0 0;">Outside, the street grew loud. Motorbikes, a radio, a woman selling xôi. When her manager called with an <span style="position: relative; display: inline-block; line-height: 1.3; color: {{t.actColor}}; background: {{t.actBg}}; padding: 0 6px; border-radius: 6px; box-shadow: {{t.actShadow}};">immediate
-      <span role="dialog" aria-label="immediate" class="sf-pop" style="display: block; position: absolute; left: -60px; top: calc(100% + 14px); width: 320px; box-sizing: border-box; border-radius: {{t.popR}}px; border: {{pop.border}}; background: {{pop.bg}}; box-shadow: {{pop.shadow}}; padding: 18px 20px 16px; z-index: 4; font-family: Geist, system-ui, sans-serif; font-size: 14px; line-height: 1.4; color: {{t.text}}; text-align: left;">
+      <span role="dialog" aria-label="immediate" class="sf-pop" style="transform-origin: 91px 0; display: block; position: absolute; left: -60px; top: calc(100% + 14px); width: 320px; box-sizing: border-box; border-radius: {{t.popR}}px; border: {{pop.border}}; background: {{pop.bg}}; box-shadow: {{pop.shadow}}; padding: 18px 20px 16px; z-index: 4; font-family: Geist, system-ui, sans-serif; font-size: 14px; line-height: 1.4; color: {{t.text}}; text-align: left;">
         <span aria-hidden="true" style="position: absolute; left: 84px; top: -7px; width: 14px; height: 14px; transform: rotate(45deg); background: {{pop.caret}}; border-left: {{pop.caretLine}}; border-top: {{pop.caretLine}};"></span>
         <span style="display: flex; align-items: center; gap: 10px;">
           <span style="font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: {{t.displayWeight}}; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">me</span>diate</span>
-          <button aria-label="Listen" style="margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+          <button aria-label="Listen" class="{{t.fx.press}}" style="margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
         </span>
         <span style="display: block; margin-top: 6px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;">/ɪˈmiːdiət/</span> · adjective</span>
         <span style="display: block; margin-top: 10px; font-family: Fraunces, Georgia, serif; font-size: 22px; color: {{t.accentText}};">ngay lập tức</span>
@@ -48,13 +48,13 @@
 
     </article>
 
-    <aside style="padding-top: 8px;">
+    <aside class="{{t.fx.enter3}}" style="padding-top: 8px;">
       <div style="border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; padding: 20px 20px 10px;">
         <div style="display: flex; align-items: baseline; justify-content: space-between;">
           <span style="font-size: 13px; font-weight: 650; color: {{t.text}};">Words in this story</span>
           <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">6</span>
         </div>
-        <ul style="list-style: none; margin: 12px 0 0; padding: 0;">
+        <ul class="{{t.fx.stagger}}" style="list-style: none; margin: 12px 0 0; padding: 0;">
           <sc-for list="{{words}}" as="w" hint-placeholder-count="6">
             <li style="padding: 11px 0; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px; background: {{w.bg}};">
               <span style="width: 8px; height: 8px; border-radius: 50%; background: {{w.dot}}; flex-shrink: 0;"></span>
@@ -64,9 +64,9 @@
           </sc-for>
         </ul>
       </div>
-      <div style="margin-top: 14px; padding: 16px 18px; border-radius: {{t.radius}}px; border: 1px dashed {{t.lineStrong}}; font-size: 13px; line-height: 1.55; color: {{t.text2}};">
+      <div class="{{t.fx.enter4}}" style="margin-top: 14px; padding: 16px 18px; border-radius: {{t.radius}}px; border: 1px dashed {{t.lineStrong}}; font-size: 13px; line-height: 1.55; color: {{t.text2}};">
         Tap any highlighted word for its meaning. Finish the story to review all six in one go.
-        <button class="sf-press" style="margin-top: 12px; width: 100%; height: 46px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; cursor: pointer;">Review these 6 words</button>
+        <button class="{{t.fx.press}}" style="margin-top: 12px; width: 100%; height: 46px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; cursor: pointer;">Review these 6 words</button>
       </div>
     </aside>
   </main>

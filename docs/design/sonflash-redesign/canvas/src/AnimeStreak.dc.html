@@ -4,16 +4,16 @@
   <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
 
   <sc-if value="{{milestone}}" hint-placeholder-val="{{false}}">
-    <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -10%; width: 260px; height: 120%; margin-left: -130px; background: {{t.prism}}; opacity: 0.4; filter: blur(22px);"></div>
+    <div aria-hidden="true" style="position: absolute; left: 50%; top: -10%; width: 260px; height: 120%; margin-left: -130px; background: {{t.prism}}; opacity: 0.4; filter: blur(22px);"></div>
     <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -160px; top: 40px; width: 480px; height: 330px; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));">
 <!--#WINGS-->
     </div>
-    <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -160px; top: 40px; width: 480px; height: 330px; transform: scaleX(-1); filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));">
+    <div aria-hidden="true" style="position: absolute; right: -160px; top: 40px; width: 480px; height: 330px; transform: scaleX(-1); filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));"><div class="nk-unfold" style="position: absolute; inset: 0;">
 <!--#WINGS-->
-    </div>
+    </div></div>
   </sc-if>
 
-  <div role="dialog" aria-modal="true" aria-labelledby="st-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; filter: drop-shadow(0 0 22px {{rimGlow}}) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
+  <div role="dialog" aria-modal="true" aria-labelledby="st-title" class="nk-unfold" style="position: relative; z-index: 3; width: 600px; filter: drop-shadow(0 0 22px {{rimGlow}}) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
     <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div></div>
     <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
 
@@ -29,7 +29,7 @@
             <div style="position: absolute; inset: -6px;">
 <!--#STAR5-->
             </div>
-            <span style="position: absolute; inset: 0; padding-top: 22px; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 46px; color: #ffffff; text-shadow: 0 3px 0 #7a0820;">30</span>
+            <span class="sf-tick" style="position: absolute; inset: 0; padding-top: 22px; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 46px; color: #ffffff; text-shadow: 0 3px 0 #7a0820;">30</span>
           </sc-if>
           <sc-if value="{{notMilestone}}" hint-placeholder-val="{{true}}">
             <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{emblem.rim}};"></div>
@@ -113,8 +113,8 @@
 
       <footer style="margin-top: 30px; display: flex; align-items: center; gap: 12px;">
         <span style="flex-grow: 1; font-size: 12.5px; font-weight: 700; color: {{t.text3}};">{{copy.foot}}</span>
-        <button class="nk-lift" style="height: 50px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14.5px; white-space: nowrap;">{{copy.secondary}}</span></button>
-        <button class="nk-lift" style="height: 50px; padding: 0 24px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15.5px; letter-spacing: 0.04em; white-space: nowrap;">{{copy.primary}}</span></button>
+        <div class="nk-lift" style="display: flex;"><button style="height: 50px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14.5px; white-space: nowrap;">{{copy.secondary}}</span></button></div>
+        <div class="nk-lift" style="display: flex;"><button style="height: 50px; padding: 0 24px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15.5px; letter-spacing: 0.04em; white-space: nowrap;">{{copy.primary}}</span></button></div>
       </footer>
     </div>
   </div>
@@ -159,7 +159,7 @@ class Component extends DCLogic {
       rim: milestone ? t.tier.mastered.rim : freeze ? t.tier.new.rim : t.tier.learning.rim,
       rimCls: milestone ? 'nk-rim-spin' : '',
       rimGlow: milestone ? 'rgb(255 42 77 / 0.6)' : freeze ? t.tier.new.soft : t.tier.learning.soft,
-      lumiSrc: t.lumi[milestone ? 'proud' : repair ? 'sad' : 'hint'],
+      lumiSrc: t.lumi[milestone ? 'cheer' : repair ? 'sad' : 'hint'],
       emblem, copy, week,
       stats: [{ label: 'REVIEWS', value: '1,284', color: t.textStrong }, { label: 'NEW WORDS', value: '312', color: t.crimsonText }, { label: 'RECALL', value: '91%', color: t.holoText }],
     };

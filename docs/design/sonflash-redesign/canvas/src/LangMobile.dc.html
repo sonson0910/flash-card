@@ -3,9 +3,9 @@
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 3; height: 64px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 10px;">
     <sc-if value="{{isReview}}" hint-placeholder-val="{{false}}">
-      <button aria-label="End review" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      <button aria-label="End review" class="{{t.fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
     </sc-if>
-    <button aria-label="Active course: 한국어. Switch course" style="height: 40px; padding: 0 11px 0 4px; border-radius: 999px; border: {{chipBorder}}; background: {{t.surfaceSolid}}; color: {{t.textStrong}}; display: flex; align-items: center; gap: 8px; font-family: inherit;">
+    <button aria-label="Active course: 한국어. Switch course" class="{{t.fx.press}}" style="height: 40px; padding: 0 11px 0 4px; border-radius: 999px; border: {{chipBorder}}; background: {{t.surfaceSolid}}; color: {{t.textStrong}}; display: flex; align-items: center; gap: 8px; font-family: inherit;">
       <span style="width: 32px; height: 32px; border-radius: 50%; background: {{ko.tileBg}}; color: {{ko.tileFg}}; font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">한</span>
       <span style="font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700;">한국어</span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{chevron}}deg);"><path d="M6 9l6 6 6-6"></path></svg>
@@ -24,16 +24,16 @@
       <h1 style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 40px; line-height: 1.04; letter-spacing: -0.03em; color: {{t.textStrong}};">24 words ready in <span style="white-space: nowrap; font-family: 'Noto Serif KR', serif; font-weight: 700; letter-spacing: 0; color: {{t.emColor}};">한국어</span>.</h1>
       <div style="margin-top: 22px; height: 150px; border-radius: 20px; border: 1px solid {{t.line}}; background: {{t.surface}};"></div>
     </main>
-    <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 4; background: {{t.scrim}};"></div>
-    <section role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="sf-rise" style="position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; box-sizing: border-box; border-radius: 28px 28px 0 0; border: {{t.dlgBorder}}; border-bottom: 0; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; padding: 10px 16px 26px;">
+    <div aria-hidden="true" class="sf-scrim" style="position: absolute; inset: 0; z-index: 4; background: {{t.scrim}};"></div>
+    <section role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="sf-sheet-b" style="position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; box-sizing: border-box; border-radius: 28px 28px 0 0; border: {{t.dlgBorder}}; border-bottom: 0; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; padding: 10px 16px 26px;">
       <div aria-hidden="true" style="width: 40px; height: 5px; margin: 0 auto 14px; border-radius: 5px; background: {{t.lineStrong}};"></div>
       <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px;">
         <h2 id="sheet-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; color: {{t.textStrong}};">Your <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">courses</span></h2>
         <span style="font-size: 12px; color: {{t.text3}};">streaks are per course</span>
       </div>
-      <div role="listbox" aria-label="Courses" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+      <div role="listbox" aria-label="Courses" class="{{t.fx.stagger}}" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
         <sc-for list="{{courses}}" as="k" hint-placeholder-count="3">
-          <div role="option" aria-selected="{{k.selected}}" style="padding: 12px; border-radius: 16px; background: {{k.rowBg}}; border: {{k.rowBorder}}; display: flex; align-items: center; gap: 12px;">
+          <div role="option" aria-selected="{{k.selected}}" class="sf-ease" style="padding: 12px; border-radius: 16px; background: {{k.rowBg}}; border: {{k.rowBorder}}; display: flex; align-items: center; gap: 12px;">
             <span style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 13px; background: {{k.tileBg}}; color: {{k.tileFg}}; font-family: {{k.font}}; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{k.glyph}}</span>
             <div style="flex-grow: 1; min-width: 0;">
               <div style="font-family: {{k.font}}; font-size: 17px; font-weight: 700; color: {{t.textStrong}};">{{k.name}}</div>
@@ -43,7 +43,7 @@
           </div>
         </sc-for>
       </div>
-      <button style="margin-top: 10px; width: 100%; height: 52px; border-radius: 16px; border: 1px dashed {{t.lineStrong}}; background: transparent; color: {{t.textStrong}}; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add a language</button>
+      <button class="{{t.fx.press}}" style="margin-top: 10px; width: 100%; height: 52px; border-radius: 16px; border: 1px dashed {{t.lineStrong}}; background: transparent; color: {{t.textStrong}}; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add a language</button>
       <div style="margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; display: flex; align-items: center; gap: 12px;">
         <div style="flex-grow: 1;">
           <div style="font-size: 12px; color: {{t.text2}};">App language</div>
@@ -53,22 +53,22 @@
           <div style="font-size: 12px; color: {{t.text2}};">Meanings in</div>
           <div style="margin-top: 1px; font-size: 14.5px; font-weight: 600; color: {{t.textStrong}};">Tiếng Việt</div>
         </div>
-        <span style="font-size: 13px; font-weight: 600; color: {{t.accentText}};">Change</span>
+        <span class="sf-ease" style="font-size: 13px; font-weight: 600; color: {{t.accentText}};">Change</span>
       </div>
     </section>
   </sc-if>
 
   <sc-if value="{{isReview}}" hint-placeholder-val="{{false}}">
-    <div style="position: relative; z-index: 2; margin: 0 16px; height: 4px; border-radius: 4px; background: {{t.track}}; overflow: hidden;"><div style="width: 29%; height: 100%; background: {{bar}};"></div></div>
+    <div style="position: relative; z-index: 2; margin: 0 16px; height: 4px; border-radius: 4px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 29%; height: 100%; background: {{bar}};"></div></div>
     <main style="position: relative; z-index: 2; flex-grow: 1; padding: 18px 16px 0; display: flex; flex-direction: column;">
-      <article aria-label="Card: 약속" style="position: relative; flex-grow: 1; box-sizing: border-box; border-radius: {{t.miniR}}px; border: {{back.border}}; background: {{back.bg}}; box-shadow: {{back.shadow}}; padding: 22px 22px 20px; display: flex; flex-direction: column; color: {{back.text}};">
+      <article aria-label="Card: 약속" class="{{t.fx.enter}}" style="position: relative; flex-grow: 1; box-sizing: border-box; border-radius: {{t.miniR}}px; border: {{back.border}}; background: {{back.bg}}; box-shadow: {{back.shadow}}; padding: 22px 22px 20px; display: flex; flex-direction: column; color: {{back.text}};">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{back.chipLine}}; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {{back.muted}}; display: flex; align-items: center;">TOPIK I · noun</span>
           <span title="Sino-Vietnamese reading" style="margin-left: auto; height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{back.chipLine}}; font-size: 11.5px; color: {{back.muted}}; display: flex; align-items: center; gap: 5px;"><span style="font-family: 'Noto Serif KR', serif; color: {{back.hl}};">約束</span>Hán Việt · ước thúc</span>
         </div>
         <div lang="ko" style="margin-top: 26px; font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 64px; line-height: 1; color: {{back.title}};">약<span style="color: {{back.hl}};">속</span></div>
         <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
-          <button aria-label="Play pronunciation" style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{back.play}}; color: {{back.playFg}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
+          <button aria-label="Play pronunciation" class="{{t.fx.press}}" style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{back.play}}; color: {{back.playFg}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
           <div>
             <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{back.text}};">yak-sok <span style="color: {{back.muted}};">·</span> <span lang="ko" style="font-family: 'Noto Sans KR', sans-serif;">[약쏙]</span></div>
             <div style="margin-top: 2px; font-size: 12px; color: {{back.muted}};">ㄱ + ㅅ → the ㅅ tenses to ㅆ</div>
@@ -96,9 +96,9 @@
       </article>
     </main>
     <div style="position: relative; z-index: 3; flex-shrink: 0; padding: 14px 16px 24px;">
-      <div role="group" aria-label="How well did you remember?" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+      <div role="group" aria-label="How well did you remember?" class="{{t.fx.stagger}}" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
         <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
-          <button style="height: 64px; border-radius: 16px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-family: inherit; font-size: 14px; font-weight: 650;">
+          <button class="{{t.fx.press}}" style="height: 64px; border-radius: 16px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-family: inherit; font-size: 14px; font-weight: 650;">
             <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{g.dot}};"></span>{{g.label}}</span>
             <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; opacity: 0.75;">{{g.next}}</span>
           </button>

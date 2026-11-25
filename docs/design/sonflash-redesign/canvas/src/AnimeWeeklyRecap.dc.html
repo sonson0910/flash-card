@@ -5,8 +5,10 @@
 
   <main style="position: relative; z-index: 3; flex-grow: 1; padding: 4px 56px 28px; display: grid; grid-template-columns: 620px 1fr; gap: 48px; min-height: 0;">
     <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-      <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -40px; top: 90px; width: 700px; height: 470px; opacity: {{t.wingOpacity}}; filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.7));">
+      <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -40px; top: 90px; width: 700px; height: 470px;">
+        <div style="height: 100%; opacity: {{t.wingOpacity}}; filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.7));">
 <!--#WINGS-->
+        </div>
       </div>
       <div aria-hidden="true" style="position: absolute; left: 130px; top: 40px; width: 400px; height: 690px; transform: rotate(-6deg); clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}};"></div>
 
@@ -77,9 +79,9 @@
     </div>
 
     <section aria-labelledby="share-title" style="display: flex; flex-direction: column; justify-content: center; padding-bottom: 10px;">
-      <p class="nk-rise" style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: {{t.crimsonText}};">WEEKLY RECAP <span style="color: {{t.text3}};">//</span> READY TO SHARE</p>
+      <p class="nk-rise" style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">WEEKLY RECAP <span style="color: {{t.text3}};">//</span> READY TO SHARE</p>
       <h1 id="share-title" class="nk-rise" style="margin: 8px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 60px; line-height: 0.98; letter-spacing: 0.01em;"><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">YOUR BEST WEEK</span><br><span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 20px rgb(255 42 77 / 0.8));">SO FAR.</span></h1>
-      <p class="nk-rise-2" style="margin: 14px 0 0; max-width: 560px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};"><span style="font-weight: 900; color: {{t.holoText}};">+38 words</span> compared with last week. Friends who join from your link get 7 days of Pro — and so do you.</p>
+      <p class="nk-rise-2" style="margin: 14px 0 0; max-width: 560px; font-size: 15.5px; line-height: 1.55; color: {{t.body}}; text-shadow: {{t.onArtHalo}};"><span style="font-weight: 900; color: {{t.holoText}};">+38 words</span> compared with last week. Friends who join from your link get 7 days of Pro — and so do you.</p>
 
       <div class="nk-rise-2" style="margin-top: 20px; display: flex; gap: 10px;">
         <sc-for list="{{targets}}" as="s" hint-placeholder-count="5">
@@ -89,15 +91,15 @@
         </sc-for>
       </div>
 
-      <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}};">SHOW ON THE CARD</h2>
+      <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">SHOW ON THE CARD</h2>
       <div class="nk-rise-3" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; max-width: 620px;">
         <sc-for list="{{include}}" as="i" hint-placeholder-count="6">
-          <button aria-pressed="{{i.on}}" onClick="{{i.pick}}" style="height: 36px; padding: 0 14px; border: 0; transform: skewX(-14deg); background: {{i.bg}}; box-shadow: {{i.edge}}; cursor: pointer;"><span style="display: flex; align-items: center; gap: 7px; transform: skewX(14deg); font-family: {{t.fBody}}; font-size: 13.5px; font-weight: 800; color: {{i.fg}};"><sc-if value="{{i.check}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{i.label}}</span></button>
+          <button class="nk-lift" aria-pressed="{{i.on}}" onClick="{{i.pick}}" style="height: 36px; padding: 0 14px; border: 0; transform: skewX(-14deg); background: {{i.bg}}; box-shadow: {{i.edge}}; cursor: pointer;"><span style="display: flex; align-items: center; gap: 7px; transform: skewX(14deg); font-family: {{t.fBody}}; font-size: 13.5px; font-weight: 800; color: {{i.fg}};"><sc-if value="{{i.check}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{i.label}}</span></button>
         </sc-for>
       </div>
 
-      <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}};">CAPTION</h2>
-      <div class="nk-rise-3" style="margin-top: 10px; max-width: 620px; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; font-size: 15px; line-height: 1.5; color: {{t.textStrong}};">146 new words this week on SonFlash 🔥 12 days in a row. Learn with me? sonflash.app/i/khanh
+      <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">CAPTION</h2>
+      <div class="nk-rise-3" style="margin-top: 10px; max-width: 620px; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; font-size: 15px; line-height: 1.5; color: {{t.textStrong}};">146 new words this week on SonFlash 🔥 12 days in a row. Learn with me? sonflash.app/i/khanh
         <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text3}};"><span style="font-weight: 800; color: {{t.crimsonText}};">Edit caption</span><span style="font-family: {{t.fMono}};">91 / 220</span></div>
       </div>
 

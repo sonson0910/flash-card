@@ -3,13 +3,13 @@
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 2; padding: 34px 48px 0; display: flex; align-items: flex-end; gap: 24px;">
     <div>
-      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.accentText}};">Interface languages · specimen</div>
-      <h1 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">One screen, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">seven locales</span></h1>
+      <div class="{{t.fx.enter}}" style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.accentText}};">Interface languages · specimen</div>
+      <h1 class="{{t.fx.title}}" style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">One screen, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">seven locales</span></h1>
     </div>
-    <p style="margin: 0 0 4px auto; max-width: 470px; font-size: 14px; line-height: 1.55; color: {{t.text2}};">The Today header, main button and a toast, rendered from the same message keys. Every string comes from a catalog; nothing is concatenated in code.</p>
+    <p class="{{t.fx.enter}}" style="margin: 0 0 4px auto; max-width: 470px; font-size: 14px; line-height: 1.55; color: {{t.text2}};">The Today header, main button and a toast, rendered from the same message keys. Every string comes from a catalog; nothing is concatenated in code.</p>
   </header>
 
-  <section aria-label="Locales" style="position: relative; z-index: 2; margin: 26px 48px 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; align-items: stretch;">
+  <section aria-label="Locales" class="{{t.fx.stagger}}" style="position: relative; z-index: 2; margin: 26px 48px 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; align-items: stretch;">
     <sc-for list="{{cols}}" as="c" hint-placeholder-count="7">
       <article lang="{{c.tag}}" style="box-sizing: border-box; padding: 14px 14px 16px; border-radius: 18px; border: {{c.border}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; flex-direction: column; font-family: {{c.font}}; line-height: {{c.lh}};">
         <div style="display: flex; align-items: center; gap: 6px; font-family: Geist, sans-serif; line-height: 1.2;">
@@ -22,7 +22,7 @@
         <div style="margin-top: 4px; font-family: {{c.display}}; font-size: 30px; font-weight: {{c.displayWeight}}; line-height: 1.1; color: {{t.textStrong}};">{{c.title}}</div>
         <div style="margin-top: 6px; font-size: 13px; color: {{t.body}};">{{c.sub}}</div>
 
-        <button class="sf-press" style="margin-top: 14px; align-self: stretch; min-height: 46px; box-sizing: border-box; padding: 9px 10px; border: 0; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-family: {{c.font}}; font-size: 14px; font-weight: 650; line-height: 1.25; text-align: center;">{{c.cta}}</button>
+        <button class="{{t.fx.press}}" style="margin-top: 14px; align-self: stretch; min-height: 46px; box-sizing: border-box; padding: 9px 10px; border: 0; border-radius: {{t.btnRadius}}; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-family: {{c.font}}; font-size: 14px; font-weight: 650; line-height: 1.25; text-align: center;">{{c.cta}}</button>
 
         <div style="margin-top: 12px; padding: 10px 11px; border-radius: 12px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.textStrong}}; font-size: 12.5px; display: flex; gap: 8px; align-items: flex-start;">
           <span style="flex-shrink: 0; margin-top: 2px; width: 16px; height: 16px; border-radius: 50%; background: {{t.ok}}; color: {{t.pageSolid}}; display: flex; align-items: center; justify-content: center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
@@ -38,7 +38,7 @@
     </sc-for>
   </section>
 
-  <section aria-label="Rules" style="position: relative; z-index: 2; margin: auto 48px 34px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;">
+  <section aria-label="Rules" class="{{t.fx.enter3}}" style="position: relative; z-index: 2; margin: auto 48px 34px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;">
     <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
       <div style="padding: 14px 16px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
         <div style="display: flex; align-items: center; gap: 8px;">
