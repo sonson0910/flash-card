@@ -318,7 +318,10 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
         await expect(page.getByRole('button', { name: 'Create deck' })).toHaveAttribute('aria-busy', 'true');
       }
       if (dialog === 'deck-create-error') await expect(page.getByRole('alert')).toBeVisible();
-      if (dialog === 'import-progress') await expect(page.getByRole('progressbar')).toHaveAttribute('value', '12');
+      if (dialog === 'import-progress') {
+        // Crystal keeps the native bar; Classic draws its own so the fill can animate.
+        await expect(page.getByRole('progressbar', { name: 'Importing 12 of 24' })).toHaveAttribute(theme.family === 'crystal' ? 'value' : 'aria-valuenow', '12');
+      }
       if (dialog === 'import-error') await expect(page.getByRole('alert')).toBeVisible();
       if (dialog === 'edit-review') {
         await expect(page.getByText('Card 2 of 6')).toBeVisible();
