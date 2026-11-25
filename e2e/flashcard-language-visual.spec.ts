@@ -19,14 +19,14 @@ const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobil
 // Language-pack cards (Korean, Japanese, Chinese) teach from the example and phrases on the front, Latin-script
 // cards from the stressed syllable, the pronunciation and the grammar chips. A card with a photo keeps the picture form.
 const languages = [
-  { kind: 'en', fixture: 'en-picture', name: 'English', showing: 'Showing the English word.', meaning: 'Vietnamese', headword: 'immediate', translation: /ngay lập tức/i, art: 'image', glyph: null, pack: null, latin: null },
-  { kind: 'ko', fixture: 'ko', name: 'Korean', showing: 'Showing the Korean word.', meaning: 'Vietnamese', headword: '결심하다', translation: /quyết tâm/i, art: 'glyph', glyph: '결', pack: { exampleWord: '결심했어요', phrase: '굳게 결심하다', aid: '[data-reading-romanization]', switch: 'Romanization', backReading: 'gyeolsimhada' }, latin: null },
-  { kind: 'ja', fixture: 'ja', name: 'Japanese', showing: 'Showing the Japanese word.', meaning: 'Vietnamese', headword: '経験', translation: /kinh nghiệm/i, art: 'glyph', glyph: '経', pack: { exampleWord: '経験', phrase: '経験を積む', aid: '[data-reading-romaji]', switch: 'Romaji', backReading: 'けいけん · keiken' }, latin: null },
-  { kind: 'zh', fixture: 'zh', name: 'Chinese', showing: 'Showing the Chinese word.', meaning: 'Vietnamese', headword: '机会', translation: /cơ hội/i, art: 'glyph', glyph: '机', pack: { exampleWord: '机会', phrase: '抓住机会', aid: '[data-reading-pinyin]', switch: 'Pinyin', backReading: 'jī huì' }, latin: null },
-  { kind: 'en-form', fixture: 'en', name: 'English', showing: 'Showing the English word.', meaning: 'Vietnamese', headword: 'immediate', translation: /ngay lập tức/i, art: 'glyph', glyph: 'I', pack: null, latin: { stress: 'me', chip: 'Stress syllable 2', gender: false } },
-  { kind: 'fr', fixture: 'fr', name: 'French', showing: 'Showing the word.', meaning: 'English', headword: 'la décision', translation: /decision/i, art: 'glyph', glyph: 'D', pack: null, latin: { stress: 'sion', chip: '-sion → feminine', gender: true } },
-  { kind: 'de', fixture: 'de', name: 'German', showing: 'Showing the word.', meaning: 'English', headword: 'die Entscheidung', translation: /decision/i, art: 'glyph', glyph: 'E', pack: null, latin: { stress: 'schei', chip: '-ung → always die', gender: true } },
-  { kind: 'es', fixture: 'es', name: 'Spanish', showing: 'Showing the word.', meaning: 'English', headword: 'la decisión', translation: /decision/i, art: 'glyph', glyph: 'D', pack: null, latin: { stress: 'sión', chip: 'Accent drops in plural', gender: true } },
+  { kind: 'en', fixture: 'en-picture', name: 'English', showing: 'Showing the English word.', returnTo: 'the English side', meaning: 'Vietnamese', headword: 'immediate', translation: /ngay lập tức/i, art: 'image', glyph: null, pack: null, latin: null },
+  { kind: 'ko', fixture: 'ko', name: 'Korean', showing: 'Showing the Korean word.', returnTo: 'the Korean side', meaning: 'Vietnamese', headword: '결심하다', translation: /quyết tâm/i, art: 'glyph', glyph: '결', pack: { exampleWord: '결심했어요', phrase: '굳게 결심하다', aid: '[data-reading-romanization]', switch: 'Romanization', backReading: 'gyeolsimhada' }, latin: null },
+  { kind: 'ja', fixture: 'ja', name: 'Japanese', showing: 'Showing the Japanese word.', returnTo: 'the Japanese side', meaning: 'Vietnamese', headword: '経験', translation: /kinh nghiệm/i, art: 'glyph', glyph: '経', pack: { exampleWord: '経験', phrase: '経験を積む', aid: '[data-reading-romaji]', switch: 'Romaji', backReading: 'けいけん · keiken' }, latin: null },
+  { kind: 'zh', fixture: 'zh', name: 'Chinese', showing: 'Showing the Chinese word.', returnTo: 'the Chinese side', meaning: 'Vietnamese', headword: '机会', translation: /cơ hội/i, art: 'glyph', glyph: '机', pack: { exampleWord: '机会', phrase: '抓住机会', aid: '[data-reading-pinyin]', switch: 'Pinyin', backReading: 'jī huì' }, latin: null },
+  { kind: 'en-form', fixture: 'en', name: 'English', showing: 'Showing the English word.', returnTo: 'the English side', meaning: 'Vietnamese', headword: 'immediate', translation: /ngay lập tức/i, art: 'glyph', glyph: 'I', pack: null, latin: { stress: 'me', chip: 'Stress syllable 2', gender: false } },
+  { kind: 'fr', fixture: 'fr', name: 'French', showing: 'Showing the word.', returnTo: 'the front', meaning: 'English', headword: 'la décision', translation: /decision/i, art: 'glyph', glyph: 'D', pack: null, latin: { stress: 'sion', chip: '-sion → feminine', gender: true } },
+  { kind: 'de', fixture: 'de', name: 'German', showing: 'Showing the word.', returnTo: 'the front', meaning: 'English', headword: 'die Entscheidung', translation: /decision/i, art: 'glyph', glyph: 'E', pack: null, latin: { stress: 'schei', chip: '-ung → always die', gender: true } },
+  { kind: 'es', fixture: 'es', name: 'Spanish', showing: 'Showing the word.', returnTo: 'the front', meaning: 'English', headword: 'la decisión', translation: /decision/i, art: 'glyph', glyph: 'D', pack: null, latin: { stress: 'sión', chip: 'Accent drops in plural', gender: true } },
 ] as const;
 
 type Theme = (typeof themes)[number];
@@ -156,7 +156,7 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
     await expect(back).toHaveAttribute('data-card-look', theme.look);
     await expect(back.getByText(language.translation).first()).toBeVisible();
     await expect(shell).toHaveAccessibleName(`${language.headword} flashcard. Showing the ${language.meaning} meaning.`);
-    await expect(back.getByRole('button', { name: `Return to the ${language.name} side of ${language.headword}` })).toBeVisible();
+    await expect(back.getByRole('button', { name: `Return to ${language.returnTo} of ${language.headword}` })).toBeVisible();
     if (language.pack) await expect(back.locator('[data-card-back-reading]')).toHaveText(language.pack.backReading);
     await expectBackFooterClear(shell);
     await expectAccessibleAndContained(page, `${name} back`);

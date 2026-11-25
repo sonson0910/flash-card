@@ -5815,6 +5815,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 .flashcard-lang-chip {
   display: inline-flex;
   align-items: center;
+  /* A flex row drops the word space between a label and the characters that follow it; the gap puts it back. */
+  gap: 0.28em;
   min-height: 28px;
   padding: 0 10px;
   border: 1px solid var(--lang-chip-line);
