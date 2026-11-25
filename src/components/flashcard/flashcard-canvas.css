@@ -5267,13 +5267,13 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 /* The aurora front uses the brighter body ink and white-based chip fills of its board palette. */
 :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"][data-card-look="aurora"] {
-  --sf-text-body: #c3ced5;
-  --lang-chip-bg: rgb(255 255 255 / 0.04);
-  --lang-chip-line: rgb(255 255 255 / 0.1);
+  --sf-text-body: var(--sf-hero-body);
+  --lang-chip-bg: var(--sf-surface-raised);
+  --lang-chip-line: var(--sf-chip-line);
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-kind="language"][data-card-look="aurora"] {
-  --lang-chip-bg: rgb(255 255 255 / 0.04);
+  --lang-chip-bg: var(--sf-surface-raised);
 }
 
 .flashcard-face[data-card-kind="language"][data-card-look="paper"] {
@@ -5424,7 +5424,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 .flashcard-lang-accent {
   color: var(--flashcard-accent);
-  text-shadow: 0 0 28px rgb(40 211 244 / 0.5);
+  text-shadow: 0 0 28px color-mix(in srgb, var(--sf-brand) 50%, transparent);
 }
 
 .flashcard-face[data-card-look="paper"] .flashcard-lang-accent {
@@ -5445,7 +5445,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-accent {
-  background: linear-gradient(180deg, #ff8fa3, var(--sf-brand) 55%, var(--sf-brand-hover));
+  background: linear-gradient(180deg, var(--sf-rose-light), var(--sf-brand) 55%, var(--sf-brand-hover));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -6055,7 +6055,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]:where([data-card-kind="language"]) .flashcard-chrome-button[data-selected="true"]:where(:not(.flashcard-reward-button)) {
-  color: #031820;
+  color: var(--sf-switch-on-text);
 }
 
 .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-say {

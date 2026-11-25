@@ -137,6 +137,7 @@
 
 :root.dark:not([data-theme-family="crystal"]) {
   --sf-nav-line: rgb(255 255 255 / 0.06);
+  --sf-chip-line: rgb(255 255 255 / 0.1);
   --sf-accent-soft: rgb(40 211 244 / 0.12);
   --sf-accent-line: rgb(40 211 244 / 0.35);
   --sf-nav-active-bg: rgb(255 255 255 / 0.08);
