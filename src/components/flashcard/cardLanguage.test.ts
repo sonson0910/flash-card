@@ -13,6 +13,7 @@ import {
   cardSideStatus,
   cardTargetLanguageKey,
   isLanguagePackCard,
+  usesLanguageCardForm,
 } from './cardLanguage';
 
 const englishCard = { word: 'immediate', language: 'en', translationLanguage: 'vi' };
@@ -44,6 +45,13 @@ describe('card language rule', () => {
     expect(cardTargetLanguageKey(legacyCard)).toBe('en');
     expect(cardTargetLanguageKey({ language: 'fr' })).toBe('other');
     expect(cardTargetLanguageKey({ language: 'cmn' })).toBe('zh');
+  });
+
+  it('uses the language card form whenever a card has no supported picture', () => {
+    expect(usesLanguageCardForm({ imageUrl: null })).toBe(true);
+    expect(usesLanguageCardForm({ imageUrl: undefined })).toBe(true);
+    expect(usesLanguageCardForm({ imageUrl: 'not-a-supported-url' })).toBe(true);
+    expect(usesLanguageCardForm({ imageUrl: 'https://images.pexels.com/photos/123/flashcard-language.jpg' })).toBe(false);
   });
 });
 

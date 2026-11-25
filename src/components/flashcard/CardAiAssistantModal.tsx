@@ -206,7 +206,7 @@ export function CardAiAssistantModal({
                   <Trans {...msg({ context: 'flashcard.ai.description', message: 'Ask questions about usage, nuances & practical examples.' })} />
                 </Dialog.Description>
               </div>
-              <Dialog.Close className="overlay-dialog-close" aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}>
+              <Dialog.Close className="overlay-dialog-close fx-press" aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}>
                 <span aria-hidden="true" className="overlay-dialog-close-surface"><X /></span>
               </Dialog.Close>
             </div>
@@ -223,7 +223,7 @@ export function CardAiAssistantModal({
                     disabled={isLoading}
                     data-active={lastQuestion === _(preset.label.id) ? 'true' : undefined}
                     onClick={() => void askAi(preset.prompt, _(preset.label.id))}
-                    className="card-tutor-preset"
+                    className="card-tutor-preset sf-ease"
                   >
                     {_(preset.label.id)}
                   </button>
@@ -231,7 +231,7 @@ export function CardAiAssistantModal({
               </div>
 
               {(turns.length > 0 || isLoading || error) && (
-                <div className="card-tutor-answers" aria-live="polite">
+                <div className="card-tutor-answers fx-stagger" aria-live="polite">
                   {turns.map((turn, index) => (
                     <div key={index} className="card-tutor-answer">
                       <p className="card-tutor-answer-heading">
@@ -242,7 +242,7 @@ export function CardAiAssistantModal({
                       <p className="card-tutor-answer-text">{turn.answer}</p>
                     </div>
                   ))}
-                  {(isLoading || error) && <div className="card-tutor-answer">
+                  {(isLoading || error) && <div key="pending" className="card-tutor-answer">
                     <p className="card-tutor-answer-heading"><HeadingStar />{activeQuestion}</p>
                     {isLoading ? (
                       <div role="status" className="card-tutor-loading">
@@ -254,7 +254,7 @@ export function CardAiAssistantModal({
                 </div>
               )}
 
-              <form onSubmit={handleCustomSubmit} className="card-tutor-ask">
+              <form onSubmit={handleCustomSubmit} className="card-tutor-ask sf-ease">
                 <input
                   type="text"
                   aria-label={_(msg({ id: 'flashcard.ai.question-label', message: 'Ask a question about this word' }))}
@@ -268,7 +268,7 @@ export function CardAiAssistantModal({
                 <button
                   type="submit"
                   disabled={!customQuery.trim() || isLoading}
-                  className="card-tutor-send"
+                  className="card-tutor-send fx-press"
                   aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
                 >
                   <span aria-hidden="true" className="card-tutor-send-surface"><ArrowRight /></span>

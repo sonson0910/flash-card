@@ -27,7 +27,13 @@ describe('speechLocaleFor', () => {
     expect(speechLocaleFor(card({ language: 'zh' }))).toBe('zh-CN');
   });
 
-  it('falls back to English for a language wave not yet launched', () => {
-    expect(speechLocaleFor(card({ language: 'fr' }))).toBe('en-US');
+  it('gives a target language without a pack its own speech locale', () => {
+    expect(speechLocaleFor(card({ language: 'fr' }))).toBe('fr-FR');
+    expect(speechLocaleFor(card({ language: 'de-AT' }))).toBe('de-DE');
+    expect(speechLocaleFor(card({ language: 'es' }))).toBe('es-ES');
+  });
+
+  it('falls back to English for a language it has no voice mapping for', () => {
+    expect(speechLocaleFor(card({ language: 'it' }))).toBe('en-US');
   });
 });

@@ -18,18 +18,18 @@ msgctxt "landing.atmosphere.golden-hour"
 msgid "Golden Hour"
 msgstr "Hoàng hôn vàng"
 
-#: src/features/landing/LandingPage.tsx:686
-#: src/features/landing/LandingPage.tsx:813
+#: src/features/landing/LandingPage.tsx:692
+#: src/features/landing/LandingPage.tsx:819
 msgctxt "landing.nav.curriculum"
 msgid "Curriculum"
 msgstr "Lộ trình"
 
-#: src/features/landing/LandingPage.tsx:1057
+#: src/features/landing/LandingPage.tsx:1063
 msgctxt "landing.methods.preview.caption"
 msgid "Built for the words you actually meet."
 msgstr "Dành cho những từ bạn thực sự gặp."
 
-#: src/features/landing/LandingPage.tsx:1140
+#: src/features/landing/LandingPage.tsx:1146
 msgctxt "landing.closing.eyebrow"
 msgid "Your next word is waiting"
 msgstr "Từ tiếp theo đang chờ bạn"
@@ -39,12 +39,12 @@ msgctxt "landing.demo.meaning.spelling"
 msgid "spelling"
 msgstr "chính tả"
 
-#: src/features/landing/LandingPage.tsx:1206
+#: src/features/landing/LandingPage.tsx:1212
 msgctxt "landing.footer.privacy"
 msgid "Privacy Policy"
 msgstr "Chính sách quyền riêng tư"
 
-#: src/features/landing/LandingPage.tsx:927
+#: src/features/landing/LandingPage.tsx:933
 msgctxt "landing.extension.description"
 msgid "The SonFlash Chrome extension turns any selected word or passage into a flashcard without leaving the page."
 msgstr "Tiện ích Chrome của SonFlash biến bất kỳ từ hay đoạn văn nào bạn bôi đen thành thẻ ghi nhớ mà không cần rời trang."
@@ -59,12 +59,12 @@ msgctxt "landing.features.timing.description"
 msgid "A memory model schedules each word just before you would forget it, so a few minutes a day is enough."
 msgstr "Mô hình ghi nhớ lên lịch cho từng từ ngay trước lúc bạn sắp quên, nên mỗi ngày chỉ cần vài phút."
 
-#: src/features/landing/LandingPage.tsx:992
+#: src/features/landing/LandingPage.tsx:998
 msgctxt "landing.languages.pack.chinese"
 msgid "中文 · Chinese"
 msgstr "中文 · Tiếng Trung"
 
-#: src/features/landing/LandingPage.tsx:421
+#: src/features/landing/LandingPage.tsx:426
 msgctxt "landing.demo.saved-from"
 msgid "Saved from <0>bbc.com</0>"
 msgstr "Lưu từ <0>bbc.com</0>"
@@ -85,13 +85,13 @@ msgid "Bud"
 msgstr "Nụ"
 
 #: src/features/landing/LandingPage.tsx:326
-#: src/features/landing/LandingPage.tsx:734
-#: src/features/landing/LandingPage.tsx:1162
+#: src/features/landing/LandingPage.tsx:740
+#: src/features/landing/LandingPage.tsx:1168
 msgctxt "landing.hero.start"
 msgid "Start learning"
 msgstr "Bắt đầu học"
 
-#: src/features/landing/LandingPage.tsx:1085
+#: src/features/landing/LandingPage.tsx:1091
 msgctxt "landing.pricing.eyebrow"
 msgid "Free to start, Pro when you want more"
 msgstr "Bắt đầu miễn phí, nâng cấp Pro khi bạn cần thêm"
@@ -117,12 +117,12 @@ msgid "New · Crystal Star"
 msgstr "Mới · Crystal Star"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:596
+#: src/features/landing/LandingPage.tsx:602
 msgid "account.data.delete.cache-warning"
 msgstr "SonFlash không thể xóa dữ liệu tài khoản đã lưu khỏi thiết bị này. Hãy xóa dữ liệu trang web SonFlash trong trình duyệt của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:595
+#: src/features/landing/LandingPage.tsx:601
 msgid "account.data.delete.started"
 msgstr "Chúng tôi không thể xác nhận việc xóa tài khoản đã hoàn tất. Nếu sau đó bạn vẫn có thể đăng nhập, hãy liên hệ bộ phận hỗ trợ."
 
@@ -136,8 +136,8 @@ msgctxt "landing.pricing.row.ai-cards"
 msgid "AI-generated cards"
 msgstr "Thẻ tạo bằng AI"
 
-#: src/features/landing/LandingPage.tsx:678
-#: src/features/landing/LandingPage.tsx:802
+#: src/features/landing/LandingPage.tsx:684
+#: src/features/landing/LandingPage.tsx:808
 msgctxt "landing.nav.paths"
 msgid "Paths"
 msgstr "Lộ trình"
@@ -147,8 +147,8 @@ msgctxt "landing.flow.read.description"
 msgid "See the word in plain language before asking yourself to recall it."
 msgstr "Xem từ bằng lời giải thích dễ hiểu trước khi tự nhớ lại."
 
-#: src/features/landing/LandingPage.tsx:671
-#: src/features/landing/LandingPage.tsx:792
+#: src/features/landing/LandingPage.tsx:677
+#: src/features/landing/LandingPage.tsx:798
 msgctxt "landing.nav.chrome-extension"
 msgid "Chrome extension"
 msgstr "Tiện ích Chrome"
@@ -163,14 +163,14 @@ msgctxt "landing.pricing.row.extension"
 msgid "Chrome extension"
 msgstr "Tiện ích Chrome"
 
-#: src/features/landing/LandingPage.tsx:705
-#: src/features/landing/LandingPage.tsx:837
+#: src/features/landing/LandingPage.tsx:711
+#: src/features/landing/LandingPage.tsx:843
 msgctxt "landing.nav.languages"
 msgid "Languages"
 msgstr "Ngôn ngữ"
 
-#: src/features/landing/LandingPage.tsx:699
-#: src/features/landing/LandingPage.tsx:830
+#: src/features/landing/LandingPage.tsx:705
+#: src/features/landing/LandingPage.tsx:836
 msgctxt "landing.nav.extension"
 msgid "Extension"
 msgstr "Tiện ích"
@@ -180,17 +180,17 @@ msgctxt "landing.pricing.faq.free.question"
 msgid "Is the free plan really free?"
 msgstr "Gói Free có thật sự miễn phí không?"
 
-#: src/features/landing/LandingPage.tsx:1043
+#: src/features/landing/LandingPage.tsx:1049
 msgctxt "landing.methods.recall.title"
 msgid "Judge your recall honestly"
 msgstr "Tự đánh giá mức độ nhớ"
 
-#: src/features/landing/LandingPage.tsx:1024
+#: src/features/landing/LandingPage.tsx:1030
 msgctxt "landing.methods.description"
 msgid "Your feedback helps plan a useful next review with FSRS scheduling."
 msgstr "Phản hồi của bạn giúp lên kế hoạch cho lần ôn tiếp theo hữu ích với lịch FSRS."
 
-#: src/features/landing/LandingPage.tsx:923
+#: src/features/landing/LandingPage.tsx:929
 msgctxt "landing.extension.title"
 msgid "Learn from the page you're already on."
 msgstr "Học ngay trên trang bạn đang đọc."
@@ -210,7 +210,7 @@ msgctxt "landing.atmosphere.quiet-dawn"
 msgid "Quiet Dawn"
 msgstr "Bình minh yên tĩnh"
 
-#: src/features/landing/LandingPage.tsx:1100
+#: src/features/landing/LandingPage.tsx:1106
 msgctxt "landing.pricing.free-vs-pro.free"
 msgid "Free"
 msgstr "Free"
@@ -225,12 +225,12 @@ msgctxt "landing.flow.capture.description"
 msgid "Turn a word or passage into a card with its meaning, pronunciation, and example."
 msgstr "Biến một từ hoặc đoạn văn thành thẻ kèm nghĩa, cách phát âm và ví dụ."
 
-#: src/features/landing/LandingPage.tsx:1111
+#: src/features/landing/LandingPage.tsx:1117
 msgctxt "landing.pricing.price"
 msgid "The final Pro price will be confirmed before sales open."
 msgstr "Giá Pro cuối cùng sẽ được xác nhận trước khi mở bán."
 
-#: src/features/landing/LandingPage.tsx:1115
+#: src/features/landing/LandingPage.tsx:1121
 msgctxt "landing.pricing.purchase-note"
 msgid "Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are."
 msgstr "Đăng ký quan tâm không mất phí. Hiện chưa mở bán — chúng tôi sẽ báo qua email khi mở."
@@ -240,8 +240,8 @@ msgctxt "landing.flow.capture.title"
 msgid "Keep the context"
 msgstr "Giữ ngữ cảnh"
 
-#: src/features/landing/LandingPage.tsx:711
-#: src/features/landing/LandingPage.tsx:845
+#: src/features/landing/LandingPage.tsx:717
+#: src/features/landing/LandingPage.tsx:851
 msgctxt "landing.nav.pricing"
 msgid "Pricing & access"
 msgstr "Giá và quyền truy cập"
@@ -252,7 +252,7 @@ msgctxt "landing.pricing.value.card-cap"
 msgid "Up to 5,000"
 msgstr "Tối đa 5.000"
 
-#: src/features/landing/LandingPage.tsx:1091
+#: src/features/landing/LandingPage.tsx:1097
 msgctxt "landing.pricing.title"
 msgid "Pricing & access"
 msgstr "Giá và quyền truy cập"
@@ -262,27 +262,27 @@ msgctxt "landing.demo.tier.learning"
 msgid "Learning"
 msgstr "Đang học"
 
-#: src/features/landing/LandingPage.tsx:969
+#: src/features/landing/LandingPage.tsx:975
 msgctxt "landing.languages.eyebrow"
 msgid "Languages you can learn"
 msgstr "Ngôn ngữ bạn có thể học"
 
-#: src/features/landing/LandingPage.tsx:465
+#: src/features/landing/LandingPage.tsx:471
 msgctxt "landing.demo.part-of-speech"
 msgid "Adjective"
 msgstr "Tính từ"
 
-#: src/features/landing/LandingPage.tsx:1019
+#: src/features/landing/LandingPage.tsx:1025
 msgctxt "landing.methods.title"
 msgid "Review what is ready."
 msgstr "Ôn những từ đã sẵn sàng."
 
-#: src/features/landing/LandingPage.tsx:880
+#: src/features/landing/LandingPage.tsx:886
 msgctxt "landing.atmosphere.static"
 msgid "Static atmosphere is enabled for this device or motion preference."
 msgstr "Đã bật nền tĩnh theo thiết bị hoặc tùy chọn chuyển động của bạn."
 
-#: src/features/landing/LandingPage.tsx:917
+#: src/features/landing/LandingPage.tsx:923
 msgctxt "landing.extension.eyebrow"
 msgid "Save from anywhere"
 msgstr "Lưu từ ở bất cứ đâu"
@@ -302,7 +302,7 @@ msgctxt "landing.features.senses.description"
 msgid "Picture, native audio, stressed syllable and a Vietnamese meaning on one card."
 msgstr "Hình ảnh, âm thanh bản ngữ, âm tiết nhấn và nghĩa tiếng Việt trên cùng một thẻ."
 
-#: src/features/landing/LandingPage.tsx:1048
+#: src/features/landing/LandingPage.tsx:1054
 msgctxt "landing.methods.recall.description"
 msgid "Four familiar ratings keep the choice quick."
 msgstr "Bốn mức đánh giá quen thuộc giúp bạn chọn nhanh."
@@ -317,7 +317,7 @@ msgctxt "landing.hero.proof.extension"
 msgid "<0>Chrome</0> extension, free"
 msgstr "<0>Chrome</0> extension miễn phí"
 
-#: src/features/landing/LandingPage.tsx:1062
+#: src/features/landing/LandingPage.tsx:1068
 msgctxt "landing.methods.preview.quote"
 msgid "A vocabulary is useful when you can reach for it."
 msgstr "Vốn từ chỉ hữu ích khi bạn có thể dùng đến."
@@ -327,7 +327,7 @@ msgctxt "landing.flow.read.title"
 msgid "Read it clearly"
 msgstr "Đọc rõ nghĩa"
 
-#: src/features/landing/LandingPage.tsx:489
+#: src/features/landing/LandingPage.tsx:495
 msgctxt "landing.demo.back-language"
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
@@ -337,7 +337,7 @@ msgctxt "landing.pricing.faq.exhausted.answer"
 msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
 msgstr "Bạn vẫn có thể ôn tập và tự thêm thẻ. Tính năng tạo thẻ bằng AI sẽ mở lại vào tháng sau. Gói Pro chưa được bán trong giai đoạn thử nghiệm."
 
-#: src/features/landing/LandingPage.tsx:1178
+#: src/features/landing/LandingPage.tsx:1184
 msgctxt "landing.closing.consent"
 msgid "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
 msgstr "SonFlash dành cho người học từ 18 tuổi trở lên. Khi đăng nhập, bạn đồng ý với <terms>Điều khoản</terms> và đã đọc <privacy>Chính sách quyền riêng tư</privacy>."
@@ -347,12 +347,12 @@ msgctxt "landing.features.capture.description"
 msgid "Highlight a word on any page in Chrome and it becomes a card in one click."
 msgstr "Bôi đen một từ trên bất kỳ trang nào trong Chrome là có ngay một thẻ, chỉ với một cú nhấp."
 
-#: src/features/landing/LandingPage.tsx:990
+#: src/features/landing/LandingPage.tsx:996
 msgctxt "landing.languages.pack.korean"
 msgid "한국어 · Korean"
 msgstr "한국어 · Tiếng Hàn"
 
-#: src/features/landing/LandingPage.tsx:1153
+#: src/features/landing/LandingPage.tsx:1159
 msgctxt "landing.closing.description"
 msgid "Start with the cards ready today, then make each new word easier to find again."
 msgstr "Bắt đầu với các thẻ cần ôn hôm nay, rồi giúp mỗi từ mới dễ tìm lại hơn."
@@ -367,13 +367,13 @@ msgctxt "landing.ribbon.spaced-review"
 msgid "Spaced review"
 msgstr "Ôn cách quãng"
 
-#: src/features/landing/LandingPage.tsx:1031
+#: src/features/landing/LandingPage.tsx:1037
 msgctxt "landing.methods.context.title"
 msgid "See the meaning in context"
 msgstr "Hiểu nghĩa trong ngữ cảnh"
 
-#: src/features/landing/LandingPage.tsx:646
-#: src/features/landing/LandingPage.tsx:1191
+#: src/features/landing/LandingPage.tsx:652
+#: src/features/landing/LandingPage.tsx:1197
 msgctxt "landing.brand.mark"
 msgid "S"
 msgstr "S"
@@ -400,7 +400,7 @@ msgstr "Thẻ từ vựng tiếng Anh mẫu"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:364
-#: src/features/landing/LandingPage.tsx:472
+#: src/features/landing/LandingPage.tsx:478
 msgid "landing.demo.reveal-prompt"
 msgstr "Chạm để xem nghĩa"
 
@@ -420,17 +420,17 @@ msgid "landing.meta.title"
 msgstr "SonFlash — Nhớ từ. Dùng khi cần."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:750
+#: src/features/landing/LandingPage.tsx:756
 msgid "landing.mobile-menu.open"
 msgstr "Mở menu điều hướng"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:770
+#: src/features/landing/LandingPage.tsx:776
 msgid "landing.mobile-nav.label"
 msgstr "Điều hướng trên điện thoại"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:653
+#: src/features/landing/LandingPage.tsx:659
 msgid "landing.nav.label"
 msgstr "Điều hướng trang giới thiệu"
 
@@ -439,13 +439,13 @@ msgstr "Điều hướng trang giới thiệu"
 msgid "landing.sign-in.busy"
 msgstr "Đang đăng nhập…"
 
-#: src/features/landing/LandingPage.tsx:693
-#: src/features/landing/LandingPage.tsx:823
+#: src/features/landing/LandingPage.tsx:699
+#: src/features/landing/LandingPage.tsx:829
 msgctxt "landing.nav.vocabulary"
 msgid "Vocabulary"
 msgstr "Từ vựng"
 
-#: src/features/landing/LandingPage.tsx:1216
+#: src/features/landing/LandingPage.tsx:1222
 msgctxt "landing.footer.copyright"
 msgid "© {year} SonFlash"
 msgstr "© {year} SonFlash"
@@ -455,13 +455,13 @@ msgctxt "landing.demo.tier.new"
 msgid "New"
 msgstr "Mới"
 
-#: src/features/landing/LandingPage.tsx:1121
+#: src/features/landing/LandingPage.tsx:1127
 msgctxt "landing.pricing.faq.title"
 msgid "Questions"
 msgstr "Câu hỏi thường gặp"
 
-#: src/features/landing/LandingPage.tsx:649
-#: src/features/landing/LandingPage.tsx:1194
+#: src/features/landing/LandingPage.tsx:655
+#: src/features/landing/LandingPage.tsx:1200
 msgctxt "landing.brand.crystal-wordmark"
 msgid "SON<0>FLASH</0>"
 msgstr "SON<0>FLASH</0>"
@@ -492,13 +492,13 @@ msgctxt "landing.demo.meaning.instant"
 msgid "a moment"
 msgstr "Khoảnh khắc"
 
-#: src/features/landing/LandingPage.tsx:975
+#: src/features/landing/LandingPage.tsx:981
 msgctxt "landing.languages.title"
 msgid "English, Korean, Japanese and Chinese."
 msgstr "Tiếng Anh, Hàn, Nhật và Trung."
 
-#: src/features/landing/LandingPage.tsx:648
-#: src/features/landing/LandingPage.tsx:1195
+#: src/features/landing/LandingPage.tsx:654
+#: src/features/landing/LandingPage.tsx:1201
 msgctxt "landing.brand.classic-wordmark"
 msgid "Son<0>Flash</0>"
 msgstr "Son<0>Flash</0>"
@@ -513,18 +513,18 @@ msgctxt "landing.features.senses.title"
 msgid "Every sense at once"
 msgstr "Đủ mọi giác quan"
 
-#: src/features/landing/LandingPage.tsx:1148
+#: src/features/landing/LandingPage.tsx:1154
 msgctxt "landing.closing.title"
 msgid "Build a vocabulary you can reach for."
 msgstr "Xây dựng vốn từ bạn có thể dùng ngay khi cần."
 
-#: src/features/landing/LandingPage.tsx:664
-#: src/features/landing/LandingPage.tsx:783
+#: src/features/landing/LandingPage.tsx:670
+#: src/features/landing/LandingPage.tsx:789
 msgctxt "landing.nav.how-it-works"
 msgid "How it works"
 msgstr "Cách hoạt động"
 
-#: src/features/landing/LandingPage.tsx:724
+#: src/features/landing/LandingPage.tsx:730
 msgctxt "landing.nav.sign-in"
 msgid "Sign in"
 msgstr "Đăng nhập"
@@ -534,7 +534,7 @@ msgctxt "landing.features.capture.title"
 msgid "Save from anywhere"
 msgstr "Lưu từ mọi nơi"
 
-#: src/features/landing/LandingPage.tsx:733
+#: src/features/landing/LandingPage.tsx:739
 msgctxt "landing.nav.start-free"
 msgid "Start free"
 msgstr "Bắt đầu miễn phí"
@@ -545,7 +545,7 @@ msgid "Bloom"
 msgstr "Nở"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:716
+#: src/features/landing/LandingPage.tsx:722
 msgid "shell.theme.quick-toggle"
 msgstr "Chuyển giữa chế độ sáng và tối"
 
@@ -555,7 +555,7 @@ msgid "Mastered"
 msgstr "Thành thạo"
 
 #: src/features/landing/LandingPage.tsx:327
-#: src/features/landing/LandingPage.tsx:1172
+#: src/features/landing/LandingPage.tsx:1178
 msgctxt "landing.hero.sign-in"
 msgid "Sign in to sync"
 msgstr "Đăng nhập để đồng bộ"
@@ -565,7 +565,7 @@ msgctxt "landing.ribbon.chrome-extension"
 msgid "Chrome extension"
 msgstr "Tiện ích Chrome"
 
-#: src/features/landing/LandingPage.tsx:1212
+#: src/features/landing/LandingPage.tsx:1218
 msgctxt "landing.footer.extension"
 msgid "Extension"
 msgstr "Tiện ích mở rộng"
@@ -590,7 +590,7 @@ msgctxt "landing.atmosphere.still-water"
 msgid "Still Water"
 msgstr "Mặt nước lặng"
 
-#: src/features/landing/LandingPage.tsx:862
+#: src/features/landing/LandingPage.tsx:868
 msgctxt "landing.hero.atmosphere"
 msgid "Choose an atmosphere"
 msgstr "Chọn không gian học"
@@ -606,17 +606,17 @@ msgctxt "landing.pricing.faq.free.answer"
 msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
 msgstr "Đúng vậy. Ôn tập, thẻ tự tạo và tiện ích Chrome đều miễn phí, không giới hạn thời gian. Gói Free có 30 thẻ tạo bằng AI mỗi tháng, tối đa 20 lượt dùng AI mỗi ngày."
 
-#: src/features/landing/LandingPage.tsx:995
+#: src/features/landing/LandingPage.tsx:1001
 msgctxt "landing.languages.status.available"
 msgid "Available now"
 msgstr "Đã có"
 
-#: src/features/landing/LandingPage.tsx:1036
+#: src/features/landing/LandingPage.tsx:1042
 msgctxt "landing.methods.context.description"
 msgid "A clear card gives each word room to make sense."
 msgstr "Một thẻ rõ ràng giúp mỗi từ có đủ chỗ để trở nên dễ hiểu."
 
-#: src/features/landing/LandingPage.tsx:1101
+#: src/features/landing/LandingPage.tsx:1107
 msgctxt "landing.pricing.free-vs-pro.pro"
 msgid "Pro"
 msgstr "Pro"
@@ -626,7 +626,7 @@ msgctxt "landing.ribbon.context-first"
 msgid "Context first"
 msgstr "Ưu tiên ngữ cảnh"
 
-#: src/features/landing/LandingPage.tsx:417
+#: src/features/landing/LandingPage.tsx:420
 msgctxt "landing.demo.next-review"
 msgid "Next review in 3 days"
 msgstr "Ôn lại sau 3 ngày"
@@ -636,7 +636,7 @@ msgctxt "landing.extension.feature.popup.title"
 msgid "Check in from the toolbar"
 msgstr "Xem nhanh từ thanh công cụ"
 
-#: src/features/landing/LandingPage.tsx:1209
+#: src/features/landing/LandingPage.tsx:1215
 msgctxt "landing.footer.terms"
 msgid "Terms"
 msgstr "Điều khoản"
@@ -646,13 +646,13 @@ msgctxt "landing.extension.feature.save.title"
 msgid "Right-click to save"
 msgstr "Nhấp chuột phải để lưu"
 
-#: src/features/landing/LandingPage.tsx:508
-#: src/features/landing/LandingPage.tsx:889
+#: src/features/landing/LandingPage.tsx:514
+#: src/features/landing/LandingPage.tsx:895
 msgctxt "landing.features.title"
 msgid "Keep the words you meet."
 msgstr "Giữ lại những từ bạn gặp."
 
-#: src/features/landing/LandingPage.tsx:1199
+#: src/features/landing/LandingPage.tsx:1205
 msgctxt "landing.footer.description"
 msgid "for intentional vocabulary learning."
 msgstr "dành cho việc học từ vựng có chủ đích."
@@ -667,17 +667,17 @@ msgctxt "landing.classic-hero.add-to-chrome"
 msgid "Add to Chrome"
 msgstr "Thêm vào Chrome"
 
-#: src/features/landing/LandingPage.tsx:1099
+#: src/features/landing/LandingPage.tsx:1105
 msgctxt "landing.pricing.free-vs-pro.title"
 msgid "Free vs Pro"
 msgstr "Free và Pro"
 
-#: src/features/landing/LandingPage.tsx:989
+#: src/features/landing/LandingPage.tsx:995
 msgctxt "landing.languages.pack.english"
 msgid "English"
 msgstr "Tiếng Anh"
 
-#: src/features/landing/LandingPage.tsx:991
+#: src/features/landing/LandingPage.tsx:997
 msgctxt "landing.languages.pack.japanese"
 msgid "日本語 · Japanese"
 msgstr "日本語 · Tiếng Nhật"
@@ -697,12 +697,12 @@ msgctxt "landing.pricing.row.reviews"
 msgid "Reviews & spaced scheduling"
 msgstr "Ôn tập & lịch lặp lại ngắt quãng"
 
-#: src/features/landing/LandingPage.tsx:1071
+#: src/features/landing/LandingPage.tsx:1077
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
 msgstr "Mở thư viện"
 
-#: src/features/landing/LandingPage.tsx:979
+#: src/features/landing/LandingPage.tsx:985
 msgctxt "landing.languages.description"
 msgid "Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress."
 msgstr "Chọn một trong bốn ngôn ngữ này để bắt đầu khoá học; nghĩa của từ hiển thị bằng tiếng Anh hoặc tiếng Việt. Mỗi khoá học có bộ thẻ và tiến độ riêng."

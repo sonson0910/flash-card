@@ -946,10 +946,19 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   .flashcard-reveal-shine {
     transition: none;
   }
+  .flashcard-shell[data-card-look="crystal"] .flashcard-reveal-shine {
+    opacity: 0;
+    animation: none;
+  }
 }
 
 html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule, .flashcard-reveal-shine) {
   transition: none;
+}
+
+html[data-motion="reduced"] .flashcard-shell[data-card-look="crystal"] .flashcard-reveal-shine {
+  opacity: 0;
+  animation: none;
 }
 
 /* ------------------------------------------------------------------------
@@ -1761,7 +1770,6 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade {
   min-height: 68px;
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
 }
 
 .review-grades[data-card-look="aurora"] .review-grade[data-rating="again"] {
@@ -1800,7 +1808,6 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   border-radius: 16px;
   background: var(--sf-surface);
   box-shadow: 0 1px 2px rgb(60 40 20 / 0.08);
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease;
 }
 
 :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-label {
@@ -1815,28 +1822,107 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   box-shadow: none;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
-    transform: translateY(-3px);
+@media (min-width: 641px) {
+  @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .review-grades[data-review-state="ready"][data-card-look="aurora"] .review-grades-row {
+      animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 280ms backwards;
+    }
+
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .review-grades[data-review-state="ready"][data-card-look="paper"] .review-grades-row {
+      animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 340ms backwards;
+    }
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+      transform: translateY(-3px);
+    }
+
+    :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade:not([data-rating="good"]):not(:disabled):hover {
+      box-shadow: 0 10px 20px -12px rgb(60 40 20 / 0.45);
+    }
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  /* Language review follows LangReview.dc.html: staggered entrance on the tray and fx-press on each key. */
+  :where(html:not([data-theme-family=crystal])) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row > * {
+      animation: au-in-k 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row > * {
+      animation: ip-in-k 480ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row > :nth-child(1) { animation-delay: 120ms; }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row > :nth-child(2) { animation-delay: 180ms; }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row > :nth-child(3) { animation-delay: 240ms; }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades)[data-review-state="ready"] .review-grades-row > :nth-child(4) { animation-delay: 300ms; }
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade {
+      transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), filter 180ms ease;
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade {
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), filter 160ms ease;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / 0.2));
+      }
+    }
+
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade:not(:disabled):active {
+      transform: translateY(0) scale(0.97);
+      filter: brightness(0.98);
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) :is(.review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade:not(:disabled):active {
+      transform: translateY(1px) scale(0.98);
+      filter: none;
+    }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) :is(.review-grades:is([data-card-look="aurora"], [data-card-look="paper"]), .review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade {
     transition: none;
   }
 
-  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) :is(.review-grades:is([data-card-look="aurora"], [data-card-look="paper"]), .review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade:is(:hover, :active) {
     transform: none;
+    filter: none;
   }
 }
 
-html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) :is(.review-grades:is([data-card-look="aurora"], [data-card-look="paper"]), .review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade {
   transition: none;
 }
 
-html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) :is(.review-grades:is([data-card-look="aurora"], [data-card-look="paper"]), .review-grades[data-card-kind="language"], main:has([data-card-kind="language"]) .review-grades, [data-study-session][data-study-kind="language"] .review-grades) .review-grade:is(:hover, :active) {
   transform: none;
+  filter: none;
 }
 
 :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="again"] {
@@ -1977,14 +2063,74 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   opacity: 0.7;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):active {
-    transform: translateY(0);
-  }
-}
-
 /* Phones follow the Mobile review board (MobileReview.dc.html 54-61 and 89-98): four keys in one row, no tray. */
 @media (max-width: 640px) {
+  @media (prefers-reduced-motion: no-preference) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades[data-review-state="ready"]:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grades-row > * {
+      animation: au-in-k 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades[data-review-state="ready"]:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grades-row > * {
+      animation: ip-in-k 480ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades[data-review-state="ready"]:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grades-row > :nth-child(1) { animation-delay: 120ms; }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades[data-review-state="ready"]:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grades-row > :nth-child(2) { animation-delay: 180ms; }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades[data-review-state="ready"]:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grades-row > :nth-child(3) { animation-delay: 240ms; }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades[data-review-state="ready"]:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grades-row > :nth-child(4) { animation-delay: 300ms; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+      transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), filter 180ms ease;
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), filter 160ms ease;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / 0.2));
+      }
+    }
+
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):active {
+      transform: translateY(0) scale(0.97);
+      filter: brightness(0.98);
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):active {
+      transform: translateY(1px) scale(0.98);
+      filter: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+      transition: none;
+    }
+
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:is(:hover, :active) {
+      transform: none;
+      filter: none;
+    }
+  }
+
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+    transition: none;
+  }
+
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:is(:hover, :active) {
+    transform: none;
+    filter: none;
+  }
 
   :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating]:not([data-rating="again"], [data-rating="good"]) {
     background: rgb(255 255 255 / 0.04);
@@ -2024,10 +2170,6 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   background: var(--rating-color);
   color: #fff;
   transform: skewX(-14deg);
-}
-
-.review-grades[data-card-look="crystal"] .review-grade:active:not(:disabled) {
-  transform: skewX(-14deg) scale(0.97);
 }
 
 .review-grades[data-card-look="crystal"] .review-grade-face {
@@ -2589,12 +2731,19 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   box-shadow: 0 0 22px -2px rgb(245 174 57 / 0.7);
 }
 
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button,
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button {
   border: 1px solid rgb(29 26 22 / 0.1);
   background: rgb(255 252 245 / 0.92);
   color: #1d1a16;
   box-shadow: 0 2px 6px rgb(60 40 20 / 0.2);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover {
+  border-color: rgb(29 26 22 / 0.1);
+  background: rgb(255 252 245 / 0.92);
+  color: #1d1a16;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -2613,12 +2762,17 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   color: #fffcf5;
 }
 
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button,
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button:not([data-card-danger]):hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button {
   border-color: rgb(239 232 218 / 0.22);
   background: transparent;
   color: #efe8da;
   box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  border-color: rgb(239 232 218 / 0.22);
+  background: transparent;
+  color: #efe8da;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
@@ -2636,36 +2790,108 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   color: var(--sf-on-brand);
 }
 
-/* Aurora icon buttons (blind, star, listen) grow on hover; paper buttons stay still. */
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]),
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button {
-  transform: none;
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
-}
+/* Desktop seed card controls: Aurora uses au-icon-btn / au-grade (Aurora.dc.html 37-41), Atelier uses ip-tab (Atelier.dc.html 30-32). */
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]),
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-more,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play {
+    transform: none;
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
+  }
 
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button.flashcard-reward-button:hover {
-  transform: none;
-}
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play::before {
+    transition: background-color 180ms ease;
+  }
 
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover,
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button:hover {
-    transform: scale(1.06);
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:not(.flashcard-action-more),
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate) {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]),
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate) {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action::before,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play::before {
+    transition: box-shadow 180ms ease, background-color 180ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button:hover,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-more:hover,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play:hover {
+      transform: scale(1.06);
+    }
+
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:not(.flashcard-action-more):not(:disabled):hover,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate):not(:disabled):hover {
+      transform: translateY(-3px);
+    }
+
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate):not(:disabled):hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px -12px rgb(60 40 20 / 0.45);
+    }
+
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:not(:disabled):hover,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play:hover {
+      transform: translateY(-3px);
+    }
+
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:not(.flashcard-action-listen):not(:disabled):hover::before,
+    :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play:hover::before {
+      box-shadow: 0 10px 20px -12px rgb(60 40 20 / 0.45);
+    }
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:not(.flashcard-action-more):not(:disabled):active,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate):not(:disabled):active,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):active,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:not(:disabled):active,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-play:active,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate):not(:disabled):active {
+    transform: translateY(0) scale(0.97);
   }
 }
 
-/* Star pop when a word is starred. */
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected,
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected {
+@media (min-width: 641px) and (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-play-button, .flashcard-action:not(.flashcard-action-more), .flashcard-action.flashcard-action-more, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate, .flashcard-action::before, .flashcard-back-play::before) {
+    transition: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-play-button, .flashcard-action:not(.flashcard-action-more), .flashcard-action.flashcard-action-more, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate):is(:hover, :active) {
+    transform: none;
+  }
+}
+
+@media (min-width: 641px) {
+  html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-play-button, .flashcard-action:not(.flashcard-action-more), .flashcard-action.flashcard-action-more, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate, .flashcard-action::before, .flashcard-back-play::before) {
+    transition: none;
+  }
+
+  html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-play-button, .flashcard-action:not(.flashcard-action-more), .flashcard-action.flashcard-action-more, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor, .flashcard-back-translate):is(:hover, :active) {
+    transform: none;
+  }
+}
+
+/* Star pop when a word is starred on Aurora, Atelier, LangCard and LangReview. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-star-selected {
   animation: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"] .flashcard-star-selected {
     animation: au-star 280ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"] .flashcard-star-selected {
     animation: ip-star 300ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
@@ -2912,7 +3138,6 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   box-shadow: none;
   font-size: 13px;
   font-weight: 600;
-  transition: none;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action::before,
@@ -3285,36 +3510,41 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   display: none;
 }
 
-/* Back content reveals after the turn lands (Aurora.dc.html 26-28; Atelier.dc.html 27-29). */
-@media (prefers-reduced-motion: no-preference) {
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-translation {
-    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
-  }
-
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-source {
-    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
-  }
-
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation) {
-    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both;
-  }
-
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-translation, .flashcard-back-source) {
-    animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
-  }
-
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-ink-rule {
-    animation: ip-ink 700ms cubic-bezier(0.65, 0, 0.35, 1) 260ms both;
-  }
-
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation) {
-    animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 340ms both;
-  }
-}
-
+/* Back content reveals after the turn lands (Aurora.dc.html 26-28; Atelier.dc.html 24-26), filling backwards. */
 :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation,
 :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
   animation: none;
+}
+
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="to-back"] .flashcard-back :is(.flashcard-back-translation, .flashcard-back-ink-rule, .flashcard-back-source, .flashcard-back-example, .flashcard-back-explanation) {
+    opacity: 0;
+    animation: none;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-translation {
+    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 80ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-source {
+    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 180ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation) {
+    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 280ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-translation, .flashcard-back-source) {
+    animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 60ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-ink-rule {
+    animation: ip-ink 700ms cubic-bezier(0.65, 0, 0.35, 1) 260ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation) {
+    animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 340ms backwards;
+  }
 }
 
 /* The study deck: two cards wait under the one in play and deal in with it (Aurora.dc.html 77-78,
@@ -3780,6 +4010,59 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation,
   :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation {
     padding-inline: 0;
+  }
+
+  /* Mobile controls follow MobileReview.dc.html: fx-press (180ms dark / 160ms light) on interactive card buttons. */
+  @media (prefers-reduced-motion: no-preference) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return) {
+      transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), filter 180ms ease;
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return) {
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), filter 160ms ease;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return):not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return):not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / 0.2));
+      }
+    }
+
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return):not(:disabled):active {
+      transform: translateY(0) scale(0.97);
+      filter: brightness(0.98);
+    }
+
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return):not(:disabled):active {
+      transform: translateY(1px) scale(0.98);
+      filter: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return) {
+      transition: none;
+    }
+
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return):is(:hover, :active) {
+      transform: none;
+      filter: none;
+    }
+  }
+
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return) {
+    transition: none;
+  }
+
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .flashcard-shell:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"]:not([data-card-kind="language"]) :is(.flashcard-chrome-button:not([data-card-danger]), .flashcard-face .flashcard-play-button, .flashcard-face .flashcard-actions .flashcard-action, .flashcard-face .flashcard-reveal, .flashcard-back .flashcard-back-play, .flashcard-back .flashcard-hook-button, .flashcard-back .flashcard-back-tutor, .flashcard-back .flashcard-back-translate, .flashcard-back .flashcard-back-return):is(:hover, :active) {
+    transform: none;
+    filter: none;
   }
 }
 
@@ -4305,16 +4588,26 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   animation: none;
 }
 
-/* nk-lift: every Crystal card control rises 3px and brightens on hover and presses in on click. */
+/* nk-lift and nk-press via individual translate/scale on Crystal card controls. */
 @media (hover: hover) {
-  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor):hover:not(:disabled) {
-    transform: translateY(-3px);
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-lang-say, .flashcard-lang-switch, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor):hover:not(:disabled),
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back-return:hover:not(:disabled) {
+    translate: 0 -3px;
     filter: brightness(1.06);
+  }
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-kind="language"] .flashcard-back-return:hover:not(:disabled) {
+    translate: -2px -2px;
   }
 }
 
-.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor):active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-lang-say, .flashcard-lang-switch, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor):active:not(:disabled),
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back-return:active:not(:disabled) {
+  translate: 0 0;
+  scale: 0.97;
+}
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-kind="language"] .flashcard-back-return:active:not(:disabled) {
+  translate: 3px 3px;
+  box-shadow: 0 0 0 transparent !important;
 }
 
 /* Front */
@@ -4501,6 +4794,10 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
 }
 
 /* A slow light beam and a faint star mark behind the back's content. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back:not([data-card-kind="language"]) .flashcard-back-beam {
+  opacity: 0.45;
+}
+
 .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back-beam {
   position: absolute;
   top: -30%;
@@ -4672,8 +4969,13 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
     will-change: transform, opacity;
   }
 
-  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor) {
-    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 220ms ease, filter 220ms ease;
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-lang-say, .flashcard-lang-switch, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor),
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back-return {
+    transition: translate 220ms cubic-bezier(0.34, 1.56, 0.64, 1), scale 220ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 220ms ease, filter 220ms ease;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-kind="language"] .flashcard-back-return {
+    transition: translate 160ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 160ms ease;
   }
 
   html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-star-flare {
@@ -4684,7 +4986,7 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
     animation: nk-pop-k 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
-  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-reveal-shine {
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"] .flashcard-reveal-shine {
     transition: none;
     animation: nk-shine-k 2.8s ease-in-out infinite;
   }
@@ -4693,21 +4995,20 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
     transition: opacity 500ms ease, filter 500ms ease, transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back-beam {
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back:not([data-card-kind="language"]) .flashcard-back-beam {
     animation: nk-beam-k 9s ease-in-out infinite;
   }
 
-  /* The back shows its content while it turns in, as the board's back face does; once the turn has ended the
-     meaning pops in again, the source row 140ms later, then the example and the explanation rise. */
-  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"] .flashcard-back-translation {
+  /* Standard Crystal back reveals match AnimeReview; language cards stay still on back flip like AnimeLangCard. */
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-back-translation {
     animation: nk-pop-k 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
-  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"] .flashcard-back-source {
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"]:not([data-card-kind="language"]) :is(.flashcard-back-source, .flashcard-back-hanviet) {
     animation: nk-pop-k 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 140ms both;
   }
 
-  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"] :is(.flashcard-back-example, .flashcard-back-explanation) {
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"]:not([data-card-kind="language"]) :is(.flashcard-back-example, .flashcard-back-explanation, .flashcard-back-related, .flashcard-back-forms) {
     animation: flashcard-rise-k 700ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both;
   }
 }
@@ -4871,6 +5172,51 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 
+/* Gender, Crystal gold/Hán-Việt, and Latin watermark palette tokens for language cards. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"] {
+  --lang-gender-m: #6fb6ff;
+  --lang-gender-f: #ff8aa6;
+  --lang-gender-n: #8fe39a;
+  --lang-gender-soft-m: rgb(111 182 255 / 0.12);
+  --lang-gender-soft-f: rgb(255 138 166 / 0.12);
+  --lang-gender-soft-n: rgb(143 227 154 / 0.12);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"] {
+  --lang-gender-m: #1f5fb8;
+  --lang-gender-f: #b3264a;
+  --lang-gender-n: #2c6a3d;
+  --lang-gender-soft-m: rgb(31 95 184 / 0.08);
+  --lang-gender-soft-f: rgb(179 38 74 / 0.08);
+  --lang-gender-soft-n: rgb(44 106 61 / 0.08);
+}
+
+:root[data-theme-family="crystal"].dark .flashcard-shell[data-card-kind="language"][data-card-look="crystal"] {
+  --lang-gender-m: #5ef2ff;
+  --lang-gender-f: #ff5470;
+  --lang-gender-n: #ffd166;
+  --lang-gender-soft-m: rgb(94 242 255 / 0.14);
+  --lang-gender-soft-f: rgb(255 84 112 / 0.16);
+  --lang-gender-soft-n: rgb(255 209 102 / 0.14);
+  --lang-gold-line: #ffd166;
+  --lang-gold-text: #ffd166;
+  --lang-hanviet-bg: linear-gradient(90deg, rgb(255 209 102 / 0.28), rgb(255 209 102 / 0.08));
+  --lang-watermark-latin: rgb(255 255 255 / 0.04);
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .flashcard-shell[data-card-kind="language"][data-card-look="crystal"] {
+  --lang-gender-m: #0a7d99;
+  --lang-gender-f: #c40f35;
+  --lang-gender-n: #8a5a00;
+  --lang-gender-soft-m: rgb(10 125 153 / 0.1);
+  --lang-gender-soft-f: rgb(196 15 53 / 0.1);
+  --lang-gender-soft-n: rgb(138 90 0 / 0.1);
+  --lang-gold-line: #ffd166;
+  --lang-gold-text: #8a5a00;
+  --lang-hanviet-bg: linear-gradient(90deg, rgb(255 209 102 / 0.28), rgb(255 209 102 / 0.08));
+  --lang-watermark-latin: rgb(13 26 51 / 0.05);
+}
+
 /* ------------------------------------------------------------------------
    Language-pack card (Korean, Japanese, Chinese): the front teaches through
    the reading aids, the example and the common phrases; the back keeps the
@@ -4880,9 +5226,10 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
    ------------------------------------------------------------------------ */
 /* The theme has no CJK font token: the self-hosted Noto Sans subset for the script loads with the
    card, and the Noto Serif faces of the boards apply where the device has them. */
+/* Latin elements inherit the active theme display/body fonts; CJK scripts select their Noto faces. */
 :is(.flashcard-face, .flashcard-back)[data-card-kind="language"] {
-  --lang-serif: "Noto Serif CJK KR", "Noto Serif KR", "Noto Sans KR", serif;
-  --lang-sans: "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
+  --lang-serif: var(--sf-font-display);
+  --lang-sans: var(--sf-font-sans, inherit);
   --lang-tone-1: var(--sf-tone-1);
   --lang-tone-2: var(--sf-tone-2);
   --lang-tone-3: var(--sf-tone-3);
@@ -4956,6 +5303,11 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   font-weight: 900;
 }
 
+:root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-art-glyph[data-watermark-script="latin"] {
+  color: var(--lang-watermark-latin);
+  font-style: italic;
+}
+
 .flashcard-face[data-card-kind="language"][data-card-look="paper"] .flashcard-body-scroll {
   padding-top: 0;
 }
@@ -4963,6 +5315,10 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 .flashcard-face[data-card-kind="language"] .flashcard-meta {
   margin-top: 4px;
   padding-right: 0;
+}
+
+:root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-meta {
+  margin-top: 0;
 }
 
 .flashcard-face[data-card-kind="language"] .flashcard-body-scroll {
@@ -5072,6 +5428,62 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   text-shadow: none;
   filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent));
 }
+
+/* Latin headword: fraunces classic / Kanit italic crystal with article, stress tier, and responsive 390px sizing. */
+.flashcard-lang-word[data-latin-headword="true"] {
+  margin-top: 8px;
+  font-family: var(--sf-font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(38px, calc(66 / 380 * 100cqi), 66px);
+  font-weight: 440;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+}
+
+.flashcard-lang-word[data-latin-headword="true"][data-latin-size="article"] {
+  font-size: clamp(34px, calc(58 / 380 * 100cqi), 58px);
+}
+
+.flashcard-lang-word[data-latin-headword="true"][data-latin-size="long"] {
+  font-size: clamp(29px, calc(46 / 380 * 100cqi), 46px);
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-word[data-latin-headword="true"] {
+  font-weight: 380;
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-word[data-latin-headword="true"] .flashcard-lang-accent {
+  font-style: italic;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-word[data-latin-headword="true"] {
+  margin-top: 4px;
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-word[data-latin-headword="true"][data-latin-size="article"] {
+  font-size: clamp(34px, calc(58 / 388 * 100cqi), 58px);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-word[data-latin-headword="true"][data-latin-size="long"] {
+  font-size: clamp(27px, calc(40 / 388 * 100cqi), 40px);
+}
+
+.flashcard-lang-article {
+  font-style: italic;
+  font-weight: 500;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-article {
+  font-weight: 700;
+}
+
+.flashcard-lang-article[data-gender="m"] { color: var(--lang-gender-m); }
+.flashcard-lang-article[data-gender="f"] { color: var(--lang-gender-f); }
+.flashcard-lang-article[data-gender="n"] { color: var(--lang-gender-n); }
 
 .flashcard-lang-rt {
   color: var(--lang-ruby);
@@ -5286,6 +5698,200 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   font-weight: 900;
 }
 
+/* Latin pronunciation: accent selector pills, monospace IPA, dot-separated syllables. */
+.flashcard-lang-latin-reading {
+  gap: 5px;
+}
+
+.flashcard-lang-ipa-row {
+  gap: 6px;
+}
+
+.flashcard-lang-ipa-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -10px -5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.flashcard-lang-ipa-pill-face {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--lang-chip-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  transition: inherit;
+}
+
+.flashcard-lang-ipa-pill[aria-pressed="true"] .flashcard-lang-ipa-pill-face {
+  border-color: var(--lang-accent-line);
+  background: color-mix(in srgb, var(--sf-brand) 14%, transparent);
+  color: var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-lang-ipa-pill[aria-pressed="true"] .flashcard-lang-ipa-pill-face {
+  background: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+}
+
+:root[data-theme-family="crystal"] .flashcard-face[data-card-look="crystal"] .flashcard-lang-ipa-pill .flashcard-lang-ipa-pill-face {
+  padding: 0 9px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--lang-chip-bg);
+  font-family: var(--sf-font-display);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+:root[data-theme-family="crystal"] .flashcard-face[data-card-look="crystal"] .flashcard-lang-ipa-pill[aria-pressed="true"] .flashcard-lang-ipa-pill-face {
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-brand);
+}
+
+.flashcard-lang-ipa {
+  color: var(--sf-text-body);
+  font-size: 15px;
+}
+
+.flashcard-lang-syllables {
+  color: var(--sf-text-muted);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-syllables {
+  color: var(--sf-text-subtle);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+/* Chips row and grammatical gender badges */
+.flashcard-lang-chips {
+  margin-top: 14px;
+  gap: 6px;
+}
+
+.flashcard-lang-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--lang-chip-line);
+  border-radius: 999px;
+  background: var(--lang-chip-bg);
+  color: var(--sf-text-body);
+  font-family: var(--lang-sans);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-chip {
+  border-color: color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
+  background: color-mix(in srgb, var(--sf-hero-text) 34%, var(--sf-on-brand));
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-chips {
+  margin-top: 12px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-chip {
+  padding: 0 11px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 16%, transparent);
+  color: var(--sf-text-strong);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.flashcard-lang-genders {
+  margin-top: 10px;
+  gap: 6px;
+}
+
+.flashcard-lang-gender {
+  --gender-color: var(--sf-text-muted);
+  --gender-soft: transparent;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border: 1.5px solid var(--gender-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gender-color);
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.45;
+}
+
+.flashcard-lang-gender[data-gender="m"] {
+  --gender-color: var(--lang-gender-m);
+  --gender-soft: var(--lang-gender-soft-m);
+}
+
+.flashcard-lang-gender[data-gender="f"] {
+  --gender-color: var(--lang-gender-f);
+  --gender-soft: var(--lang-gender-soft-f);
+}
+
+.flashcard-lang-gender[data-gender="n"] {
+  --gender-color: var(--lang-gender-n);
+  --gender-soft: var(--lang-gender-soft-n);
+}
+
+.flashcard-lang-gender[data-active="true"] {
+  background: var(--gender-soft);
+  opacity: 1;
+}
+
+.flashcard-lang-gender-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flashcard-lang-gender-art {
+  font-family: var(--sf-font-display);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-gender {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 2px var(--gender-color);
+  font-size: 12.5px;
+  font-weight: 900;
+  transform: skewX(-12deg);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-gender-inner {
+  transform: skewX(12deg);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-gender-art {
+  font-size: 15px;
+}
+
 /* Example and phrases */
 .flashcard-lang-label {
   margin: 0;
@@ -5334,6 +5940,18 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   font-family: var(--lang-sans);
   font-size: 9.5px;
   font-weight: 400;
+}
+
+.flashcard-lang-example-reading {
+  margin: 3px 0 0;
+  color: var(--sf-text-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-example-reading {
+  margin-top: 2px;
+  font-weight: 700;
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-example {
@@ -5499,7 +6117,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-actions {
-  padding: 16px 0 12px;
+  padding: 0 0 6px;
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-actions .flashcard-action {
@@ -5555,6 +6173,16 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   font-size: 18px;
 }
 
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-translation {
+  font-size: clamp(32px, 12.1cqi, 48px);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-word {
+  font-family: var(--lang-sans);
+  font-size: 18px;
+  font-weight: 900;
+}
+
 .flashcard-back[data-card-kind="language"] .flashcard-lang-example-text {
   margin: 0;
   font-family: var(--lang-serif);
@@ -5563,8 +6191,271 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   line-height: 1.45;
 }
 
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-example-text[data-latin-example="true"] {
+  font-style: italic;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-example-text[data-latin-example="true"] > span {
+  font-style: normal;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-text {
+  font-family: var(--lang-sans);
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .flashcard-back[data-card-kind="language"] .flashcard-lang-example-text:lang(ja) {
   line-height: 1.9;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-example-reading {
+  margin: 4px 0 0;
+  color: var(--sf-text-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-reading {
+  margin-top: 3px;
+  font-weight: 700;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-hanviet {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+  margin-top: 12px;
+  padding: 2px 14px;
+  border: 1px dashed var(--lang-accent-line);
+  border-radius: 999px;
+  color: var(--sf-text-body);
+  font-size: 13px;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-hanviet-label {
+  color: var(--sf-text-subtle);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-hanviet-source {
+  color: var(--sf-text-strong);
+  font-family: "Noto Serif CJK SC", "Noto Serif SC", serif;
+  font-size: 16px;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-hanviet-reading {
+  color: var(--sf-brand);
+  font-weight: 650;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-hanviet {
+  border-color: color-mix(in srgb, var(--flashcard-ink-accent) 40%, transparent);
+  color: var(--flashcard-ink-body);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-hanviet-label {
+  color: var(--flashcard-ink-muted);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-hanviet-source {
+  color: var(--flashcard-ink-text);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-hanviet-reading {
+  color: var(--flashcard-ink-accent);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-hanviet {
+  margin-top: 10px;
+  padding: 2px 16px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--lang-hanviet-bg);
+  box-shadow: inset 2px 0 0 var(--lang-gold-line);
+  color: var(--sf-text-body);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-hanviet-label {
+  color: var(--lang-gold-text);
+  font-family: var(--sf-font-display);
+  font-size: 11.5px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-hanviet-source {
+  font-family: "Noto Sans SC", "Noto Sans CJK SC", sans-serif;
+  font-weight: 900;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-hanviet-reading {
+  color: var(--sf-brand-text);
+  font-weight: 900;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-self: stretch;
+  gap: 6px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-related-label {
+  margin-right: 4px;
+  color: var(--sf-text-subtle);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-related-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 2px 10px;
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 9%, transparent);
+  border-radius: 999px;
+  background: var(--lang-chip-bg);
+  color: var(--sf-text-strong);
+  font-size: 12.5px;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-related-word {
+  font-family: var(--lang-sans);
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-related-gloss {
+  color: var(--sf-text-subtle);
+  font-size: 11.5px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-related-label,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-related-gloss {
+  color: var(--flashcard-ink-muted);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-related-chip {
+  border-color: color-mix(in srgb, var(--flashcard-ink-body) 14%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-body) 6%, transparent);
+  color: var(--flashcard-ink-text);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-related {
+  margin-top: 10px;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-related-label {
+  margin-right: 2px;
+  color: var(--sf-text-subtle);
+  font-family: var(--sf-font-display);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-related-chip {
+  padding: 2px 11px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text-strong);
+  font-weight: 800;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-related-gloss {
+  font-weight: 600;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-forms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-self: stretch;
+  gap: 6px;
+  margin-top: 14px;
+  text-align: left;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-form-cell {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 9%, transparent);
+  border-radius: 12px;
+  background: var(--lang-chip-bg);
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-form-label {
+  color: var(--sf-text-subtle);
+  font-size: 10.5px;
+  font-weight: 550;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-form-value {
+  margin-top: 3px;
+  overflow-wrap: break-word;
+  color: var(--sf-text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-form-cell {
+  border-color: color-mix(in srgb, var(--flashcard-ink-body) 14%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-body) 6%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-form-label {
+  color: var(--flashcard-ink-muted);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-form-value {
+  color: var(--flashcard-ink-text);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-forms {
+  margin-top: 12px;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-form-cell {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-form-label {
+  color: var(--sf-text-subtle);
+  font-family: var(--sf-font-display);
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-form-value {
+  margin-top: 2px;
+  font-weight: 800;
 }
 
 .flashcard-back[data-card-kind="language"] .flashcard-back-example-word {
@@ -5588,8 +6479,104 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 @media (max-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-art[data-card-art-kind="glyph"] {
+    min-height: 58px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip {
+    margin: 14px 0 4px 18px;
+  }
+
   :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-body-scroll {
     padding: 0 22px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-word:not([data-latin-headword="true"]) {
+    margin-top: 4px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-word:lang(ko) {
+    font-size: clamp(34px, calc(100cqi / (var(--headword-chars, 4) * 1.08)), 56px);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-chips {
+    margin-top: 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-example {
+    margin-top: 10px;
+    padding: 9px 12px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-example-text:lang(ja) {
+    font-size: 16px;
+    line-height: 1.72;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-phrases {
+    margin-top: 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-phrase {
+    min-height: 26px;
+    font-size: 13px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-lang-actions {
+    padding: 8px 0 10px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-art[data-card-art-kind="glyph"] {
+    min-height: 54px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-body {
+    margin-top: -6px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-body-scroll {
+    padding: 0 22px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-word:not([data-latin-headword="true"]) {
+    margin-top: 2px;
+    font-size: clamp(34px, calc(100cqi / (var(--headword-chars, 2) * 1.15)), 56px);
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-chips {
+    margin-top: 8px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-example {
+    margin-top: 10px;
+    padding: 8px 12px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-example-text:lang(ja) {
+    font-size: 16px;
+    line-height: 1.72;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-phrases {
+    margin-top: 8px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-phrase {
+    min-height: 26px;
+    font-size: 12.5px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-actions {
+    padding: 6px 0 8px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-reveal-dock {
+    padding: 0 16px 14px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-reveal {
+    min-height: 50px;
+    font-size: 17px;
   }
 }
 
@@ -5939,22 +6926,10 @@ html[data-motion="reduced"] :is([data-reading-aid], .flashcard-lang-switch-knob)
   color: var(--sf-on-brand);
 }
 
-/* The board's icon buttons (blind, star, listen) grow on hover in both looks (canvas/shared.css 28-29). */
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]),
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]),
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button,
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button {
+/* Language card top controls and play buttons use fx-press in JSX, suppressed only when disabled. */
+html:not([data-theme-family="crystal"]) .flashcard-shell[data-card-kind="language"][data-card-mode="standard"] :is(.fx-press, .fx-press-danger):disabled:is(:hover, :active) {
   transform: none;
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]):hover,
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]):hover,
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button:hover,
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button:hover {
-    transform: scale(1.06);
-  }
+  filter: none;
 }
 
 /* Meta row: part of speech, a text3 dot, the tier in its colour (LangCard.dc.html 37-41). */
@@ -6424,4 +7399,349 @@ html[data-motion="reduced"] :is([data-reading-aid], .flashcard-lang-switch-knob)
   font-size: 13.5px;
   font-style: italic;
   font-weight: 600;
+}
+
+/* Dense back cards carrying Hán-Việt, related chips, or forms fit above the return bar without scrolling on desktop. */
+@media (min-width: 641px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-header {
+    min-height: 52px;
+    padding-top: 14px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-scroll {
+    padding: 6px 26px 6px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-translation {
+    font-size: clamp(30px, calc(46 / 378 * 100cqi), 46px);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-source {
+    margin-top: 6px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-hanviet {
+    min-height: 28px;
+    margin-top: 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-example {
+    margin-top: 10px;
+    padding: 10px 14px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-example-text {
+    font-size: 16.5px;
+    line-height: 1.4;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-example-text:lang(ja) {
+    line-height: 1.75;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-example-translation {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-explanation {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-related {
+    margin-top: 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-forms {
+    margin-top: 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-form-cell {
+    padding: 6px 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-form-value {
+    font-size: 12.5px;
+    line-height: 1.25;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-tools {
+    padding-top: 6px;
+    padding-bottom: 0;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"]:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-scroll {
+    padding: 8px 24px 4px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"]:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-example {
+    margin-top: 10px;
+    padding: 10px 14px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"]:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-example-text:lang(ja) {
+    line-height: 1.72;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"]:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-explanation {
+    margin-top: 8px;
+    font-size: 13.5px;
+    line-height: 1.48;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"]:has(:is(.flashcard-back-hanviet, .flashcard-back-related, .flashcard-back-forms)) .flashcard-back-tools {
+    padding-top: 6px;
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-header {
+    min-height: 44px;
+    padding: 10px 116px 0 18px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-scroll {
+    padding: 4px 18px 4px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-translation {
+    font-size: clamp(24px, 8cqi, 34px);
+    line-height: 1.05;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-source {
+    margin-top: 4px;
+    gap: 8px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-hanviet {
+    min-height: 26px;
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-example {
+    margin-top: 6px;
+    padding: 8px 12px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-example-text {
+    font-size: 14.5px;
+    line-height: 1.35;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-example-text:lang(ja) {
+    line-height: 1.62;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-example-reading {
+    margin-top: 2px;
+    font-size: 11.5px;
+    line-height: 1.32;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-example-translation {
+    margin-top: 3px;
+    font-size: 12.5px;
+    line-height: 1.34;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-explanation {
+    margin-top: 6px;
+    font-size: 12.5px;
+    line-height: 1.36;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-related {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-related-chip {
+    min-height: 24px;
+    padding: 1px 8px;
+    font-size: 11.5px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-forms {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-form-cell {
+    padding: 5px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-form-label {
+    font-size: 9.5px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-form-value {
+    margin-top: 1px;
+    font-size: 10.5px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-tools {
+    gap: 6px;
+    padding-top: 4px;
+    padding-bottom: 0;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back :is(.flashcard-back-return, .flashcard-back-return:hover) {
+    min-height: 46px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-header {
+    min-height: 46px;
+    padding-top: 10px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-scroll {
+    padding: 4px 18px 4px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-translation {
+    font-size: clamp(24px, 8cqi, 34px);
+    line-height: 1.05;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-source {
+    margin-top: 4px;
+    gap: 8px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-hanviet {
+    min-height: 26px;
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example {
+    margin-top: 6px;
+    padding: 8px 12px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-text {
+    font-size: 14.5px;
+    line-height: 1.35;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-text:lang(ja) {
+    line-height: 1.62;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-reading {
+    margin-top: 2px;
+    font-size: 11.5px;
+    line-height: 1.32;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-translation {
+    margin-top: 3px;
+    font-size: 12.5px;
+    line-height: 1.34;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-explanation {
+    margin-top: 6px;
+    font-size: 12.5px;
+    line-height: 1.36;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-related {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-related-chip {
+    min-height: 24px;
+    padding: 1px 8px;
+    font-size: 11.5px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-forms {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-form-cell {
+    padding: 5px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-form-label {
+    font-size: 9.5px;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-form-value {
+    margin-top: 1px;
+    font-size: 10.5px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-tools {
+    gap: 6px;
+    padding-top: 4px;
+    padding-bottom: 0;
+  }
+
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-kind="language"][data-card-look="crystal"][data-card-mode="standard"] .flashcard-back .flashcard-back-return {
+    min-height: 44px;
+  }
+}
+
+/* Language card back reveal follows LangCard.dc.html / LangReview.dc.html: fx-enter -> fx-enter-2 -> fx-enter-3, backwards. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"] .flashcard-back .flashcard-back-translation {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"])[data-card-mode="standard"][data-card-flipping="to-back"] .flashcard-back :is(.flashcard-back-translation, .flashcard-back-source, .flashcard-back-hanviet, .flashcard-back-example, .flashcard-back-explanation, .flashcard-back-related, .flashcard-back-forms) {
+    opacity: 0;
+    animation: none;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back .flashcard-back-translation {
+    animation: au-in-k 420ms cubic-bezier(0.16, 1, 0.3, 1) 80ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back :is(.flashcard-back-source, .flashcard-back-hanviet) {
+    animation: au-in-k 420ms cubic-bezier(0.16, 1, 0.3, 1) 180ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation, .flashcard-back-related, .flashcard-back-forms) {
+    animation: au-in-k 420ms cubic-bezier(0.16, 1, 0.3, 1) 280ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back .flashcard-back-translation {
+    animation: ip-in-k 480ms cubic-bezier(0.16, 1, 0.3, 1) 60ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back :is(.flashcard-back-source, .flashcard-back-hanviet) {
+    animation: ip-in-k 480ms cubic-bezier(0.16, 1, 0.3, 1) 200ms backwards;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation, .flashcard-back-related, .flashcard-back-forms) {
+    animation: ip-in-k 480ms cubic-bezier(0.16, 1, 0.3, 1) 340ms backwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .flashcard-shell[data-card-kind="language"][data-card-mode="standard"] :is(.fx-press, .fx-press-danger) {
+    transition: none;
+    transform: none;
+    filter: none;
+  }
+}
+
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .flashcard-shell[data-card-kind="language"][data-card-mode="standard"] :is(.fx-press, .fx-press-danger) {
+  transition: none;
+  transform: none;
+  filter: none;
 }

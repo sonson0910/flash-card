@@ -1,26 +1,35 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties, MouseEvent, PointerEvent } from 'react';
+import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from 'react';
 import { getCachedLanguagePack, loadLanguagePack, resolveLanguagePackId } from '../../features/languagePacks/registry';
 import { loadScriptFont } from '../../features/theme/loadThemeAssets';
 import type { LanguagePack } from '../../features/languagePacks/types';
 import type { CardData } from '../../types/card';
-import { buildExampleSegments, buildLanguageCardReading, type HeadwordSegment, type JapanesePitchType, type LanguageCardReading } from './languageCardReading';
+import { cardTargetLanguageKey, isLanguagePackCard } from './cardLanguage';
+import { buildExampleSegments, buildLanguageCardReading, splitLatinHeadword, type HeadwordSegment, type JapanesePitchType, type LanguageCardReading } from './languageCardReading';
 
-type CardPack = 'ko' | 'ja' | 'zh';
+type CardPack = 'ko' | 'ja' | 'zh' | 'latin';
 
 /** BCP-47 tag for text in the card's target language, so the browser picks the right CJK glyphs. */
 export function cardTextLang(card: Pick<CardData, 'language'>): string {
   return card.language?.trim() || 'en';
 }
 
-/** The target language's own name ("한국어", "日本語", "中文"), as the Crystal card prints it. */
+function primaryLanguageCode(card: Pick<CardData, 'language'>): string {
+  const pack = resolveLanguagePackId(card.language);
+  if (pack !== 'en') return pack;
+  return (card.language ?? '').trim().toLowerCase().split(/[-_]/)[0] || 'en';
+}
+
+/** The target language's own name ("English", "Français", "Deutsch", "한국어", "日本語", "中文"), as Crystal renders it. */
 export function cardEndonym(card: Pick<CardData, 'language'>): string | null {
-  const code = resolveLanguagePackId(card.language);
-  if (code === 'en') return null;
+  const code = primaryLanguageCode(card);
   try {
-    return new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? null;
+    const raw = new Intl.DisplayNames([code], { type: 'language' }).of(code);
+    if (!raw) return null;
+    const chars = Array.from(raw);
+    return chars.length > 0 ? `${chars[0].toLocaleUpperCase(code)}${chars.slice(1).join('')}` : raw;
   } catch {
     return null;
   }
@@ -87,22 +96,53 @@ export function LanguageCardHeadword({ card, reading, showReading, isBlindMode, 
   const { _ } = useLingui();
   const pitchName = usePitchName();
   const lang = cardTextLang(card);
+  const isPackCard = isLanguagePackCard(card);
+  const pronunciations = card.languageDetails?.pronunciations ?? [];
+  const [variant, setVariant] = useState(0);
+  useEffect(() => {
+    setVariant(0);
+  }, [card.id]);
+  const activeVariant = pronunciations.length > 0 ? Math.min(variant, pronunciations.length - 1) : 0;
+  const activeIpa = pronunciations.length > 0 ? pronunciations[activeVariant].ipa : (card.phonetic?.trim() ?? '');
+  const latin = useMemo(() => (isPackCard ? null : splitLatinHeadword(card)), [card, isPackCard]);
+  const latinCharLength = latin ? Array.from(latin.article + latin.bareWord).length : 0;
+  const latinSizeTier = latinCharLength > 13 ? 'long' : latin?.article ? 'article' : 'short';
   const segments: readonly HeadwordSegment[] = reading?.headword ?? [{ text: card.word.trim() }];
   const hideRuby = reading?.pack === 'zh' && !showReading;
   const pitch = reading?.pack === 'ja' ? reading.pitch : null;
   const pitchLabel = pitch ? _({ ...pitchAccentLabelMessage, values: { name: pitchName(pitch.type) } }) : undefined;
   return (
-    <div data-card-headword className="flashcard-headword flashcard-lang-headword" data-card-pack={reading?.pack}>
-      <h2 lang={lang} className="flashcard-lang-word break-words [overflow-wrap:anywhere]" style={{ '--headword-chars': Math.max(Array.from(card.word.trim()).length, 1) } as CSSProperties}>
-        {segments.map((segment, index) => segment.ruby
-          ? (
-            <ruby key={index} data-tone={segment.tone}>
-              {segment.text}
-              <rt data-reading-aid aria-hidden={isBlindMode || hideRuby || undefined} className="flashcard-lang-rt">{hideRuby ? ' ' : segment.ruby}</rt>
-            </ruby>
-          )
-          : <span key={index} data-headword-accent={segment.accent ? 'true' : undefined} className={segment.accent ? 'flashcard-lang-accent' : undefined}>{segment.text}</span>)}
-      </h2>
+    <div data-card-headword className="flashcard-headword flashcard-lang-headword" data-card-pack={reading?.pack ?? (!isPackCard ? 'latin' : undefined)}>
+      {latin ? (
+        <h2
+          lang={lang}
+          data-latin-headword="true"
+          data-latin-size={latinSizeTier}
+          className="flashcard-lang-word break-words [overflow-wrap:anywhere]"
+          style={{ '--headword-chars': Math.max(latinCharLength, 1) } as CSSProperties}
+        >
+          {latin.article && (
+            <span data-headword-article data-gender={card.languageDetails?.gender} className="flashcard-lang-article">
+              {latin.article}
+              {latin.article.endsWith('\'') || latin.article.endsWith('’') ? '' : ' '}
+            </span>
+          )}
+          {latin.wPre}
+          {latin.wStress && <span data-headword-accent="true" className="flashcard-lang-accent">{latin.wStress}</span>}
+          {latin.wRest}
+        </h2>
+      ) : (
+        <h2 lang={lang} className="flashcard-lang-word break-words [overflow-wrap:anywhere]" style={{ '--headword-chars': Math.max(Array.from(card.word.trim()).length, 1) } as CSSProperties}>
+          {segments.map((segment, index) => segment.ruby
+            ? (
+              <ruby key={index} data-tone={segment.tone}>
+                {segment.text}
+                <rt data-reading-aid aria-hidden={isBlindMode || hideRuby || undefined} className="flashcard-lang-rt sf-ease-filter">{hideRuby ? ' ' : segment.ruby}</rt>
+              </ruby>
+            )
+            : <span key={index} data-headword-accent={segment.accent ? 'true' : undefined} className={segment.accent ? 'flashcard-lang-accent' : undefined}>{segment.text}</span>)}
+        </h2>
+      )}
       <div data-card-pronunciation className="flashcard-lang-reading flex flex-wrap items-center">
         <button
           type="button"
@@ -111,7 +151,7 @@ export function LanguageCardHeadword({ card, reading, showReading, isBlindMode, 
           data-playing={isPlayingAudio ? 'true' : 'false'}
           onPointerDown={event => event.stopPropagation()}
           onClick={onPlayAudio}
-          className="flashcard-play-button touch-manipulation flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+          className="flashcard-play-button fx-press touch-manipulation flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
           aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
           title={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
         >
@@ -119,8 +159,36 @@ export function LanguageCardHeadword({ card, reading, showReading, isBlindMode, 
             ? <span data-audio-waves="active" className="flex h-3.5 items-center gap-0.5" aria-hidden="true"><span className="wave-bar-1 h-full w-0.5 rounded-full bg-current" /><span className="wave-bar-2 h-full w-0.5 rounded-full bg-current" /><span className="wave-bar-3 h-full w-0.5 rounded-full bg-current" /><span className="wave-bar-4 h-full w-0.5 rounded-full bg-current" /></span>
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>}
         </button>
+        {latin && (pronunciations.length > 0 || activeIpa || latin.syllables.length > 0) && (
+          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-latin-reading sf-ease-filter flex min-w-0 flex-1 flex-col">
+            {(pronunciations.length > 0 || activeIpa) && (
+              <div className="flashcard-lang-ipa-row flex flex-wrap items-center">
+                {pronunciations.map((entry, index) => (
+                  <button
+                    key={`${entry.tag}-${index}`}
+                    type="button"
+                    data-card-control
+                    aria-pressed={index === activeVariant}
+                    onPointerDown={event => event.stopPropagation()}
+                    onClick={event => {
+                      event.stopPropagation();
+                      setVariant(index);
+                    }}
+                    className="flashcard-lang-ipa-pill sf-ease cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+                  >
+                    <span className="flashcard-lang-ipa-pill-face">{entry.tag}</span>
+                  </button>
+                ))}
+                {activeIpa && <span lang={lang} className="flashcard-lang-ipa font-mono">{activeIpa}</span>}
+              </div>
+            )}
+            {latin.syllables.length > 0 && (
+              <span lang={lang} className="flashcard-lang-syllables">{latin.syllables.join('·')}</span>
+            )}
+          </div>
+        )}
         {reading?.pack === 'ko' && reading.blocks.length > 0 && (
-          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-blocks flex flex-wrap">
+          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-blocks sf-ease-filter flex flex-wrap">
             {reading.blocks.map((block, index) => (
               <span key={index} className="flashcard-lang-block">
                 <span lang="ko" className="flashcard-lang-block-text">{block.text}</span>
@@ -132,7 +200,7 @@ export function LanguageCardHeadword({ card, reading, showReading, isBlindMode, 
           </div>
         )}
         {reading?.pack === 'ja' && reading.morae.length > 0 && (
-          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-kana flex flex-col">
+          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-kana sf-ease-filter flex flex-col">
             <span className="flashcard-lang-morae flex" role={pitch ? 'img' : undefined} aria-label={pitchLabel} data-pitch={pitch?.type}>
               {reading.morae.map((mora, index) => (
                 <span key={index} lang="ja" className="flashcard-lang-mora" data-high={mora.high === undefined ? undefined : String(mora.high)} data-step={mora.step ? 'true' : undefined}>{mora.text}</span>
@@ -148,7 +216,7 @@ export function LanguageCardHeadword({ card, reading, showReading, isBlindMode, 
           </div>
         )}
         {reading?.pack === 'zh' && reading.syllables.length > 0 && (
-          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-tones flex flex-wrap">
+          <div data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-tones sf-ease-filter flex flex-wrap">
             {reading.syllables.map((syllable, index) => (
               <span key={index} className="flashcard-lang-tone" data-tone={syllable.tone}>
                 <svg width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><path d={TONE_PATH[syllable.tone]} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -165,22 +233,171 @@ export function LanguageCardHeadword({ card, reading, showReading, isBlindMode, 
   );
 }
 
-/** The card's example on the front, its word marked; the block is left out when the card has no example. */
-export function LanguageCardExample({ card, reading }: { card: CardData; reading: LanguageCardReading | null }) {
-  const sentence = card.exampleSentence?.trim();
+const GENDER_PRESETS: Readonly<Record<string, readonly { art: string; g: 'm' | 'f' | 'n' }[]>> = {
+  fr: [{ art: 'le', g: 'm' }, { art: 'la', g: 'f' }],
+  de: [{ art: 'der', g: 'm' }, { art: 'die', g: 'f' }, { art: 'das', g: 'n' }],
+  es: [{ art: 'el', g: 'm' }, { art: 'la', g: 'f' }],
+};
+
+/** Compact linguistic cue chips in board order; omitted completely when a card carries none. */
+export function LanguageCardChips({ card }: { card: CardData }) {
+  const lang = cardTextLang(card);
   const pack = resolveLanguagePackId(card.language);
-  if (!sentence || pack === 'en') return null;
-  const segments = buildExampleSegments(sentence, card, pack as CardPack, reading);
+  const targetLang = cardTargetLanguageKey(card);
+  const details = card.languageDetails;
+  if (!details) return null;
+
+  const chips: ReactNode[] = [];
+
+  if (targetLang === 'en' && details.stressIndex !== undefined) {
+    chips.push(
+      <span key="stress" className="flashcard-lang-chip">
+        <Trans {...msg({ context: 'flashcard.language.stress-syllable', message: 'Stress syllable {n}' })} values={{ n: details.stressIndex + 1 }} />
+      </span>,
+    );
+  }
+
+  if (details.sinoForm?.source) {
+    // The Han characters behind the word: the traditional form for Chinese, hanja for Korean, kanji for Japanese.
+    const source = { source: details.sinoForm.source };
+    const glyphs = { 0: <span lang={pack === 'zh' ? 'zh-Hant' : lang} /> };
+    chips.push(
+      <span key="sino" className="flashcard-lang-chip">
+        {pack === 'zh'
+          ? <Trans {...msg({ context: 'flashcard.language.sino-traditional', message: 'Traditional <0>{source}</0>' })} values={source} components={glyphs} />
+          : pack === 'ko'
+            ? <Trans {...msg({ context: 'flashcard.language.sino-hanja', message: 'Hanja <0>{source}</0>' })} values={source} components={glyphs} />
+            : <Trans {...msg({ context: 'flashcard.language.sino-kanji', message: 'Kanji <0>{source}</0>' })} values={source} components={glyphs} />}
+      </span>,
+    );
+  }
+
+  if (pack === 'zh' && details.measureWord?.word) {
+    const labelWord = details.measureWord.reading
+      ? `${details.measureWord.word} ${details.measureWord.reading}`
+      : details.measureWord.word;
+    chips.push(
+      <span key="measure" lang={lang} className="flashcard-lang-chip">
+        <Trans {...msg({ context: 'flashcard.language.measure-word', message: 'Measure word {word}' })} values={{ word: labelWord }} />
+      </span>,
+    );
+  }
+
+  if (pack === 'ko' && details.spokenForm) {
+    chips.push(
+      <span key="spoken" lang={lang} className="flashcard-lang-chip">
+        <Trans {...msg({ context: 'flashcard.language.spoken-form', message: 'Spoken {form}' })} values={{ form: details.spokenForm }} />
+      </span>,
+    );
+  }
+
+  if (details.hints?.length) {
+    details.hints.forEach((hint, index) => {
+      const trimmed = hint.trim();
+      if (trimmed) {
+        chips.push(
+          <span key={`hint-${index}`} lang={lang} className="flashcard-lang-chip">{trimmed}</span>,
+        );
+      }
+    });
+  }
+
+  if (details.plural?.trim()) {
+    const plural = details.plural.trim();
+    const alreadyPrefixed = /^pl\.\s+/i.test(plural);
+    chips.push(
+      <span key="plural" lang={lang} className="flashcard-lang-chip">
+        {alreadyPrefixed
+          ? plural
+          : <Trans {...msg({ context: 'flashcard.language.plural-prefix', message: 'pl. {plural}' })} values={{ plural }} />}
+      </span>,
+    );
+  }
+
+  if (chips.length === 0) return null;
+  return (
+    <div data-card-section="chips" className="flashcard-lang-chips flex flex-wrap">
+      {chips}
+    </div>
+  );
+}
+
+/** Grammatical gender selector row for French, German, and Spanish nouns when gender metadata exists. */
+export function LanguageCardGender({ card }: { card: CardData }) {
+  const { _ } = useLingui();
+  const gender = card.languageDetails?.gender;
+  if (!gender) return null;
+  const code = primaryLanguageCode(card);
+  const options = GENDER_PRESETS[code];
+  if (!options) return null;
+
+  return (
+    <div
+      role="group"
+      data-card-section="genders"
+      aria-label={_(msg({ context: 'flashcard.language.gender-aria', message: 'Grammatical gender' }))}
+      className="flashcard-lang-genders flex flex-wrap"
+    >
+      {options.map((option) => (
+        <span
+          key={option.art}
+          data-gender={option.g}
+          data-active={option.g === gender ? 'true' : 'false'}
+          className="flashcard-lang-gender"
+        >
+          <span className="flashcard-lang-gender-inner">
+            <span className="flashcard-lang-gender-art">{option.art}</span>
+            <span>
+              {option.g === 'm'
+                ? <Trans {...msg({ context: 'flashcard.language.gender-m', message: 'masc.' })} />
+                : option.g === 'f'
+                  ? <Trans {...msg({ context: 'flashcard.language.gender-f', message: 'fem.' })} />
+                  : <Trans {...msg({ context: 'flashcard.language.gender-n', message: 'neut.' })} />}
+            </span>
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** The card's example on the front, its word marked; the block is left out when the card has no example. */
+export function LanguageCardExample({
+  card,
+  reading,
+  showReading = true,
+  isBlindMode = false,
+}: {
+  card: CardData;
+  reading: LanguageCardReading | null;
+  showReading?: boolean;
+  isBlindMode?: boolean;
+}) {
+  const sentence = card.exampleSentence?.trim();
+  if (!sentence) return null;
+  const pack = resolveLanguagePackId(card.language);
+  const segmentPack: CardPack = pack === 'en' ? 'latin' : pack;
+  const segments = buildExampleSegments(sentence, card, segmentPack, reading);
+  const exampleReading = showReading ? card.languageDetails?.exampleReading?.trim() : '';
   return (
     <figure data-card-section="example" className="flashcard-lang-example">
       <figcaption className="flashcard-lang-label"><Trans {...msg({ context: 'flashcard.language-card.example', message: 'Example' })} /></figcaption>
-      <p lang={cardTextLang(card)} className="flashcard-lang-example-text">
+      <p
+        lang={cardTextLang(card)}
+        data-latin-example={segmentPack === 'latin' ? 'true' : undefined}
+        className="flashcard-lang-example-text"
+      >
         {segments.map((segment, index) => !segment.highlight
           ? <span key={index}>{segment.text}</span>
           : segment.ruby
-            ? <ruby key={index} data-example-word className="flashcard-lang-example-word">{segment.text}<rt data-reading-aid className="flashcard-lang-example-rt">{segment.ruby}</rt></ruby>
+            ? <ruby key={index} data-example-word className="flashcard-lang-example-word">{segment.text}<rt data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-example-rt sf-ease-filter">{segment.ruby}</rt></ruby>
             : <span key={index} data-example-word className="flashcard-lang-example-word">{segment.text}</span>)}
       </p>
+      {exampleReading && (
+        <p data-reading-aid aria-hidden={isBlindMode || undefined} className="flashcard-lang-example-reading sf-ease-filter">
+          {exampleReading}
+        </p>
+      )}
     </figure>
   );
 }
@@ -222,7 +439,7 @@ export function LanguageReadingSwitch({ card, showReading, onToggle }: { card: C
         event.stopPropagation();
         onToggle();
       }}
-      className="flashcard-action flashcard-lang-switch touch-manipulation ml-auto flex min-h-11 shrink-0 items-center"
+      className="flashcard-action flashcard-lang-switch sf-ease touch-manipulation ml-auto flex min-h-11 shrink-0 items-center"
     >
       <span className="flashcard-lang-switch-track" aria-hidden="true"><span className="flashcard-lang-switch-knob" /></span>
       <span>{label}</span>

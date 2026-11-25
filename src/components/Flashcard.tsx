@@ -22,7 +22,7 @@ import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardBack } from './flashcard/CardBack';
 import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
-import { cardSideAnnouncement, cardSideStatus, isLanguagePackCard } from './flashcard/cardLanguage';
+import { cardSideAnnouncement, cardSideStatus, usesLanguageCardForm } from './flashcard/cardLanguage';
 import { cardTierOf, useCardLook } from './flashcard/cardLook';
 import { classicCardMotion, crystalFlipMotion, crystalTiltMotion } from './flashcard/crystalCardMotion';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
@@ -127,10 +127,27 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   latestEditOpenChangeRef.current = onEditOpenChange;
   const [isBlindMode, setIsBlindMode] = useState(initialBlind);
   const [showReading, setShowReading] = useState(true);
-  const isPackCard = isLanguagePackCard(data);
+  const isLangForm = usesLanguageCardForm(data);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
+  const [starPulse, setStarPulse] = useState(false);
+  const prevStarRef = useRef({ id: data.id, bookmarked: Boolean(data.bookmarked) });
   const [isZenMode] = useZenGlassMode();
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const next = Boolean(data.bookmarked);
+    if (prevStarRef.current.id !== data.id) {
+      prevStarRef.current = { id: data.id, bookmarked: next };
+      setStarPulse(false);
+      return;
+    }
+    if (!prevStarRef.current.bookmarked && next) {
+      setStarPulse(true);
+    } else if (!next) {
+      setStarPulse(false);
+    }
+    prevStarRef.current.bookmarked = next;
+  }, [data.id, data.bookmarked]);
   const cancelLearningDetailsFocusRestore = () => {
     if (learningDetailsFocusTimerRef.current !== null) {
       globalThis.clearTimeout(learningDetailsFocusTimerRef.current);
@@ -186,10 +203,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
   const cardLook = useCardLook();
   const isCrystalCard = cardLook === 'crystal' && !isZenMode;
+  const isClassicLangCard = isLangForm && cardLook !== 'crystal' && !isZenMode;
   // Classic standard cards turn and tilt on their seed board's curves (Aurora dark, Atelier light);
   // the language card turns in 640 ms and tilts 4deg in both looks (LangCard.dc.html 496, 515).
   const classicMotion = !isZenMode && cardLook !== 'crystal'
-    ? (isPackCard ? classicCardMotion.aurora : classicCardMotion[cardLook])
+    ? (isLangForm ? classicCardMotion.aurora : classicCardMotion[cardLook])
     : null;
   const boardFlip = isCrystalCard ? crystalFlipMotion : classicMotion?.flip ?? null;
 
@@ -403,7 +421,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
       data-card-mode={isZenMode ? 'zen' : 'standard'}
       data-card-look={cardLook}
-      data-card-kind={isPackCard ? 'language' : undefined}
+      data-card-kind={isLangForm ? 'language' : undefined}
       data-card-hovered={isHovered ? 'true' : 'false'}
       data-card-blind={isBlindMode ? 'true' : 'false'}
       data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"
@@ -687,12 +705,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                 onToggleBookmark(data.id);
               }}
               data-selected={data.bookmarked ? 'true' : 'false'}
-              className="flashcard-chrome-button flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-chrome-button flashcard-reward-button${isClassicLangCard ? ' fx-press' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               title={data.bookmarked ? _(msg({ id: 'flashcard.star.remove', message: 'Remove star' })) : _(msg({ id: 'flashcard.star.add', message: 'Star this word' }))}
               aria-label={data.bookmarked ? _(msg({ id: 'flashcard.star.remove', message: 'Remove star' })) : _(msg({ id: 'flashcard.star.add', message: 'Star this word' }))}
               aria-pressed={data.bookmarked}
             >
-              <span className={data.bookmarked ? 'flashcard-star-selected' : undefined}>
+              <span className={starPulse ? 'flashcard-star-selected' : undefined} onAnimationEnd={() => setStarPulse(false)}>
                 <Star size={17} className={data.bookmarked ? 'fill-current' : ''} aria-hidden="true" />
               </span>
             </button>
@@ -708,9 +726,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                 setIsBlindMode(value => !value);
               }}
               data-selected={isBlindMode ? 'true' : 'false'}
-              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-chrome-button${isClassicLangCard ? ' fx-press' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               title={isBlindMode ? _(msg({ id: 'flashcard.hints.show', message: 'Show hints' })) : _(msg({ id: 'flashcard.hints.hide', message: 'Hide hints' }))}
-              aria-label={isPackCard
+              aria-label={isLangForm
                 ? isBlindMode
                   ? _({ ...showReadingsMessage, values: { image: supportedImageUrl ? 'yes' : 'no' } })
                   : _({ ...hideReadingsMessage, values: { image: supportedImageUrl ? 'yes' : 'no' } })
@@ -724,7 +742,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           {onEditDelete && onUpdateCard && !isFlipped && (
             <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
               onClick={event => { event.stopPropagation(); setEditDialogOpen(true); }}
-              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-chrome-button${isClassicLangCard ? ' fx-press' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               title={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))} aria-label={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))}><Pencil size={16} aria-hidden="true" /></button>
           )}
 
@@ -734,7 +752,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
               data-card-danger
-              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,opacity,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100"
+              className={`flashcard-chrome-button${isClassicLangCard ? ' fx-press-danger' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,opacity,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100`}
               title={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
               aria-label={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
             >
@@ -825,6 +843,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           backFlipRef={backFlipRef}
           focusAfterFlipRef={focusAfterFlipRef}
           showCardSide={showCardSide}
+          showReading={showReading}
         />
         )}
       </div>
@@ -833,7 +852,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
         <audio ref={audioRef} src={data.audioUrl} preload={imagePriority ? 'metadata' : 'none'} />
       )}
     </div>
-    {hasHangulReviewPanel && <Suspense fallback={null}><div className="hangul-breakdown-slot"><HangulBreakdown word={data.word} /></div></Suspense>}
+    {hasHangulReviewPanel && <Suspense fallback={null}><div className="hangul-breakdown-slot fx-enter-3"><HangulBreakdown word={data.word} /></div></Suspense>}
     </div>
   );
 });

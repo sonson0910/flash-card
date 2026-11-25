@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveStaticJapanesePitchAccent } from '../../features/languagePacks/japanesePitch';
 import { loadLanguagePack } from '../../features/languagePacks/registry';
 import type { CardData } from '../../types/card';
-import { buildExampleSegments, buildLanguageCardReading, findExampleWord } from './languageCardReading';
+import { buildExampleSegments, buildLanguageCardReading, findExampleWord, splitLatinHeadword, stripLeadingArticle } from './languageCardReading';
 
 type ReadingCard = Pick<CardData, 'word' | 'phonetic' | 'partOfSpeech' | 'japanesePitchAccent'>;
 
@@ -139,5 +139,84 @@ describe('buildExampleSegments', () => {
       { text: '机会', highlight: true, ruby: undefined },
       { text: '。' },
     ]);
+  });
+
+  it('strips leading articles and matches Latin words case-insensitively inside example sentences', () => {
+    expect(stripLeadingArticle('la décision', 'la')).toBe('décision');
+    expect(stripLeadingArticle('die Entscheidung', 'die')).toBe('Entscheidung');
+    expect(stripLeadingArticle('l’histoire', 'l’')).toBe('histoire');
+    expect(stripLeadingArticle('décision', 'la')).toBe('décision');
+
+    expect(buildExampleSegments(
+      'Elle a pris une décision importante.',
+      { word: 'la décision', partOfSpeech: 'noun', languageDetails: { article: 'la' } },
+      'latin',
+      null,
+    )).toEqual([
+      { text: 'Elle a pris une ' },
+      { text: 'décision', highlight: true, ruby: undefined },
+      { text: ' importante.' },
+    ]);
+
+    expect(findExampleWord(
+      'Immediate action is required.',
+      { word: 'immediate', partOfSpeech: 'adjective' },
+      'latin',
+    )).toEqual({ start: 0, end: 9 });
+
+    expect(findExampleWord(
+      'Unrelated choice.',
+      { word: 'décision', partOfSpeech: 'noun' },
+      'latin',
+    )).toBeNull();
+  });
+
+  it('splits Latin headwords using explicit languageDetails and limits English syllable fallback to English', () => {
+    expect(splitLatinHeadword({
+      word: 'la décision',
+      phonetic: '/de.si.zjɔ̃/',
+      language: 'fr',
+      languageDetails: {
+        article: 'la',
+        syllables: ['dé', 'ci', 'sion'],
+        stressIndex: 2,
+      },
+    })).toEqual({
+      article: 'la',
+      bareWord: 'décision',
+      wPre: 'déci',
+      wStress: 'sion',
+      wRest: '',
+      syllables: ['dé', 'ci', 'sion'],
+      stressIndex: 2,
+    });
+
+    expect(splitLatinHeadword({
+      word: 'décision',
+      phonetic: '/de.si.zjɔ̃/',
+      language: 'fr',
+    })).toEqual({
+      article: '',
+      bareWord: 'décision',
+      wPre: 'décision',
+      wStress: '',
+      wRest: '',
+      syllables: [],
+      stressIndex: null,
+    });
+
+    expect(splitLatinHeadword({
+      word: 'immediate',
+      phonetic: '/ɪˈmiːdiət/',
+      language: 'en',
+    })).toEqual({
+      article: '',
+      bareWord: 'immediate',
+      wPre: 'immediate',
+      wStress: '',
+      wRest: '',
+      syllables: ['imme', 'diate'],
+      stressIndex: null,
+    });
   });
 });

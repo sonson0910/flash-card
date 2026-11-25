@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { AudioLines } from 'lucide-react';
 import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from 'react';
-import { resolveLanguagePackId } from '../../features/languagePacks/registry';
+import { cardTargetLanguageKey } from './cardLanguage';
 import { parseSyllables } from '../../lib/syllableParser';
 import type { CardData } from '../../types/card';
 import { ReadingToggle } from './ReadingToggle';
@@ -37,7 +37,7 @@ function renderLuminescentPhonetic(phonetic?: string | null, onDarkSurface = fal
  * is the one case the orthographic split can place without guessing.
  */
 export function headwordStressParts(card: Pick<CardData, 'word' | 'phonetic' | 'language'>) {
-  if (resolveLanguagePackId(card.language) !== 'en') return null;
+  if (cardTargetLanguageKey(card) !== 'en') return null;
   const ipa = (card.phonetic || '').trim().replace(/^[/[]\s*/, '');
   if (!ipa.startsWith('ˈ')) return null;
   const word = card.word.trim();
@@ -62,7 +62,7 @@ export function CardHeadword({ card, variant = 'standard', onPlayAudio, isPlayin
   const { _ } = useLingui();
   const { word, phonetic } = card;
   const targetLanguage = card.language || 'en';
-  const isEnglish = resolveLanguagePackId(card.language) === 'en';
+  const isEnglish = cardTargetLanguageKey(card) === 'en';
 
   if (variant !== 'standard') {
     return (

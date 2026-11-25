@@ -273,7 +273,7 @@ msgctxt "progress.learning-since"
 msgid "Learning since {date}"
 msgstr "Bắt đầu học từ {date}"
 
-#: src/components/stats/StatsCharts.tsx:181
+#: src/components/stats/StatsCharts.tsx:192
 msgctxt "stats.review-activity-partial"
 msgid "Coverage begins {date}; this range is partial."
 msgstr "Dữ liệu bắt đầu từ {date}; khoảng thời gian này chưa đầy đủ."
@@ -288,7 +288,7 @@ msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr "Chú thích"
 
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:176
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:178
 msgctxt "weeklyRecap.saved-warning"
 msgid "Showing saved recap. Recent reviews may not be included."
 msgstr "Đang hiển thị bản tổng kết đã lưu. Các lượt ôn gần đây có thể chưa được tính."
@@ -298,7 +298,7 @@ msgctxt "weeklyRecap.selection.legend"
 msgid "Show on the card"
 msgstr "Hiển thị trên thẻ"
 
-#: src/components/stats/ReviewRangeToggle.tsx:80
+#: src/components/stats/ReviewRangeToggle.tsx:84
 msgctxt "stats.review-range-all-time"
 msgid "All time"
 msgstr "Tất cả"
@@ -308,12 +308,12 @@ msgctxt "progress.learning-since.kicker"
 msgid "since {date}"
 msgstr "từ {date}"
 
-#: src/components/stats/ReviewRangeToggle.tsx:78
+#: src/components/stats/ReviewRangeToggle.tsx:82
 msgctxt "stats.review-range-30-days"
 msgid "30 days"
 msgstr "30 ngày"
 
-#: src/components/stats/ReviewRangeToggle.tsx:79
+#: src/components/stats/ReviewRangeToggle.tsx:83
 msgctxt "stats.review-range-26-weeks"
 msgid "26 weeks"
 msgstr "26 tuần"
@@ -537,7 +537,7 @@ msgid "stats.heatmap-legend"
 msgstr "Mức độ học từ ít đến nhiều"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ReviewRangeToggle.tsx:77
+#: src/components/stats/ReviewRangeToggle.tsx:81
 #: src/components/stats/StatsCharts.tsx:60
 msgid "stats.heatmap-title"
 msgstr "Hoạt động ôn tập"
@@ -953,12 +953,12 @@ msgid "weeklyRecap.counted-since"
 msgstr "Số từ theo tuần được đếm từ ngày {date}."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:173
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:175
 msgid "weeklyRecap.dialog.close"
 msgstr "Đóng"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:174
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:65
 msgid "weeklyRecap.dialog.title"
 msgstr "Tổng kết tuần của bạn"

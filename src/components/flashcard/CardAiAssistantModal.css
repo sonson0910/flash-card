@@ -290,6 +290,7 @@ html[data-theme-family="crystal"] .card-tutor-send-surface {
 :where(html:not([data-theme-family=crystal])) .card-tutor-word { line-height: 1; }
 :where(html:not([data-theme-family=crystal])) .card-tutor-preset { background: transparent; }
 :where(html:not([data-theme-family=crystal])) .card-tutor-input { color: var(--sf-text-strong, var(--sf-text)); }
+html:not([data-theme-family="crystal"]) .card-tutor-send.fx-press:disabled:is(:hover, :active) { transform: none; filter: none; }
 
 @media (max-width: 639px) {
   .card-tutor .overlay-dialog-header { padding-right: 16px; padding-left: 20px; }
@@ -303,5 +304,7 @@ html[data-theme-family="crystal"] .card-tutor-send-surface {
 @media (prefers-reduced-motion: reduce) {
   .card-tutor-preset { transition: none; }
   .card-tutor-spinner { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .card-tutor :is(.fx-press, .fx-press-danger) { transition: none; transform: none; filter: none; }
 }
 html[data-motion="reduced"] .card-tutor-spinner { animation: none; }
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .card-tutor :is(.fx-press, .fx-press-danger) { transition: none; transform: none; filter: none; }

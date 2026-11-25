@@ -273,7 +273,7 @@ msgctxt "progress.learning-since"
 msgid "Learning since {date}"
 msgstr ""
 
-#: src/components/stats/StatsCharts.tsx:181
+#: src/components/stats/StatsCharts.tsx:192
 msgctxt "stats.review-activity-partial"
 msgid "Coverage begins {date}; this range is partial."
 msgstr ""
@@ -288,7 +288,7 @@ msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr ""
 
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:176
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:178
 msgctxt "weeklyRecap.saved-warning"
 msgid "Showing saved recap. Recent reviews may not be included."
 msgstr ""
@@ -298,7 +298,7 @@ msgctxt "weeklyRecap.selection.legend"
 msgid "Show on the card"
 msgstr ""
 
-#: src/components/stats/ReviewRangeToggle.tsx:80
+#: src/components/stats/ReviewRangeToggle.tsx:84
 msgctxt "stats.review-range-all-time"
 msgid "All time"
 msgstr ""
@@ -308,12 +308,12 @@ msgctxt "progress.learning-since.kicker"
 msgid "since {date}"
 msgstr ""
 
-#: src/components/stats/ReviewRangeToggle.tsx:78
+#: src/components/stats/ReviewRangeToggle.tsx:82
 msgctxt "stats.review-range-30-days"
 msgid "30 days"
 msgstr ""
 
-#: src/components/stats/ReviewRangeToggle.tsx:79
+#: src/components/stats/ReviewRangeToggle.tsx:83
 msgctxt "stats.review-range-26-weeks"
 msgid "26 weeks"
 msgstr ""
@@ -537,7 +537,7 @@ msgid "stats.heatmap-legend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ReviewRangeToggle.tsx:77
+#: src/components/stats/ReviewRangeToggle.tsx:81
 #: src/components/stats/StatsCharts.tsx:60
 msgid "stats.heatmap-title"
 msgstr ""
@@ -953,12 +953,12 @@ msgid "weeklyRecap.counted-since"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:173
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:175
 msgid "weeklyRecap.dialog.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:174
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:65
 msgid "weeklyRecap.dialog.title"
 msgstr ""

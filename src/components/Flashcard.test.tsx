@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Flashcard } from './Flashcard';
+import { ReviewControls } from './study/ReviewControls';
 
 const accountSession = vi.hoisted(() => ({ signedIn: false }));
 vi.mock('../features/account/accountDataService', () => ({
@@ -113,7 +114,7 @@ describe('Flashcard mobile controls', () => {
           emoji: '🎯',
           category: 'Study',
           audioUrl: null,
-          imageUrl: null,
+          imageUrl: 'https://images.pexels.com/photos/123/flashcard-language.jpg',
           mnemonic: 'Think of a camera lens.',
         }}
         initialSide="back"
@@ -190,11 +191,34 @@ describe('Flashcard mobile controls', () => {
     expect(html).not.toContain('**bờ**');
   });
 
-  it('uses the same centered minimal action for returning to English', () => {
-    const html = renderCard(
+  it('uses the same centered minimal action for returning to English on pictured cards and Back to front on language cards', () => {
+    const pictured = renderCard(
       <Flashcard
         data={{
           id: 'return-action',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: 'https://images.pexels.com/photos/123/flashcard-language.jpg',
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(pictured).toContain('data-return-to-english="true"');
+    expect(pictured).toContain('flashcard-back-return group/back relative z-20 flex w-full shrink-0');
+    expect(pictured).toContain('data-return-hover-edge="true"');
+    expect(pictured).toContain('<span>Back to English</span>');
+    expect(pictured).not.toContain('Return to “focus”');
+
+    const languageForm = renderCard(
+      <Flashcard
+        data={{
+          id: 'return-action-lang',
           word: 'focus',
           translation: 'tập trung',
           explanation: 'A clear explanation.',
@@ -208,11 +232,8 @@ describe('Flashcard mobile controls', () => {
       />,
     );
 
-    expect(html).toContain('data-return-to-english="true"');
-    expect(html).toContain('flashcard-back-return group/back relative z-20 flex w-full shrink-0');
-    expect(html).toContain('data-return-hover-edge="true"');
-    expect(html).toContain('<span>Back to English</span>');
-    expect(html).not.toContain('Return to “focus”');
+    expect(languageForm).toContain('data-card-kind="language"');
+    expect(languageForm).toContain('<span>Back to front</span>');
   });
 
   it('renders meaning reveal as a centered unframed secondary action', () => {
@@ -375,13 +396,128 @@ describe('Flashcard language presentation', () => {
     expect(back).toContain('>In English<');
   });
 
-  it('keeps the definition and English names on an English card', () => {
-    const front = renderCard(<Flashcard data={{ ...koreanCard, id: 'english', word: 'decide', language: 'en', exampleSentence: 'We decide today.' }} />);
+  it('keeps the definition and non-language card form on a pictured English card', () => {
+    const front = renderCard(<Flashcard data={{
+      ...koreanCard,
+      id: 'english',
+      word: 'decide',
+      language: 'en',
+      exampleSentence: 'We decide today.',
+      imageUrl: 'https://images.pexels.com/photos/123/flashcard-language.jpg',
+    }} />);
 
     expect(front).not.toContain('data-card-kind="language"');
     expect(front).not.toContain('data-card-section="example"');
     expect(front).toContain('To make a firm decision to do something.');
     expect(front).toContain('aria-label="decide flashcard. Showing the English word."');
+  });
+
+  it('uses the full language card form on unpictured Latin cards with structured details and preserves motion roles', () => {
+    const frenchFront = renderCard(
+      <Flashcard
+        data={{
+          id: 'lang-fr',
+          language: 'fr',
+          translationLanguage: 'en',
+          word: 'la décision',
+          translation: 'decision',
+          explanation: 'To make a decision.',
+          explanationTranslation: 'prendre une décision = to make a decision.',
+          phonetic: '/de.si.zjɔ̃/',
+          emoji: '🧭',
+          category: 'DELF B1',
+          partOfSpeech: 'noun',
+          audioUrl: null,
+          imageUrl: null,
+          exampleSentence: 'Elle a pris une décision importante.',
+          exampleTranslation: 'She made an important decision.',
+          wordFamily: { verb: 'décider', adj: 'décisif' },
+          languageDetails: {
+            pronunciations: [{ tag: 'FR', ipa: '/de.si.zjɔ̃/' }],
+            syllables: ['dé', 'ci', 'sion'],
+            stressIndex: 2,
+            article: 'la',
+            indefiniteArticle: 'une',
+            gender: 'f',
+            plural: 'les décisions',
+            hints: ['-sion → feminine'],
+          },
+        }}
+        onToggleBookmark={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+    expect(frenchFront).toContain('data-card-kind="language"');
+    expect(frenchFront).toContain('data-latin-headword="true"');
+    expect(frenchFront).toContain('data-headword-article="true" data-gender="f"');
+    expect(frenchFront).toContain('class="flashcard-lang-accent">sion</span>');
+    expect(frenchFront).toContain('dé·ci·sion');
+    expect(frenchFront).toContain('flashcard-lang-ipa-pill-face">FR</span>');
+    expect(frenchFront).toContain('data-card-section="chips"');
+    expect(frenchFront).toContain('pl. les décisions');
+    expect(frenchFront).toContain('data-card-section="genders"');
+    expect(frenchFront).toContain('data-example-word="true" class="flashcard-lang-example-word">décision</span>');
+    expect(frenchFront).toContain('flashcard-reward-button fx-press');
+    expect(frenchFront).toContain('flashcard-chrome-button fx-press-danger');
+    expect(frenchFront).toContain('flashcard-lang-say fx-press');
+    expect(frenchFront).not.toContain('data-reading-toggle="true"');
+
+    const frenchBack = renderCard(
+      <Flashcard
+        data={{
+          id: 'lang-fr',
+          language: 'fr',
+          translationLanguage: 'en',
+          word: 'la décision',
+          translation: 'decision',
+          explanation: 'To make a decision.',
+          explanationTranslation: 'prendre une décision = to make a decision.',
+          phonetic: '/de.si.zjɔ̃/',
+          emoji: '🧭',
+          category: 'DELF B1',
+          partOfSpeech: 'noun',
+          audioUrl: null,
+          imageUrl: null,
+          wordFamily: { verb: 'décider', adj: 'décisif' },
+          languageDetails: {
+            pronunciations: [{ tag: 'FR', ipa: '/de.si.zjɔ̃/' }],
+            article: 'la',
+            indefiniteArticle: 'une',
+            plural: 'les décisions',
+          },
+        }}
+        initialSide="back"
+      />,
+    );
+    expect(frenchBack).toContain('data-card-section="related"');
+    expect(frenchBack).toContain('décider');
+    expect(frenchBack).toContain('data-card-section="forms"');
+    expect(frenchBack).toContain('une décision');
+    expect(frenchBack).toContain('les décisions');
+    expect(frenchBack).not.toContain('data-card-section="hanviet"');
+    expect(frenchBack).toContain('<span>Back to front</span>');
+
+    const plainEnglishFront = renderCard(
+      <Flashcard
+        data={{
+          id: 'en-plain',
+          language: 'en',
+          translationLanguage: 'vi',
+          word: 'immediate',
+          translation: 'ngay lập tức',
+          explanation: 'Without delay.',
+          phonetic: '/ɪˈmiːdiət/',
+          emoji: '⚡',
+          category: 'General',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+      />,
+    );
+    expect(plainEnglishFront).toContain('data-card-kind="language"');
+    expect(plainEnglishFront).not.toContain('flashcard-lang-ipa-pill');
+    expect(plainEnglishFront).not.toContain('data-card-section="chips"');
+    expect(plainEnglishFront).not.toContain('data-card-section="genders"');
   });
 
   it.each(['en', 'ja', 'zh'])('does not add the Korean Hangul breakdown to %s cards', language => {
@@ -439,5 +575,45 @@ describe('Flashcard language presentation', () => {
     } finally {
       i18n.activate('en');
     }
+  });
+
+  it('keeps settled bookmarked cards free of star-pop on mount and scopes language-card motion roles', () => {
+    const starredFront = renderCard(
+      <Flashcard
+        data={{
+          id: 'starred-language-ko',
+          language: 'ko',
+          translationLanguage: 'vi',
+          word: '결심하다',
+          translation: 'quyết tâm',
+          explanation: 'To make a firm decision.',
+          phonetic: 'gyeolsimhada',
+          emoji: '💪',
+          category: 'TOPIK II',
+          partOfSpeech: 'verb',
+          audioUrl: null,
+          imageUrl: null,
+          bookmarked: true,
+        }}
+        onToggleBookmark={vi.fn()}
+      />,
+    );
+
+    expect(starredFront).not.toContain('flashcard-star-selected');
+    expect(starredFront).toContain('flashcard-reward-button fx-press');
+    expect(starredFront).toContain('flashcard-lang-say fx-press');
+    expect(starredFront).toContain('flashcard-lang-switch sf-ease');
+    expect(starredFront).toContain('flashcard-reveal group/flip relative z-20 flex min-h-[58px] w-full fx-press');
+
+    const lockedGrades = renderCard(
+      <ReviewControls revealed={false} reviewed={false} cardKind="language" onRate={vi.fn()} />,
+    );
+    const readyGrades = renderCard(
+      <ReviewControls revealed reviewed={false} cardKind="language" onRate={vi.fn()} />,
+    );
+    expect(lockedGrades).toContain('data-card-kind="language"');
+    expect(lockedGrades).not.toContain('fx-stagger');
+    expect(readyGrades).toContain('review-grades-row fx-stagger');
+    expect(readyGrades).toContain('review-grade fx-press');
   });
 });

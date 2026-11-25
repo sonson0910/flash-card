@@ -21,12 +21,9 @@ html:not([data-theme-family="crystal"]) .hangul-breakdown__part { min-width: 30p
 html:not([data-theme-family="crystal"]) .hangul-breakdown__part > span[lang="ko"] { font-family: "Noto Sans KR", "Noto Sans CJK KR", sans-serif; }
 html:not([data-theme-family="crystal"]) .hangul-breakdown__part span + span { color: var(--sf-brand); font-size: 11px; font-weight: 600; }
 /* LangReview.dc.html 55-67 at 1440: the panel stands 62px below the card top with its left edge 348px right of
-   centre (right: 72px), rises with the board's sf-rise-2 beat, keeps the board's normal line height, and draws
+   centre (right: 72px), enters with fx-enter-3 on the wrapper, keeps the board's normal line height, and draws
    44px blocks inside a 1px border (46px in all). */
 @media (min-width: 1320px) { html:not([data-theme-family="crystal"]) .hangul-breakdown-slot { left: calc(50% + 348px); top: 62px; } }
-html:not([data-theme-family="crystal"]) .hangul-breakdown-slot { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) 120ms backwards; }
-@media (prefers-reduced-motion: reduce) { html:not([data-theme-family="crystal"]) .hangul-breakdown-slot { animation: none; } }
-html[data-motion="reduced"]:not([data-theme-family="crystal"]) .hangul-breakdown-slot { animation: none; }
 html:not([data-theme-family="crystal"]) .hangul-breakdown { line-height: normal; }
 html:not([data-theme-family="crystal"]) .hangul-breakdown__block { flex-basis: 46px; height: 46px; }
 html:not([data-theme-family="crystal"]) .hangul-breakdown__parts { column-gap: 10px; }

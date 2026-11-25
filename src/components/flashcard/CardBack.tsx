@@ -11,9 +11,9 @@ import { RecoverableActionFeedback } from '../RecoverableActionFeedback';
 import { CardEffectsLayer } from './CardEffectsLayer';
 import { CardTierBadge, type CardTier } from './CardFront';
 import { CardHeadword } from './CardHeadword';
-import { cardExplanationSectionLabel, cardInMeaningLanguage, cardMeaningLanguageName, cardMeaningSectionLabel, cardReturnLabel, cardTargetLanguageKey, isLanguagePackCard } from './cardLanguage';
+import { cardExplanationSectionLabel, cardInMeaningLanguage, cardMeaningLanguageKey, cardMeaningLanguageName, cardMeaningSectionLabel, cardReturnLabel, cardTargetLanguageKey, isLanguagePackCard, usesLanguageCardForm } from './cardLanguage';
 import { useCardLook } from './cardLook';
-import { buildExampleSegments } from './languageCardReading';
+import { buildExampleSegments, splitLatinHeadword } from './languageCardReading';
 import { cardTextLang, useLanguageCardReading } from './LanguageCardFace';
 import { CardMnemonicSection } from './CardMnemonicSection';
 import { RichVietnameseExplanation } from './RichVietnameseExplanation';
@@ -47,6 +47,37 @@ interface CardBackProps {
   backFlipRef: RefObject<HTMLButtonElement | null>;
   focusAfterFlipRef: RefObject<'front' | 'back' | null>;
   showCardSide: (side: 'front' | 'back') => void;
+  showReading?: boolean;
+}
+
+type WordFamilyKey = 'adv' | 'noun' | 'verb' | 'adj';
+const WORD_FAMILY_ORDER: readonly WordFamilyKey[] = ['adv', 'noun', 'verb', 'adj'];
+
+function joinArticleAndWord(article: string, bareWord: string): string {
+  const cleanArticle = article.trim();
+  const cleanWord = bareWord.trim();
+  if (!cleanArticle) return cleanWord;
+  return cleanArticle.endsWith('\'') || cleanArticle.endsWith('’')
+    ? `${cleanArticle}${cleanWord}`
+    : `${cleanArticle} ${cleanWord}`;
+}
+
+function renderPosAbbrev(key: WordFamilyKey): ReactNode {
+  if (key === 'noun') return <Trans {...msg({ context: 'flashcard.language.pos-noun-short', message: 'n.' })} />;
+  if (key === 'verb') return <Trans {...msg({ context: 'flashcard.language.pos-verb-short', message: 'v.' })} />;
+  if (key === 'adj') return <Trans {...msg({ context: 'flashcard.language.pos-adjective-short', message: 'adj.' })} />;
+  return <Trans {...msg({ context: 'flashcard.language.pos-adverb-short', message: 'adv.' })} />;
+}
+
+function renderFormLabel(key: 'definite' | 'indefinite' | 'plural' | WordFamilyKey | 'antonym'): ReactNode {
+  if (key === 'definite') return <Trans {...msg({ context: 'flashcard.language.form-definite', message: 'definite' })} />;
+  if (key === 'indefinite') return <Trans {...msg({ context: 'flashcard.language.form-indefinite', message: 'indefinite' })} />;
+  if (key === 'plural') return <Trans {...msg({ context: 'flashcard.language.form-plural', message: 'plural' })} />;
+  if (key === 'noun') return <Trans {...msg({ context: 'flashcard.language.form-noun', message: 'noun' })} />;
+  if (key === 'verb') return <Trans {...msg({ context: 'flashcard.language.form-verb', message: 'verb' })} />;
+  if (key === 'adj') return <Trans {...msg({ context: 'flashcard.language.form-adjective', message: 'adjective' })} />;
+  if (key === 'adv') return <Trans {...msg({ context: 'flashcard.language.form-adverb', message: 'adverb' })} />;
+  return <Trans {...msg({ context: 'flashcard.language.form-antonym', message: 'antonym' })} />;
 }
 
 export function CardBack({
@@ -54,7 +85,7 @@ export function CardBack({
   setShowReportDialog, setShowEditDialog, audioSpeed, toggleAudioSpeed, playAudio, isPlayingAudio,
   startPronunciationCheck, isRecording, pronunciationError, isTranslating, translationError,
   translateExplanation, setTranslationError, learningDetailsButtonRef, setShowLearningDetails,
-  setShowAiModal, aiTutorButtonRef, backFlipRef, focusAfterFlipRef, showCardSide,
+  setShowAiModal, aiTutorButtonRef, backFlipRef, focusAfterFlipRef, showCardSide, showReading = true,
 }: CardBackProps) {
   const { _, i18n } = useLingui();
   const reading = useLanguageCardReading(data);
@@ -78,16 +109,79 @@ export function CardBack({
   const sourceLanguage = data.language || 'en';
   const meaningLanguage = data.translationLanguage || 'vi';
   const isPackCard = isLanguagePackCard(data);
-  const backReading = isPackCard ? reading?.backReading ?? data.phonetic : null;
+  const isLangForm = usesLanguageCardForm(data);
+  const classicLangMotion = isLangForm && look !== 'crystal';
+  const latinHeadword = !isPackCard && isLangForm ? splitLatinHeadword(data) : null;
+  const backHeadwordText = latinHeadword
+    ? joinArticleAndWord(latinHeadword.article, latinHeadword.bareWord)
+    : data.word;
+  const backReading = isPackCard
+    ? (reading?.backReading ?? data.phonetic)
+    : (data.languageDetails?.pronunciations?.[0]?.ipa || data.phonetic || null);
+  const sinoForm = data.languageDetails?.sinoForm;
+  const showHanviet = isLangForm && cardMeaningLanguageKey(data) === 'vi' && Boolean(sinoForm?.source);
+  const exampleReading = isLangForm && showReading ? data.languageDetails?.exampleReading?.trim() : '';
+  const relatedItems = isLangForm
+    ? (() => {
+      const synonymEntries = (data.synonyms ?? [])
+        .map(item => item.trim())
+        .filter(Boolean)
+        .map((item) => {
+          const splitIndex = item.indexOf(' · ');
+          return splitIndex > 0
+            ? { word: item.slice(0, splitIndex).trim(), gloss: item.slice(splitIndex + 3).trim(), posKey: null as WordFamilyKey | null }
+            : { word: item, gloss: '', posKey: null as WordFamilyKey | null };
+        });
+      if (synonymEntries.length > 0) return synonymEntries;
+      if (!data.wordFamily) return [];
+      return WORD_FAMILY_ORDER
+        .map((key) => {
+          const word = data.wordFamily?.[key]?.trim();
+          return word ? { word, gloss: '', posKey: key } : null;
+        })
+        .filter((entry): entry is { word: string; gloss: string; posKey: WordFamilyKey } => entry !== null);
+    })()
+    : [];
+  const formCells = isLangForm
+    ? (() => {
+      const details = data.languageDetails;
+      const baseWord = latinHeadword ? latinHeadword.bareWord : data.word.trim();
+      const hasDeclensionForms = Boolean(details?.article?.trim() || details?.indefiniteArticle?.trim() || details?.plural?.trim());
+      if (hasDeclensionForms) {
+        const items: Array<{ key: 'definite' | 'indefinite' | 'plural' | WordFamilyKey | 'antonym'; value: string }> = [];
+        if (details?.article?.trim()) items.push({ key: 'definite', value: joinArticleAndWord(details.article, baseWord) });
+        if (details?.indefiniteArticle?.trim()) items.push({ key: 'indefinite', value: joinArticleAndWord(details.indefiniteArticle, baseWord) });
+        if (details?.plural?.trim()) items.push({ key: 'plural', value: details.plural.trim().replace(/^pl\.\s+/i, '') });
+        return items.slice(0, 3);
+      }
+      const antonym = data.antonyms?.map(item => item.trim()).find(Boolean) ?? '';
+      const familyEntries = data.wordFamily
+        ? WORD_FAMILY_ORDER
+          .map((key) => {
+            const val = data.wordFamily?.[key]?.trim();
+            return val ? { key, value: val } : null;
+          })
+          .filter((entry): entry is { key: WordFamilyKey; value: string } => entry !== null)
+        : [];
+      const merged: Array<{ key: 'definite' | 'indefinite' | 'plural' | WordFamilyKey | 'antonym'; value: string }> = antonym
+        ? [...familyEntries.slice(0, 2), { key: 'antonym', value: antonym }]
+        : familyEntries.slice(0, 3);
+      return merged;
+    })()
+    : [];
   const isDue = Boolean(data.nextReviewDate) && isCardDue(data);
-  const hasLearningDetails = Boolean(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake);
+  const hasLearningDetails = Boolean(
+    data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length
+    || data.synonyms?.length || data.antonyms?.length || data.commonMistake
+    || (data.wordFamily && Object.values(data.wordFamily).some(Boolean)),
+  );
   return (
     <div
       ref={faceRef}
       data-card-face="back"
       data-card-mode="standard"
       data-card-look={look}
-      data-card-kind={isPackCard ? 'language' : undefined}
+      data-card-kind={isLangForm ? 'language' : undefined}
       style={{ transformOrigin: 'center center', borderRadius: 'var(--flashcard-radius, 34px)' }}
       className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[var(--flashcard-radius,34px)]"
     >
@@ -102,8 +196,8 @@ export function CardBack({
       <div className="flashcard-back-header relative z-20 flex shrink-0 flex-wrap items-center">
         <span className="flashcard-back-language">
           {/* The language card's ink back keeps the dot too (LangCard.dc.html 188). */}
-          {(look === 'aurora' || (isPackCard && look === 'paper')) && <span className="flashcard-back-language-dot" aria-hidden="true" />}
-          {isPackCard ? cardInMeaningLanguage(i18n, data) : cardMeaningLanguageName(i18n, data)}
+          {(look === 'aurora' || (isLangForm && look === 'paper')) && <span className="flashcard-back-language-dot" aria-hidden="true" />}
+          {isLangForm ? cardInMeaningLanguage(i18n, data) : cardMeaningLanguageName(i18n, data)}
         </span>
         {isDue && (
           <span data-card-status="due" className="flashcard-back-due">
@@ -120,8 +214,8 @@ export function CardBack({
           </h2>
           {(look === 'paper' || look === 'aurora') && <span className="flashcard-back-ink-rule" aria-hidden="true" />}
           <div className="flashcard-back-source flex flex-wrap items-center">
-            <span lang={sourceLanguage} className="flashcard-back-word">{data.word}</span>
-            {isPackCard
+            <span lang={sourceLanguage} data-latin-word={!isPackCard && isLangForm ? 'true' : undefined} className="flashcard-back-word">{backHeadwordText}</span>
+            {isLangForm
               ? backReading && <span data-card-back-reading className="flashcard-back-reading">{backReading}</span>
               : <>
                 {data.partOfSpeech && <span lang={sourceLanguage} className="flashcard-back-pos">{data.partOfSpeech}</span>}
@@ -134,7 +228,7 @@ export function CardBack({
               data-playing={isPlayingAudio ? 'true' : 'false'}
               onPointerDown={event => event.stopPropagation()}
               onClick={playAudio}
-              className="flashcard-back-play touch-manipulation flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-back-play${classicLangMotion ? ' fx-press' : ''} touch-manipulation flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               aria-label={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
             >
               {isPlayingAudio
@@ -145,6 +239,18 @@ export function CardBack({
                   : <svg width={look === 'paper' ? 12 : 13} height={look === 'paper' ? 12 : 13} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>}
             </button>
           </div>
+          {showHanviet && sinoForm && (
+            <div data-card-section="hanviet" className="flashcard-back-hanviet">
+              <span className="flashcard-back-hanviet-label"><Trans {...msg({ context: 'flashcard.language.hanviet', message: 'Sino-Vietnamese' })} /></span>
+              <span lang={cardTargetLanguageKey(data) === 'zh' ? 'zh-Hant' : sourceLanguage} className="flashcard-back-hanviet-source">{sinoForm.source}</span>
+              {sinoForm.reading && (
+                <>
+                  <span aria-hidden="true">{'→'}</span>
+                  <span lang={meaningLanguage} className="flashcard-back-hanviet-reading">{sinoForm.reading}</span>
+                </>
+              )}
+            </div>
+          )}
           {data.origin === 'ai' && (
             <p data-ai-disclosure className="flashcard-back-note">
               <Trans {...msg({ context: 'flashcard.ai-disclosure', message: 'AI-generated content may be incorrect. Please check the meaning.' })} />
@@ -155,9 +261,13 @@ export function CardBack({
 
         {(data.exampleSentence || data.exampleTranslation) && (
           <figure data-card-section="example" className="flashcard-back-example">
-            {data.exampleSentence && (isPackCard ? (
-              <blockquote lang={cardTextLang(data)} className="flashcard-back-example-text flashcard-lang-example-text">
-                {buildExampleSegments(data.exampleSentence, data, cardTargetLanguageKey(data) as 'ko' | 'ja' | 'zh', reading).map((segment, index) => !segment.highlight
+            {data.exampleSentence && (isLangForm ? (
+              <blockquote
+                lang={cardTextLang(data)}
+                data-latin-example={!isPackCard ? 'true' : undefined}
+                className="flashcard-back-example-text flashcard-lang-example-text"
+              >
+                {buildExampleSegments(data.exampleSentence, data, isPackCard ? (cardTargetLanguageKey(data) as 'ko' | 'ja' | 'zh') : 'latin', reading).map((segment, index) => !segment.highlight
                   ? <span key={index}>{segment.text}</span>
                   : segment.ruby
                     ? <ruby key={index} data-example-word className="flashcard-back-example-word">{segment.text}<rt className="flashcard-lang-example-rt">{segment.ruby}</rt></ruby>
@@ -168,6 +278,7 @@ export function CardBack({
                 <span aria-hidden="true">“</span><span>{highlightWord(data.exampleSentence, data.word)}</span><span aria-hidden="true">”</span>
               </blockquote>
             ))}
+            {exampleReading && <p className="flashcard-back-example-reading">{exampleReading}</p>}
             {data.exampleTranslation && <figcaption lang={meaningLanguage} className="flashcard-back-example-translation">{data.exampleTranslation}</figcaption>}
           </figure>
         )}
@@ -205,9 +316,36 @@ export function CardBack({
           )}
         </section>
 
+        {relatedItems.length > 0 && (
+          <div data-card-section="related" className="flashcard-back-related">
+            <span className="flashcard-back-related-label"><Trans {...msg({ context: 'flashcard.language.related', message: 'Related' })} /></span>
+            {relatedItems.map((item, index) => (
+              <span key={`${item.word}-${index}`} className="flashcard-back-related-chip">
+                <span lang={sourceLanguage} className="flashcard-back-related-word">{item.word}</span>
+                {(item.gloss || item.posKey) && (
+                  <span lang={item.posKey ? undefined : meaningLanguage} className="flashcard-back-related-gloss">
+                    {item.posKey ? renderPosAbbrev(item.posKey) : item.gloss}
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {formCells.length > 0 && (
+          <div data-card-section="forms" className="flashcard-back-forms">
+            {formCells.map((cell, index) => (
+              <div key={`${cell.key}-${index}`} className="flashcard-back-form-cell">
+                <div className="flashcard-back-form-label">{renderFormLabel(cell.key)}</div>
+                <div lang={sourceLanguage} className="flashcard-back-form-value">{cell.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flashcard-back-tools grid grid-cols-2 items-start gap-2">
           <section data-card-section="memory-hook" aria-label={_(msg({ id: 'flashcard.memory-hook', message: 'Memory hook' }))} className={`min-w-0 ${data.mnemonic ? 'col-span-2' : ''}`}>
-            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} buttonMotionClass={classicLangMotion ? 'fx-press' : undefined} />
           </section>
           <button
             ref={aiTutorButtonRef}
@@ -215,7 +353,7 @@ export function CardBack({
             data-card-control
             onPointerDown={event => event.stopPropagation()}
             onClick={() => setShowAiModal(true)}
-            className={`flashcard-back-tool flashcard-back-tutor flex min-h-11 min-w-0 items-center justify-center gap-2 transition-[background-color,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${data.mnemonic ? 'col-span-2' : ''}`}
+            className={`flashcard-back-tool flashcard-back-tutor${classicLangMotion ? ' fx-press' : ''} flex min-h-11 min-w-0 items-center justify-center gap-2 transition-[background-color,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${data.mnemonic ? 'col-span-2' : ''}`}
           >
             <Sparkles size={15} className="flashcard-back-tutor-icon shrink-0" aria-hidden="true" />
             <span className="truncate"><Trans {...msg({ context: 'flashcard.ask-ai-tutor', message: 'Ask AI Tutor' })} /></span>
@@ -264,17 +402,17 @@ export function CardBack({
           focusAfterFlipRef.current = 'front';
           showCardSide('front');
         }}
-        className="flashcard-back-return group/back relative z-20 flex w-full shrink-0 cursor-pointer items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--sf-brand)]"
+        className={`flashcard-back-return group/back relative z-20 flex w-full shrink-0${classicLangMotion ? ' fx-press' : ''} cursor-pointer items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--sf-brand)]`}
         aria-label={cardReturnLabel(i18n, data)}
       >
         {look === 'aurora' && <span data-return-hover-edge className="flashcard-reveal-laser pointer-events-none absolute" aria-hidden="true" />}
-        {(look === 'crystal' || look === 'aurora' || isPackCard) && (
+        {(look === 'crystal' || look === 'aurora' || isLangForm) && (
           <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
         )}
         <span>
-          {cardTargetLanguageKey(data) === 'en'
-            ? <Trans {...msg({ context: 'flashcard.back-to-english', message: 'Back to English' })} />
-            : <Trans {...msg({ context: 'flashcard.back-to-front', message: 'Back to front' })} />}
+          {isLangForm || cardTargetLanguageKey(data) !== 'en'
+            ? <Trans {...msg({ context: 'flashcard.back-to-front', message: 'Back to front' })} />
+            : <Trans {...msg({ context: 'flashcard.back-to-english', message: 'Back to English' })} />}
         </span>
       </button>
     </div>
