@@ -708,6 +708,34 @@ describe('release workflow contracts', () => {
     expect(index).toContain('export const finalizeFileUpload = cloudStorageIsSetUp && onObjectFinalized({');
   });
 
+  it('gives every Functions parameter a value in the deploy parameter file', () => {
+    // A non-interactive deploy stops on any declared parameter the file does not set, default or not.
+    const sourceRoot = new URL('../functions/src/', import.meta.url);
+    const declared = new Set();
+    for (const entry of fs.readdirSync(sourceRoot, { recursive: true })) {
+      if (!/\.ts$/.test(entry) || /\.test\.ts$/.test(entry)) continue;
+      const source = fs.readFileSync(new URL(entry, sourceRoot), 'utf8');
+      for (const match of source.matchAll(/\bdefine(?:Boolean|String|Int|Float|List)\(\s*'([A-Z0-9_]+)'/g)) declared.add(match[1]);
+    }
+    expect([...declared].sort()).toEqual(['ENFORCE_APP_CHECK', 'REMINDER_EMAIL_ENABLED']);
+
+    const stepOf = (workflow, name) => workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+    const steps = [
+      stepOf(read('.github/workflows/deploy-staging.yml'), 'Deploy only sealed Functions'),
+      stepOf(read('.github/workflows/deploy-production.yml'), 'Promote only the sealed Functions artifact after App Check approval'),
+    ];
+    for (const step of steps) {
+      const deploy = step.indexOf('deploy --only functions');
+      expect(deploy).toBeGreaterThan(-1);
+      for (const name of declared) {
+        const written = step.search(new RegExp(`printf '%s\\\\n' '${name}=[a-z]+' >>? "\\$parameter_file"`));
+        expect(written, name).toBeGreaterThan(-1);
+        expect(written, name).toBeLessThan(deploy);
+      }
+      expect(step).toContain("printf '%s\\n' 'REMINDER_EMAIL_ENABLED=false' >> \"$parameter_file\"");
+    }
+  });
+
   it('checks the ready Pro entitlement index before promoting production Functions', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     expect(workflow).toContain('gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json');

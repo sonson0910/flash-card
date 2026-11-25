@@ -396,8 +396,10 @@ and production; deployment credentials never enter the browser artifact.
    dispatch the same candidate with `promote_functions=true` and a bounded
    `app_check_observation_ref`. Functions waits for separate `production-functions`
    approval and deploys only the sealed compiled Functions; the already-compatible
-   Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
-   true. Never deploy incompatible Functions enforcement before its Hosting client.
+   Hosting artifact is then promoted idempotently. The Functions step writes a value for
+   every declared parameter (`ENFORCE_APP_CHECK=true`, `REMINDER_EMAIL_ENABLED=false`): a
+   non-interactive deploy stops on a parameter the file does not set, even one with a default.
+   Never deploy incompatible Functions enforcement before its Hosting client.
 5. Do not select or infer an all-target deploy. Firestore Rules use only the protected
    candidate-bound workflow in section 2; Storage Rules ship only in the candidate's own
    `deploy_storage_rules` job, before its Hosting.
