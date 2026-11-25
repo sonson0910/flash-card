@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/firebase-emulator';
-import type { Page, TestInfo } from '@playwright/test';
+import type { Locator, Page, TestInfo } from '@playwright/test';
 
 async function beginFreshCardRecall(page: Page) {
   const introduction = page.getByRole('region', { name: 'Meet this word' });
@@ -15,6 +15,25 @@ async function beginFreshCardRecall(page: Page) {
     const box = await control.boundingBox();
     expect(box && box.y >= bounds.top && box.y + box.height <= bounds.bottom).toBe(true);
   }
+}
+
+// The pointer rests on the card after a click inside it, so the card tilts toward the pointer. WebKit then
+// reports an intersection ratio just under 1 for a control that is fully on screen, so this reads boxes instead:
+// the control must lie inside the viewport and inside every ancestor that clips its overflow.
+async function expectFullyOnScreen(control: Locator) {
+  await expect(async () => {
+    const fits = await control.evaluate(element => {
+      const box = element.getBoundingClientRect();
+      const inside = (outer: DOMRect) => box.left >= outer.left && box.right <= outer.right && box.top >= outer.top && box.bottom <= outer.bottom;
+      if (!inside(new DOMRect(0, 0, window.innerWidth, window.innerHeight))) return false;
+      for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        if ((style.overflowX !== 'visible' || style.overflowY !== 'visible') && !inside(ancestor.getBoundingClientRect())) return false;
+      }
+      return true;
+    });
+    expect(fits).toBe(true);
+  }).toPass({ timeout: 5000 });
 }
 
 const longWord = 'counterintelligence';
@@ -72,7 +91,7 @@ for (const family of ['classic', 'crystal']) {
       const answer = page.getByRole('textbox', { name: 'Your answer', exact: true });
       await answer.fill('sự tương đồng');
       await page.getByRole('button', { name: 'Check', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeInViewport({ ratio: 1 });
+      await expectFullyOnScreen(page.getByRole('button', { name: 'Reveal answer' }));
       await page.getByRole('button', { name: 'Reveal answer' }).click();
       await expect(page.locator('[data-study-session]')).toHaveAttribute('data-study-state', 'revealed');
       await expect(page.locator('[data-study-rating]').getByRole('button').first()).toBeEnabled();
