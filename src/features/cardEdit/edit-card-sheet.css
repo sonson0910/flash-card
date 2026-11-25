@@ -687,7 +687,6 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: border-color .15s ease, background-color .15s ease, transform .18s cubic-bezier(.16, 1, .3, 1), filter .18s ease;
 }
 
 :root:not([data-theme-family="crystal"]) .edit-sheet-button:not(.edit-sheet-button--primary) {
@@ -719,16 +718,6 @@
 .edit-sheet-button--primary:hover:not(:disabled) {
   border-color: transparent;
   filter: brightness(1.06);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  :root:not([data-theme-family="crystal"]) .edit-sheet-button--primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-  }
-}
-
-:root:not([data-theme-family="crystal"]) .edit-sheet-button--primary:active:not(:disabled) {
-  transform: translateY(0) scale(.97);
 }
 
 :root:not([data-theme-family="crystal"]) .edit-sheet-button--primary kbd {
@@ -1982,6 +1971,56 @@
   }
 }
 
+/* Classic sheet & centered dialog entrances (preserving translate(-50%, -50%) on centered desktop edit). */
+@keyframes edit-sheet-au-dialog-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 14px, 0) scale(.97); filter: blur(8px); }
+  to { opacity: 1; transform: translate(-50%, -50%); filter: none; }
+}
+@keyframes edit-sheet-ip-dialog-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 22px, 0) rotate(-.8deg); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+@media (max-width: 767.98px) {
+  .edit-sheet {
+    animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) backwards;
+  }
+}
+@media (min-width: 768px) {
+  .edit-sheet--review {
+    animation: sf-sheet-r-k 360ms cubic-bezier(.16, 1, .3, 1) backwards;
+  }
+  html.dark:not([data-theme-family="crystal"]) .edit-sheet--dialog {
+    animation: edit-sheet-au-dialog-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  html:not(.dark):not([data-theme-family="crystal"]) .edit-sheet--dialog {
+    animation: edit-sheet-ip-dialog-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
+html:not([data-theme-family="crystal"]) .edit-sheet :is(.fx-press, .fx-press-danger):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.edit-sheet, .edit-sheet--review) {
+    animation: none;
+  }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .edit-sheet--dialog {
+    animation: none;
+  }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) :is(.edit-sheet-input, .edit-sheet-word, .edit-sheet-chip-button, .edit-sheet-button, .edit-sheet-star, .edit-sheet-meaning-choice, .edit-sheet-tag-suggestion, .edit-sheet-segment, .edit-sheet-more summary::before) {
+    transition: none;
+  }
+}
+html[data-motion="reduced"] :is(.edit-sheet, .edit-sheet--review) {
+  animation: none;
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .edit-sheet--dialog {
+  animation: none;
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.edit-sheet-input, .edit-sheet-word, .edit-sheet-chip-button, .edit-sheet-button, .edit-sheet-star, .edit-sheet-meaning-choice, .edit-sheet-tag-suggestion, .edit-sheet-segment, .edit-sheet-more summary::before) {
+  transition: none;
+}
+
 /* Crystal library editing: the AnimeDlgStudy "Edit card" dialog. The rim (::before) and the fill (::after, 2px
    inside it) carry the chamfer, so the frame's glow is not cut by a clip on the frame itself. */
 @media (min-width: 768px) {
@@ -2100,7 +2139,7 @@
 /* The board lifts its chips, close chip and footer buttons on hover (nk-lift); the primary keeps its own glow
    filter, so it only rises. */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  html[data-theme-family="crystal"]:not([data-motion="reduced"]) :is(.edit-sheet-meaning-choice, .edit-sheet--review .edit-sheet-close, .edit-sheet--review .edit-sheet-button:not(.edit-sheet-button--primary)):hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.06); }
-  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .edit-sheet--review .edit-sheet-button--primary:hover:not(:disabled) { transform: translateY(-3px); }
-  html[data-theme-family="crystal"]:not([data-motion="reduced"]) :is(.edit-sheet-meaning-choice, .edit-sheet--review .edit-sheet-close, .edit-sheet--review .edit-sheet-button):active:not(:disabled) { transform: translateY(0) scale(.97); }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) :is(.edit-sheet-meaning-choice, .edit-sheet--review .edit-sheet-close, .edit-sheet--review .edit-sheet-button:not(.edit-sheet-button--primary)):hover:not(:disabled) { translate: 0 -3px; filter: brightness(1.06); }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .edit-sheet--review .edit-sheet-button--primary:hover:not(:disabled) { translate: 0 -3px; }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) :is(.edit-sheet-meaning-choice, .edit-sheet--review .edit-sheet-close, .edit-sheet--review .edit-sheet-button):active:not(:disabled) { translate: 0 0; scale: .97; }
 }

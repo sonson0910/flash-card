@@ -50,6 +50,25 @@
   --cc-fr: 14px;
 }
 
+@keyframes create-card-au-dialog-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 14px, 0) scale(.97); filter: blur(8px); }
+  to { opacity: 1; transform: translate(-50%, -50%); filter: none; }
+}
+@keyframes create-card-ip-dialog-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 22px, 0) rotate(-.8deg); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+html.dark:not([data-theme-family="crystal"]) .create-card-dialog {
+  animation: create-card-au-dialog-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+}
+html:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog {
+  animation: create-card-ip-dialog-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+}
+html:not([data-theme-family="crystal"]) .create-card-dialog :is(.fx-press, .fx-press-danger):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
+}
+
 .create-card-dialog__ornament {
   position: absolute;
   z-index: 2;
@@ -435,14 +454,6 @@ html:not([data-theme-family="crystal"]) .create-card-dialog__ai-badge { height: 
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); }
 /* Ink & Paper's primary action is ink; Midnight Aurora's is the brand cyan. */
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { padding: 0 20px; border: 0; background: var(--sf-primary-bg); color: var(--sf-on-primary); font-weight: 650; box-shadow: var(--sf-primary-shadow); }
-@media (hover: hover) and (pointer: fine) {
-  html:not([data-theme-family="crystal"]) .create-card-dialog__primary:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
-}
-html:not([data-theme-family="crystal"]) .create-card-dialog__primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
-/* sf-press eases its lift over 180ms; reduced motion snaps. */
-:where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
-@media (prefers-reduced-motion: reduce) { :where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { transition: none; } }
-:where(html[data-motion="reduced"]:not([data-theme-family=crystal])) .create-card-dialog__primary { transition: none; }
 /* DlgCreate: header gap 14px (line 3); text at line-height normal (lines 5, 13, 24, 33-35, 39); labels 6px above
    42px fields, the focused field's ring in accentLine + 4px accentSoft (line 13); 32px part-of-speech segments and a
    30px play button, each with a 44px hit area (lines 18, 25); meta 6px under the headword in the body face with
@@ -705,7 +716,7 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 :where(html[data-theme-family=crystal]) .is-waiting > .create-card-dialog__step-icon { border: 1.5px dashed color-mix(in srgb, var(--sf-text) 16%, transparent); }
 :where(html[data-theme-family=crystal]) .is-stopped > .create-card-dialog__step-icon { border: 1.5px solid color-mix(in srgb, var(--sf-text) 16%, transparent); background: linear-gradient(color-mix(in srgb, var(--sf-text) 30%, transparent), color-mix(in srgb, var(--sf-text) 30%, transparent)) center / 8px 1.5px no-repeat; }
 :where(html:not([data-theme-family=crystal])) .is-done > .create-card-dialog__step-icon { background: var(--sf-success-soft); color: var(--sf-success-text); }
-:where(html:not([data-theme-family=crystal])) .is-active > .create-card-dialog__step-icon { width: 16px; height: 16px; margin: 2px; border: 2px solid var(--sf-track, color-mix(in srgb, var(--sf-text) 8%, transparent)); border-top-color: var(--sf-brand); animation: create-card-dialog-spin .8s linear infinite; }
+:where(html:not([data-theme-family=crystal])) .is-active > .create-card-dialog__step-icon { width: 16px; height: 16px; margin: 2px; border: 2px solid var(--sf-track, color-mix(in srgb, var(--sf-text) 8%, transparent)); border-top-color: var(--sf-brand); animation: sf-spin-k 900ms linear infinite; }
 :where(html:not([data-theme-family=crystal])) .is-waiting > .create-card-dialog__step-icon { border: 1.5px dashed var(--sf-edge-highlight); }
 :where(html:not([data-theme-family=crystal])) .is-stopped > .create-card-dialog__step-icon { border: 1.5px solid var(--sf-edge-highlight); background: linear-gradient(color-mix(in srgb, var(--sf-text) 30%, transparent), color-mix(in srgb, var(--sf-text) 30%, transparent)) center / 8px 1.5px no-repeat; }
 
@@ -751,7 +762,7 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__not-checked { display: inline-flex; align-items: center; padding: 2px 8px; border: 1px dashed color-mix(in srgb, var(--sf-text) 30%, transparent); border-radius: 999px; color: var(--sf-text-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .02em; }
 
 :where(html[data-theme-family=crystal]) .create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
-:where(html:not([data-theme-family=crystal])) .create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background: var(--sf-skeleton, linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent))) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background-color: var(--sf-track); }
 .create-card-dialog__skeleton--meta { width: 9rem; margin: 6px 0; }
 .create-card-dialog__skeleton--short { width: 2rem; margin: 6px 0; }
 .create-card-dialog__skeleton--meaning { width: 62%; height: 16px; margin: 14px 0 6px; border-radius: 6px; }
@@ -789,7 +800,14 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 :where(html[data-theme-family=crystal]) .create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
 :where(html[data-theme-family=crystal]) .create-card-dialog__stream-image-slot.is-loading { background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: var(--sf-text-subtle); }
-:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image-slot.is-loading { background: var(--sf-skeleton, linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent))) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image-slot.is-loading { background-color: var(--sf-track); background-image: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) :is(.create-card-dialog__skeleton, .create-card-dialog__stream-image-slot.is-loading).sf-shimmer {
+    background-image: linear-gradient(90deg, transparent 0 50%, rgb(255 255 255 / 0.2) 75%, transparent 100%);
+    background-size: 200% 100%;
+    animation: sf-shimmer-k 1.6s linear infinite;
+  }
+}
 .create-card-dialog__stream-image-slot img { width: 100%; height: 100%; object-fit: cover; }
 :where(html[data-theme-family=crystal]) .create-card-dialog__stream-image p { margin: 8px 0 0; color: var(--sf-text-muted); font-size: .71875rem; text-align: center; }
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image p { margin: 8px 0 0; color: var(--sf-text-subtle); font-size: .71875rem; text-align: center; }
@@ -919,10 +937,16 @@ html[data-theme-family="crystal"] .create-card-dialog__footer--stream .create-ca
   .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
   .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
   .create-card-dialog__skeleton { animation: none !important; transition: none !important; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .create-card-dialog { animation: none; }
 }
 html[data-motion="reduced"] .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
 html[data-motion="reduced"] .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
 html[data-motion="reduced"] .create-card-dialog__skeleton { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-family="crystal"] :is(.create-card-dialog__skeleton, .create-card-dialog__stream-image-slot.is-loading) { background-image: none; }
+}
+html[data-theme-family="crystal"][data-motion="reduced"] :is(.create-card-dialog__skeleton, .create-card-dialog__stream-image-slot.is-loading) { background-image: none; }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .create-card-dialog { animation: none; }
 /* Crystal manual card: the details panel is an inner tile with the board's 1px line, and its inputs, like the deck
    select, take the board's field recipe (42px, chamfered, strong 1px inset line) in place of rounded bordered boxes,
    so no radius sits under a cut and the chamfer clips the line on the diagonal. */

@@ -261,20 +261,19 @@
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px;
   border: 1px solid var(--fl-line-strong); border-radius: var(--fl-btn-radius); background: var(--fl-secondary-bg); box-shadow: var(--fl-secondary-shadow, none);
   color: var(--fl-text); font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer;
-  transition: background-color var(--motion-fast, 140ms) ease, border-color var(--motion-fast, 140ms) ease, transform var(--motion-fast, 140ms) ease;
 }
 .sf-files-button:hover:not(:disabled) { border-color: var(--fl-accent-line); }
 .sf-files-button:active:not(:disabled) { transform: translateY(1px); }
 .sf-files-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .sf-files-button--primary { border-color: transparent; background: var(--fl-primary-bg); box-shadow: var(--fl-primary-shadow); color: var(--fl-primary-text); }
 .sf-files-button--primary:hover:not(:disabled) { border-color: transparent; filter: brightness(1.06); }
-/* UploadStates lines 65 and 92: the primary action carries the board's sf-press (shared.css); the reduced-motion
-   rules at the end of the file still clear the transition. */
-:where(html:not([data-theme-family=crystal])) .sf-files-button--primary { transition: background-color var(--motion-fast, 140ms) ease, border-color var(--motion-fast, 140ms) ease, transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
-@media (hover: hover) and (pointer: fine) {
-  :where(html:not([data-theme-family=crystal])) .sf-files-button--primary:hover:not(:disabled) { transform: translateY(-2px); }
+html:not([data-theme-family="crystal"]) .sf-files-tokens :is(.fx-press, .fx-press-danger):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }
-:where(html:not([data-theme-family=crystal])) .sf-files-button--primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+:root:not(.dark):not([data-theme-family="crystal"]) .sf-files-drop__tile.sf-pulse {
+  --sf-pulse: rgb(180 70 26 / 0.32);
+}
 /* UploadStates: text, the files list head included (line 62), keeps line-height normal (lines 35-113); the state chip is 28px plus its 1px border, padded 0 10px
    (line 35); the drop tile is 58px plus its border (line 46); the primary has no border (line 65); "Manage all files" is
    13px in a 42px box with the plain line colour and no shadow, and keeps a 44px hit area (line 113). */

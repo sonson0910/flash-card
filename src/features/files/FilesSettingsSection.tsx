@@ -49,11 +49,11 @@ export function FilesSettingsSection({ port, onOpenFiles }: FilesSettingsSection
             <span className="ss-row__sub" role={library.state.status === 'error' && !listing ? 'alert' : undefined}>{summary}</span>
           </span>
           {library.state.status === 'error' && !listing ? (
-            <button type="button" className="ss-secondary crystal-chamfer-sm" onClick={() => { void library.refresh(); }}>
+            <button type="button" className="ss-secondary fx-press crystal-chamfer-sm" onClick={() => { void library.refresh(); }}>
               <Trans {...msg({ id: 'files.settings.retry', message: 'Retry' })} />
             </button>
           ) : (
-            <button type="button" className="ss-secondary crystal-chamfer-sm" onClick={onOpenFiles}>
+            <button type="button" className="ss-secondary fx-press crystal-chamfer-sm" onClick={onOpenFiles}>
               <Trans {...msg({ id: 'files.settings.open', message: 'Open My files' })} />
             </button>
           )}

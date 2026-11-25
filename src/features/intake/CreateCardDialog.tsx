@@ -393,7 +393,7 @@ function SpinnerLabel({ descriptor }: { descriptor: MessageDescriptor }) {
 }
 
 function Skeleton({ size }: { size: 'meta' | 'short' | 'meaning' | 'line' | 'line-short' | 'line-wide' }) {
-  return <span className={`create-card-dialog__skeleton create-card-dialog__skeleton--${size}`} aria-hidden="true" />;
+  return <span className={`create-card-dialog__skeleton create-card-dialog__skeleton--${size} sf-shimmer`} aria-hidden="true" />;
 }
 
 function CardPreview({
@@ -443,11 +443,11 @@ function CardPreview({
           <span className="create-card-dialog__ai-badge"><Sparkles size={13} aria-hidden="true" />{isManual ? <Trans {...msg({ id: 'library.create-card.preview.manual-draft', message: 'Manual draft' })} /> : <Trans {...msg({ id: 'library.create-card.preview.ai-draft', message: 'AI draft' })} />}</span>
           {unchecked ? notChecked : <span className="create-card-dialog__edit-note">{isManual ? <Trans {...msg({ id: 'library.create-card.preview.edit-manual', message: 'Edit your card details below' })} /> : <Trans {...msg({ id: 'library.create-card.preview.edit-generated', message: 'Edit the generated details below' })} />}</span>}
         </div>}
-        <div className="create-card-dialog__headword-row">
+        <div className={`create-card-dialog__headword-row${isStream ? ' fx-enter' : ''}`}>
           <h3 id="create-card-preview-title" lang={card.language || 'en'}>{stressed ? <>{stressed.before}<span className="create-card-dialog__stress">{stressed.stressed}</span>{stressed.after}</> : card.word || '—'}</h3>
-          {card.word && !isStream && <button type="button" className="create-card-dialog__audio" onClick={onPlay} aria-label={translate(CREATE_CARD_MESSAGES.playPronunciation, { word: card.word })}><Volume2 size={15} aria-hidden="true" /></button>}
+          {card.word && !isStream && <button type="button" className="create-card-dialog__audio fx-press" onClick={onPlay} aria-label={translate(CREATE_CARD_MESSAGES.playPronunciation, { word: card.word })}><Volume2 size={15} aria-hidden="true" /></button>}
         </div>
-        <div className="create-card-dialog__meta">
+        <div className={`create-card-dialog__meta${isStream ? ' fx-enter' : ''}`}>
           {pending('phonetic') ? <Skeleton size="meta" /> : <label>
             <span className="sr-only"><Trans {...msg({ id: 'library.create-card.pronunciation', message: 'Pronunciation' })} /></span>
             <input
@@ -472,7 +472,7 @@ function CardPreview({
             />
           </label>}
         </div>
-        {pending('translation') ? <Skeleton size="meaning" /> : <label className="create-card-dialog__preview-meaning">
+        {pending('translation') ? <Skeleton size="meaning" /> : <label className={`create-card-dialog__preview-meaning${isStream ? ' fx-enter-2' : ''}`}>
           <span className="sr-only"><Trans {...msg({ id: 'library.create-card.meaning', message: 'Meaning' })} /></span>
           <input
             aria-label={translate(CREATE_CARD_MESSAGES.meaning)}
@@ -484,7 +484,7 @@ function CardPreview({
             placeholder={translate(CREATE_CARD_MESSAGES.meaning)}
           />
         </label>}
-        {pending('explanation') ? <div className="create-card-dialog__skeleton-lines"><Skeleton size="line-wide" /><Skeleton size="line" /></div> : <label className="create-card-dialog__preview-explanation">
+        {pending('explanation') ? <div className="create-card-dialog__skeleton-lines"><Skeleton size="line-wide" /><Skeleton size="line" /></div> : <label className={`create-card-dialog__preview-explanation${isStream ? ' fx-enter-2' : ''}`}>
           <span className="sr-only"><Trans {...msg({ id: 'library.create-card.definition', message: 'Definition' })} /></span>
           <textarea
             aria-label={translate(CREATE_CARD_MESSAGES.definition)}
@@ -545,7 +545,7 @@ function CardPreview({
         </fieldset>}
       </div>
       {isStream && <div className="create-card-dialog__stream-image">
-        <div className={`create-card-dialog__stream-image-slot${imageStatus === 'finding' ? ' is-loading' : ''}`} aria-hidden="true">
+        <div className={`create-card-dialog__stream-image-slot${imageStatus === 'finding' ? ' is-loading sf-shimmer' : ''}`} aria-hidden="true">
           {card.imageUrl ? <img src={card.imageUrl} alt="" /> : <ImageIcon size={24} strokeWidth={1.6} />}
         </div>
         <p>{translate(imageStatus === 'finding' ? CREATE_CARD_MESSAGES.stream.findingImage : CREATE_CARD_MESSAGES.stream.noImage)}</p>
@@ -867,7 +867,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
   return (
     <Dialog.Root open={model.open} onOpenChange={open => { if (!open) onClose(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="create-card-dialog__overlay crystal-starfield dialog-veil" />
+        <Dialog.Overlay className="create-card-dialog__overlay crystal-starfield dialog-veil sf-scrim" />
         <Dialog.Content
           className={`create-card-dialog crystal-chamfer${streamLayout ? ' create-card-dialog--stream' : ''}`}
           aria-describedby="create-card-dialog-description"
@@ -909,7 +909,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <button type="button" className="create-card-dialog__close" disabled={model.stage === 'saving'} aria-label={translate(CREATE_CARD_MESSAGES.close)}>
+              <button type="button" className="create-card-dialog__close fx-press" disabled={model.stage === 'saving'} aria-label={translate(CREATE_CARD_MESSAGES.close)}>
                 <X size={17} aria-hidden="true" />
               </button>
             </Dialog.Close>
@@ -917,7 +917,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
 
           <form className="create-card-dialog__form" onSubmit={onSubmit}>
             {!manualMode && <p className="sr-only" role="status" aria-live="polite">{announcement}</p>}
-            <div className="create-card-dialog__body">
+            <div className={`create-card-dialog__body${streamLayout ? '' : ' fx-stagger'}`}>
               {streamLayout ? <div className="create-card-dialog__stream">
                 <div className="create-card-dialog__stream-word">
                   <span lang={model.preview?.language || 'en'}>{model.draft.word || model.preview?.word}</span>
@@ -956,7 +956,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
               <div className="create-card-dialog__input-grid">
                 <label>
                   <FieldLabel descriptor={CREATE_CARD_MESSAGES.word} />
-                  <span className="create-card-dialog__field create-card-dialog__field--active">
+                  <span className="create-card-dialog__field create-card-dialog__field--active sf-ease">
                     <input
                       ref={wordInputRef}
                       value={manualMode ? manualDraft.word : model.draft.word}
@@ -970,7 +970,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                 </label>
                 <label>
                   <FieldLabel descriptor={CREATE_CARD_MESSAGES.context} optional />
-                  <span className="create-card-dialog__field">
+                  <span className="create-card-dialog__field sf-ease">
                     <input
                       value={model.draft.context}
                       onChange={event => updateDraft({ context: event.target.value })}
@@ -993,7 +993,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                       role="radio"
                       data-pos={option.value}
                       aria-checked={selected}
-                      className={selected ? 'is-selected' : ''}
+                      className={selected ? 'is-selected sf-ease' : 'sf-ease'}
                       disabled={isBusy}
                       onClick={() => updateDraft({ partOfSpeech: option.value })}
                       onKeyDown={onPosKeyDown}
@@ -1024,7 +1024,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                         key={field.value}
                         type="button"
                         aria-pressed={selectedFields.has(field.value)}
-                        className={selectedFields.has(field.value) ? 'is-selected' : ''}
+                        className={selectedFields.has(field.value) ? 'is-selected sf-ease' : 'sf-ease'}
                         disabled={isBusy}
                         onClick={() => toggleField(field.value)}
                       ><Check size={13} aria-hidden="true" />{translate(field.label)}</button>)}
@@ -1035,14 +1035,14 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                 <section className="create-card-dialog__manual" aria-labelledby="manual-card-heading">
                   <div className="create-card-dialog__section-heading">
                     <div><p className="create-card-dialog__section-kicker"><Trans {...msg({ id: 'library.create-card.manual-details', message: 'MANUAL DETAILS' })} /></p><h3 id="manual-card-heading"><Trans {...msg({ id: 'library.create-card.your-card', message: 'Your card' })} /></h3></div>
-                    <button type="button" className="create-card-dialog__text-button" disabled={isBusy} onClick={() => { setManualMode(false); setLocalError(null); }}><Trans {...msg({ id: 'library.create-card.use-ai-draft', message: 'Use AI draft' })} /></button>
+                    <button type="button" className="create-card-dialog__text-button fx-press" disabled={isBusy} onClick={() => { setManualMode(false); setLocalError(null); }}><Trans {...msg({ id: 'library.create-card.use-ai-draft', message: 'Use AI draft' })} /></button>
                   </div>
                   <div className="create-card-dialog__manual-grid">
-                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.meaning} /><input dir="auto" value={manualDraft.translation} onChange={event => updateManual('translation', event.target.value)} required disabled={isBusy} /></label>
-                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.pronunciation} optional /><input dir="auto" value={manualDraft.phonetic ?? ''} onChange={event => updateManual('phonetic', event.target.value)} placeholder={translate(CREATE_CARD_MESSAGES.pronunciationPlaceholder)} disabled={isBusy} /></label>
-                    <label className="is-wide"><FieldLabel descriptor={CREATE_CARD_MESSAGES.definition} optional /><textarea dir="auto" rows={2} value={manualDraft.explanation ?? ''} onChange={event => updateManual('explanation', event.target.value)} disabled={isBusy} /></label>
-                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.exampleSentence} optional /><textarea dir="auto" rows={2} value={manualDraft.exampleSentence ?? ''} onChange={event => updateManual('exampleSentence', event.target.value)} disabled={isBusy} /></label>
-                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.exampleTranslation} optional /><textarea dir="auto" rows={2} value={manualDraft.exampleTranslation ?? ''} onChange={event => updateManual('exampleTranslation', event.target.value)} disabled={isBusy} /></label>
+                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.meaning} /><input className="sf-ease" dir="auto" value={manualDraft.translation} onChange={event => updateManual('translation', event.target.value)} required disabled={isBusy} /></label>
+                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.pronunciation} optional /><input className="sf-ease" dir="auto" value={manualDraft.phonetic ?? ''} onChange={event => updateManual('phonetic', event.target.value)} placeholder={translate(CREATE_CARD_MESSAGES.pronunciationPlaceholder)} disabled={isBusy} /></label>
+                    <label className="is-wide"><FieldLabel descriptor={CREATE_CARD_MESSAGES.definition} optional /><textarea className="sf-ease" dir="auto" rows={2} value={manualDraft.explanation ?? ''} onChange={event => updateManual('explanation', event.target.value)} disabled={isBusy} /></label>
+                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.exampleSentence} optional /><textarea className="sf-ease" dir="auto" rows={2} value={manualDraft.exampleSentence ?? ''} onChange={event => updateManual('exampleSentence', event.target.value)} disabled={isBusy} /></label>
+                    <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.exampleTranslation} optional /><textarea className="sf-ease" dir="auto" rows={2} value={manualDraft.exampleTranslation ?? ''} onChange={event => updateManual('exampleTranslation', event.target.value)} disabled={isBusy} /></label>
                   </div>
                 </section>
               ) : (
@@ -1054,7 +1054,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
 
               <div className="create-card-dialog__save-row">
                 <label><FieldLabel descriptor={CREATE_CARD_MESSAGES.saveTo} />
-                  <select value={model.draft.deck} onChange={event => updateDraft({ deck: event.target.value })} disabled={isBusy} aria-invalid={!deckIsAllowed}>
+                  <select className="sf-ease" value={model.draft.deck} onChange={event => updateDraft({ deck: event.target.value })} disabled={isBusy} aria-invalid={!deckIsAllowed}>
                     {allowUnassigned && <option value="">{translate(CREATE_CARD_MESSAGES.unassigned)}</option>}
                     {decks.map(option => <option key={option.value} value={option.value} disabled={option.disabled || option.allowed === false}>
                       {option.label ?? option.value}{option.disabled || option.allowed === false ? ` · ${deckOptionReason(option.reason)}` : ''}
@@ -1094,7 +1094,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                   aria-valuenow={streamSteps.ready}
                   aria-valuetext={readyText}
                 >
-                  <span className="create-card-dialog__progress-fill" style={{ width: `${(streamSteps.ready / streamSteps.total) * 100}%` }} />
+                  <span className="create-card-dialog__progress-fill sf-grow" style={{ width: `${(streamSteps.ready / streamSteps.total) * 100}%` }} />
                   {streamSteps.steps.map((step, index) => <span key={step.id} className={`create-card-dialog__progress-segment${index < streamSteps.ready ? ' is-on' : ''}`} />)}
                 </div>
               </div>
@@ -1102,25 +1102,25 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                 <button
                   ref={cancelRef}
                   type="button"
-                  className="create-card-dialog__secondary"
+                  className="create-card-dialog__secondary fx-press"
                   onClick={actions.stopGeneration ? stopGeneration : onClose}
                   onFocus={trackCancelFocus}
                   onBlur={trackCancelFocus}
                 ><Trans {...msg({ id: 'library.create-card.stream.cancel', message: 'Cancel' })} /></button>
                 <button type="button" className="create-card-dialog__primary" disabled><Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /></button>
               </> : <>
-                <button type="button" className="create-card-dialog__manual-link" onClick={finishManually}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>
+                <button type="button" className="create-card-dialog__manual-link fx-press" onClick={finishManually}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>
                 <Dialog.Close asChild>
-                  <button type="button" className="create-card-dialog__secondary"><Trans {...msg({ id: 'library.close', message: 'Close' })} /></button>
+                  <button type="button" className="create-card-dialog__secondary fx-press"><Trans {...msg({ id: 'library.close', message: 'Close' })} /></button>
                 </Dialog.Close>
-                <button ref={tryAgainRef} type="button" className="create-card-dialog__primary" onClick={retryGeneration}><RefreshCw size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.stream.try-again', message: 'Try again' })} /></button>
+                <button ref={tryAgainRef} type="button" className="create-card-dialog__primary fx-press" onClick={retryGeneration}><RefreshCw size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.stream.try-again', message: 'Try again' })} /></button>
               </>}
             </footer> : <footer className="create-card-dialog__footer">
               <span className="create-card-dialog__request-count"><Sparkles size={14} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.request-count', message: '{count, plural, one {# AI request completed} other {# AI requests completed}}' })} values={{ count: model.completedAiRequests }} /></span>
-              {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}
-              {canResumeRegeneration && <button type="button" className="create-card-dialog__secondary" onClick={retryGeneration} disabled={isBusy}><RefreshCw size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.stream.try-again', message: 'Try again' })} /></button>}
-              {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans {...msg({ id: 'library.create-card.regenerate', message: 'Regenerate' })} />}</button>}
-              <button ref={primaryRef} type="submit" className="create-card-dialog__primary" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
+              {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link fx-press" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}
+              {canResumeRegeneration && <button type="button" className="create-card-dialog__secondary fx-press" onClick={retryGeneration} disabled={isBusy}><RefreshCw size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.stream.try-again', message: 'Try again' })} /></button>}
+              {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary fx-press" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans {...msg({ id: 'library.create-card.regenerate', message: 'Regenerate' })} />}</button>}
+              <button ref={primaryRef} type="submit" className="create-card-dialog__primary fx-press" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
                 {model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : hasPreview ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : <Trans {...msg({ id: 'library.create-card.generate-preview', message: 'Generate preview' })} />}
               </button>
             </footer>}
