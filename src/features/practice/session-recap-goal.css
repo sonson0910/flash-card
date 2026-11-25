@@ -36,7 +36,7 @@ html[data-motion="reduced"]:not([data-theme-family=crystal]) .practice-recap-mai
   /* RecapNext.dc.html lines 5-6: the page runs 72px from each edge, the 470px goal card sits 40px from the lead
      column and both end on the same line. */
   html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"]:has(> .ielts-goal-panel) { width: 100%; column-gap: 40px; padding-inline: 72px; }
-  html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"] > .practice-recap-lead { justify-self: stretch; align-self: end; }
+  html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"]:has(> .ielts-goal-panel) > .practice-recap-lead { justify-self: stretch; align-self: end; }
   html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"] > .ielts-goal-panel { grid-row: 1; align-self: end; margin-top: 0; }
   html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"]:has(> .ielts-goal-panel) .practice-recap-stats { justify-content: flex-start; }
 }
