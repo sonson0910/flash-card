@@ -155,11 +155,13 @@ html:not([data-theme-family="crystal"]) .sf-cells.sf-late > :nth-child(7n+5) { a
 html:not([data-theme-family="crystal"]) .sf-cells.sf-late > :nth-child(7n+6) { animation-delay: 550ms; }
 html:not([data-theme-family="crystal"]) .sf-cells.sf-late > :nth-child(7n) { animation-delay: 580ms; }
 
+/* The role rules above are written per mode (html.dark / html:not(.dark)), so these name the mode as well:
+   same weight, later in the file, and the OS setting wins. */
 @media (prefers-reduced-motion: reduce) {
-  html:not([data-theme-family="crystal"]) :is(.fx-enter, .fx-enter-2, .fx-enter-3, .fx-enter-4, .fx-title, .fx-stagger > *, .fx-dialog, .sf-scrim, .sf-sheet-r, .sf-sheet-b, .sf-toast, .fx-correct, .fx-reward, .sf-tick, .sf-bars > *, .sf-draw, .sf-draw-to, .sf-cells > *, .sf-drain) { animation: none; }
-  html:not([data-theme-family="crystal"]) .fx-glint::after { animation: none; }
-  html:not([data-theme-family="crystal"]) .sf-fall-once { display: none; }
-  html:not([data-theme-family="crystal"]) :is(.fx-lift, .fx-press, .fx-press-danger, .sf-ease, .sf-ease-filter) { transition: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) :is(.fx-enter, .fx-enter-2, .fx-enter-3, .fx-enter-4, .fx-title, .fx-stagger > *, .fx-dialog, .sf-scrim, .sf-sheet-r, .sf-sheet-b, .sf-toast, .fx-correct, .fx-reward, .sf-tick, .sf-bars > *, .sf-draw, .sf-draw-to, .sf-cells > *, .sf-drain) { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .fx-glint::after { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .sf-fall-once { display: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) :is(.fx-lift, .fx-press, .fx-press-danger, .sf-ease, .sf-ease-filter) { transition: none; }
 }
 html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.fx-enter, .fx-enter-2, .fx-enter-3, .fx-enter-4, .fx-title, .fx-stagger > *, .fx-dialog, .sf-scrim, .sf-sheet-r, .sf-sheet-b, .sf-toast, .fx-correct, .fx-reward, .sf-tick, .sf-bars > *, .sf-draw, .sf-draw-to, .sf-cells > *, .sf-drain) { animation: none; }
 html[data-motion="reduced"]:not([data-theme-family="crystal"]) .fx-glint::after { animation: none; }
