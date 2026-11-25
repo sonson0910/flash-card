@@ -60,6 +60,7 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
   const { i18n: activeI18n } = useLingui();
   const locale = activeI18n.locale || 'en';
   const { family } = useTheme();
+  const isCrystal = family === 'crystal';
   const [reviewRangeDays, setReviewRangeDays] = useState<ReviewRange>(182);
   const showsInsights = hasActivity || (stats.total > 0 && Boolean(stats.dueForecast || stats.recentlyMastered));
   const showsCharts = showsInsights && (hasActivity || Boolean(stats.reviewActivity));
@@ -95,7 +96,7 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
     {showsInsights && <div className="space-y-6">
       {showsCharts && <Suspense fallback={<ChartsFallback />}><div className="async-content-enter" data-async-content="progress-charts"><StatsCharts key={`${ownerId ?? 'signed-out'}:${targetLanguage ?? 'en'}`} darkMode={darkMode} data={stats} section="primary" reviewRangeDays={reviewRangeDays} /></div></Suspense>}
       {(stats.dueForecast || stats.recentlyMastered) && <section className="progress-evidence grid grid-cols-1" aria-label={i18n._(msg({ id: 'progress.evidence.forecast-and-mastery', message: 'Forecast and recently mastered cards' }))}>
-        <div className="progress-forecast crystal-chamfer min-w-0">
+        <div className={`progress-forecast crystal-chamfer min-w-0${!isCrystal ? ' fx-enter-3' : ''}`}>
           <div className="stats-panel-head"><h2 className="stats-panel-title"><Trans {...msg({ context: 'progress.forecast.title', message: 'Coming up' })} /></h2><span className="stats-panel-note"><Trans {...msg({ context: 'progress.forecast.note', message: 'Cards due, next 14 days' })} /></span></div>
           {dueTimeline ? <ol data-due-timeline data-forecast-empty={dueTimeline.every(day => day.count === 0) ? 'true' : undefined} className="progress-forecast-days">{dueTimeline.map((day, index) => <li key={day.date} data-forecast-day={index === 0 ? 'today' : index === 1 ? 'tomorrow' : undefined} style={{ '--forecast-ratio': forecastShare(day.count, forecastMaximum) / 100 } as CSSProperties}>
             <time dateTime={day.date}>{index === 0 ? <Trans {...msg({ context: 'progress.forecast.today', message: 'Today' })} /> : forecastWeekday(day.date, locale)}</time>
@@ -103,14 +104,14 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
             <strong className="progress-forecast-count">{day.count}</strong>
           </li>)}</ol> : <p className="progress-panel-empty"><Trans {...msg({ context: 'progress.forecast.unavailable', message: 'Forecast is unavailable while saved progress is loading.' })} /></p>}
         </div>
-        <div className="progress-mastered crystal-chamfer min-w-0">
+        <div className={`progress-mastered crystal-chamfer min-w-0${!isCrystal ? ' fx-enter-3' : ''}`}>
           <div className="stats-panel-head">
             <h2 className="stats-panel-title">{family === 'crystal'
               ? <Trans {...msg({ context: 'progress.mastered.crystal-title', message: 'New stars' })} />
               : <Trans {...msg({ context: 'progress.mastered.title', message: 'Recently <0>mastered</0>' })} components={{ 0: <span className="progress-accent" /> }} />}</h2>
             {stats.learned > 0 && <button type="button" onClick={openMasteredVocabulary ?? openVocabulary} aria-label={activeI18n._({ ...msg({ id: 'progress.mastered.all-label', message: 'All {count, plural, one {# mastered card} other {# mastered cards}} in Vocabulary' }), values: { count: stats.learned } })} className="progress-mastered-all"><Trans {...msg({ context: 'progress.mastered.all', message: 'All {count}' })} values={{ count: stats.learned }} /><ArrowRight size={14} aria-hidden="true" /></button>}
           </div>
-          {stats.recentlyMastered?.length ? <ul className="progress-mastered-cards">{stats.recentlyMastered.map(card => <li key={card.id}>
+          {stats.recentlyMastered?.length ? <ul className={`progress-mastered-cards${!isCrystal ? ' fx-stagger' : ''}`}>{stats.recentlyMastered.map(card => <li key={card.id}>
             {family === 'crystal' && <span className="stats-grade-chip progress-mastered-chip" aria-hidden="true"><Trans {...msg({ context: 'progress.mastered.chip', message: 'Star' })} /></span>}
             <p className="progress-mastered-word">{card.word}</p>
             <p className="progress-mastered-meaning">{card.translation}</p>

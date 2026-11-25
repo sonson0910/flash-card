@@ -219,6 +219,13 @@
   background-size: 260% 100%;
   background-position: 70% 0;
 }
+html:not([data-theme-family="crystal"]) .ach-grid.fx-stagger > .achievement-newly-unlocked {
+  animation: achievement-unlocked 820ms var(--ease-out-expo) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .ach-grid.fx-stagger > .achievement-newly-unlocked { animation: none; }
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .ach-grid.fx-stagger > .achievement-newly-unlocked { animation: none; }
 
 /* Crystal collection */
 .achievements-board--crystal {

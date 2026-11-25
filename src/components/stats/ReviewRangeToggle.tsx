@@ -3,6 +3,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { shiftStudyDay } from '../../../functions/src/study-day-rules';
 import type { ReviewActivity } from '../../features/gamification/verifiedGamificationClient';
+import { useTheme } from '../../features/theme/ThemeProvider';
 import { useVerifiedStats } from './VerifiedStatsContext';
 import { dayInTimeZone } from './ActivityHeatmap';
 
@@ -71,12 +72,15 @@ function useContextAllTime(): boolean {
 /** The range switch for the review activity heatmap and its totals. */
 export function ReviewRangeToggle({ value, onChange, className, allTime }: ReviewRangeToggleProps) {
   const { _ } = useLingui();
+  const isCrystal = useTheme().family === 'crystal';
   const contextAllTime = useContextAllTime();
   const offersAllTime = allTime ?? contextAllTime;
   const selected = value === 'all' && !offersAllTime ? 182 : value;
-  return <div className={className ? `stats-range ${className}` : 'stats-range'} role="group" aria-label={_(msg({ id: 'stats.heatmap-title', message: 'Review activity' }))}>
-    <button type="button" onClick={() => onChange(30)} aria-pressed={selected === 30} className={buttonClass}><span><Trans {...msg({ context: 'stats.review-range-30-days', message: '30 days' })} /></span></button>
-    <button type="button" onClick={() => onChange(182)} aria-pressed={selected === 182} className={buttonClass}><span><Trans {...msg({ context: 'stats.review-range-26-weeks', message: '26 weeks' })} /></span></button>
-    {offersAllTime && <button type="button" onClick={() => onChange('all')} aria-pressed={selected === 'all'} className={buttonClass}><span><Trans {...msg({ context: 'stats.review-range-all-time', message: 'All time' })} /></span></button>}
+  const rootClass = [className, 'stats-range', !isCrystal && 'fx-enter'].filter(Boolean).join(' ');
+  const itemClass = isCrystal ? buttonClass : `${buttonClass} sf-ease`;
+  return <div className={rootClass} role="group" aria-label={_(msg({ id: 'stats.heatmap-title', message: 'Review activity' }))}>
+    <button type="button" onClick={() => onChange(30)} aria-pressed={selected === 30} className={itemClass}><span><Trans {...msg({ context: 'stats.review-range-30-days', message: '30 days' })} /></span></button>
+    <button type="button" onClick={() => onChange(182)} aria-pressed={selected === 182} className={itemClass}><span><Trans {...msg({ context: 'stats.review-range-26-weeks', message: '26 weeks' })} /></span></button>
+    {offersAllTime && <button type="button" onClick={() => onChange('all')} aria-pressed={selected === 'all'} className={itemClass}><span><Trans {...msg({ context: 'stats.review-range-all-time', message: 'All time' })} /></span></button>}
   </div>;
 }

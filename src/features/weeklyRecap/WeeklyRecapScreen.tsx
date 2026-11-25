@@ -213,19 +213,19 @@ export function WeeklyRecapScreen({
 
     <section className="weekly-recap-controls">
       <header className="weekly-recap-controls__intro">
-        <p className="weekly-recap-controls__kicker"><Trans {...msg({ id: 'weeklyRecap.controls.kicker', message: 'Weekly recap <0/> Ready to share' })} components={{ 0: <span className="weekly-recap-controls__kicker-separator" aria-hidden="true" /> }} /></p>
-        <h1>{isCrystal ? <CrystalIntroHeadline bestWeek={intro.bestWeek} locale={locale} /> : <IntroHeadline bestWeek={intro.bestWeek} locale={locale} />}</h1>
-        {intro.aheadOfLastWeek !== null && intro.aheadOfLastWeek > 0 && <p className="weekly-recap-controls__lead">
+        <p className={`weekly-recap-controls__kicker${!isCrystal ? ' fx-enter' : ''}`}><Trans {...msg({ id: 'weeklyRecap.controls.kicker', message: 'Weekly recap <0/> Ready to share' })} components={{ 0: <span className="weekly-recap-controls__kicker-separator" aria-hidden="true" /> }} /></p>
+        <h1 className={!isCrystal ? 'fx-title' : undefined}>{isCrystal ? <CrystalIntroHeadline bestWeek={intro.bestWeek} locale={locale} /> : <IntroHeadline bestWeek={intro.bestWeek} locale={locale} />}</h1>
+        {intro.aheadOfLastWeek !== null && intro.aheadOfLastWeek > 0 && <p className={`weekly-recap-controls__lead${!isCrystal ? ' fx-enter' : ''}`}>
           <Trans {...msg({ id: 'weeklyRecap.controls.ahead', message: '<0>+{words, plural, one {# word} other {# words}}</0> compared with last week.' })} values={{ words: intro.aheadOfLastWeek }} components={{ 0: <strong /> }} />
         </p>}
       </header>
-      {intro.countedSince && <p className="weekly-recap-controls__unavailable">
+      {intro.countedSince && <p className={`weekly-recap-controls__unavailable${!isCrystal ? ' fx-enter' : ''}`}>
         <Trans {...msg({ id: 'weeklyRecap.counted-since', message: 'Weekly word counts started on {date}.' })} values={{ date: weeklyRecapShortDate(intro.countedSince, locale) }} />
       </p>}
 
       {selectionKeys.length > 0 && <fieldset className="weekly-recap-controls__selection">
-        <legend><Trans {...msg({ context: 'weeklyRecap.selection.legend', message: 'Show on the card' })} /></legend>
-        <div>{selectionKeys.map(key => <label key={key} className={selection[key] ? 'is-selected' : undefined}>
+        <legend className={!isCrystal ? 'fx-enter-3' : undefined}><Trans {...msg({ context: 'weeklyRecap.selection.legend', message: 'Show on the card' })} /></legend>
+        <div className={!isCrystal ? 'fx-enter-3' : undefined}>{selectionKeys.map(key => <label key={key} className={[selection[key] && 'is-selected', !isCrystal && 'sf-ease'].filter(Boolean).join(' ') || undefined}>
           <input type="checkbox" checked={selection[key]} onChange={() => actions.toggleSelection(key)} data-selection-key={key} />
           {isCrystal
             // The board skews the toggle and turns its label back upright.
@@ -235,8 +235,8 @@ export function WeeklyRecapScreen({
       </fieldset>}
 
       <div className="weekly-recap-controls__caption">
-        <label htmlFor="weekly-recap-caption"><Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} /></label>
-        <div className="weekly-recap-controls__caption-box">
+        <label htmlFor="weekly-recap-caption" className={!isCrystal ? 'fx-enter-3' : undefined}><Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} /></label>
+        <div className={`weekly-recap-controls__caption-box${!isCrystal ? ' fx-enter-3 sf-ease' : ''}`}>
           <textarea id="weekly-recap-caption" value={caption} maxLength={WEEKLY_RECAP_CAPTION_MAX_LENGTH} onChange={event => actions.setCaption(event.target.value)} rows={isCrystal ? 3 : 2} />
           <span>{caption.length} / {WEEKLY_RECAP_CAPTION_MAX_LENGTH}</span>
         </div>
@@ -246,7 +246,7 @@ export function WeeklyRecapScreen({
       {lastOutcome && !exportError && <p role="status" aria-live="polite" className="weekly-recap-controls__outcome">{_(outcomeCopy[lastOutcome])}</p>}
       {exportError && <p role="alert" className="weekly-recap-controls__error"><Trans {...msg({ context: 'weeklyRecap.export-error', message: 'Could not create the image. Please try again.' })} /></p>}
 
-      <div className="weekly-recap-controls__actions">
+      <div className={`weekly-recap-controls__actions${!isCrystal ? ' fx-enter-4' : ''}`}>
         {isCrystal
           // Skewed board buttons: the label span turns the text back upright; the shine band rests at the left edge.
           ? <>
@@ -254,8 +254,8 @@ export function WeeklyRecapScreen({
             <button type="button" onClick={actions.download} disabled={isBusy}><span className="weekly-recap-controls__action-label"><BoardDownload />{downloadLabel}</span></button>
           </>
           : <>
-            <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action sf-press"><Share2 size={16} aria-hidden="true" />{shareLabel}</button>
-            <button type="button" onClick={actions.download} disabled={isBusy}><Download size={15} aria-hidden="true" />{downloadLabel}</button>
+            <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action fx-press"><Share2 size={16} aria-hidden="true" />{shareLabel}</button>
+            <button type="button" onClick={actions.download} disabled={isBusy} className="fx-press"><Download size={15} aria-hidden="true" />{downloadLabel}</button>
           </>}
       </div>
     </section>

@@ -3,6 +3,7 @@ import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup as renderReactToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stateFromFixture, streakFixtures } from '../../features/gamification/testing/verifiedStatsFixtures';
+import { ThemeProvider } from '../../features/theme/ThemeProvider';
 import StatsCharts, { reviewDayInRange } from './StatsCharts';
 import { VerifiedStatsProvider } from './VerifiedStatsContext';
 
@@ -300,5 +301,49 @@ describe('StatsCharts accessible data equivalents', () => {
     );
 
     expect(html).toMatch(/<button[^>]*class="[^"]*min-h-11/);
+  });
+
+  it('uses Classic motion roles for arcs, center tick, legend, line, and bars while preserving Crystal reveals', () => {
+    const sample = {
+      xpChartData: [{ date: 'Jul 14, 2026', XP: 15 }, { date: 'Jul 15, 2026', XP: 30 }],
+      difficultyChart: [
+        { name: 'Mastered', value: 3 },
+        { name: 'Learning', value: 2 },
+        { name: 'Not reviewed', value: 1 },
+      ],
+      categoryChart: [{ name: 'Nouns', value: 6 }],
+      categoryChartIsPartial: false,
+      reviewActivity: { coverageStartedOn: '2026-07-01', days: { '2026-07-15': { reviewed: 4, again: 0, hard: 1, good: 2, easy: 1 } } },
+      rewardTimeZone: 'UTC',
+    };
+    const classic = renderToStaticMarkup(<StatsCharts darkMode={false} data={sample} />);
+    expect(classic).toContain('stats-activity fx-enter-2');
+    expect(classic).toContain('stats-mastery fx-enter-2');
+    expect(classic).toContain('<path data-chart-motion="ring" class="sf-draw sf-late" pathLength="1" d="M');
+    expect(classic).toContain('stats-ring-value sf-tick');
+    expect(classic).toContain('stats-mastery-legend fx-stagger');
+    expect(classic).toContain('<polyline data-chart-motion="line" class="sf-draw" pathLength="1"');
+    expect(classic).toContain('<span data-chart-motion="bar" class="sf-grow');
+
+    const fullCircle = renderToStaticMarkup(<StatsCharts darkMode={false} section="primary" data={{
+      xpChartData: [],
+      difficultyChart: [{ name: 'Mastered', value: 5 }],
+      categoryChart: [],
+      categoryChartIsPartial: false,
+    }} />);
+    expect(fullCircle).toContain('<circle data-chart-motion="ring" class="sf-draw sf-late" pathLength="1"');
+
+    vi.stubGlobal('localStorage', { getItem: (key: string) => (key === 'sonflash_theme_family' ? 'crystal' : null) });
+    try {
+      const crystal = renderToStaticMarkup(<ThemeProvider><StatsCharts darkMode={false} data={sample} /></ThemeProvider>);
+      expect(crystal).toContain('chart-ring-reveal');
+      expect(crystal).toContain('chart-line-reveal');
+      expect(crystal).toContain('chart-bar-reveal');
+      expect(crystal).not.toContain('sf-draw');
+      expect(crystal).not.toContain('sf-grow');
+      expect(crystal).not.toContain('fx-enter-2');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

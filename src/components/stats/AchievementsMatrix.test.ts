@@ -88,13 +88,13 @@ describe('learner level on the achievements ring', () => {
       createElement(AchievementsMatrix, { stats: { ...stats(), xpChartData: history }, onBackToProgress: () => {} }),
     )));
 
-    expect(html).toContain('<span class="ach-ring-label">Level</span><span class="ach-ring-number">3</span>');
+    expect(html).toContain('<span class="ach-ring-label">Level</span><span class="ach-ring-number sf-tick">3</span>');
     expect(html).toContain('data-learner-level="3"');
     // 640 XP is 240 into level 3, which spans 500 XP.
     expect(html).toMatch(/<span class="ach-mono">240<\/span> \/ 500 XP to Level 4/);
     // 260 XP left at an average of 80 XP per study day.
     expect(html).toContain('XP to Level 4</span><span class="tabular-nums">≈ 4 sessions</span>');
-    expect(html).toContain('class="ach-meter-fill" style="width:48%"');
+    expect(html).toContain('class="ach-meter-fill sf-grow" style="width:48%"');
     expect(html).not.toContain('data-featured-achievement');
   });
 

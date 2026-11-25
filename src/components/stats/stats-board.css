@@ -186,6 +186,8 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+:where(html[data-theme-family=crystal]) .stats-range-button {
   transition: background-color .16s ease, color .16s ease;
 }
 .stats-range-button[aria-pressed='true'] { background: var(--st-nav-active-bg); color: var(--st-nav-active-text); }
@@ -205,7 +207,7 @@
     z-index: -1;
     border-radius: inherit;
     background: transparent;
-    transition: background-color .16s ease;
+    transition: background-color 200ms ease;
   }
   :where(html:not([data-theme-family=crystal])) .stats-range-button[aria-pressed='true'] { background: transparent; }
   :where(html:not([data-theme-family=crystal])) .stats-range-button[aria-pressed='true']::before { background: var(--st-nav-active-bg); }
@@ -215,6 +217,9 @@
 }
 @media (pointer: fine) and (prefers-reduced-motion: reduce) {
   :where(html:not([data-theme-family=crystal])) .stats-range-button::before { transition: none; }
+}
+@media (pointer: fine) {
+  html[data-motion="reduced"]:not([data-theme-family="crystal"]) .stats-range-button::before { transition: none; }
 }
 
 /* Heatmap */
@@ -230,6 +235,25 @@
 .stats-heat-cell { display: block; flex-shrink: 0; width: 22px; height: 22px; border-radius: 5px; }
 .stats-heat-cell[data-level='3'], .stats-heat-cell[data-level='4'] { box-shadow: var(--st-heat-glow); }
 .stats-heat-button[aria-pressed='true'] .stats-heat-cell { outline: 2px solid var(--st-title); outline-offset: 1px; }
+html:not([data-theme-family="crystal"]) .stats-heat-cell {
+  animation: sf-cells-k 360ms cubic-bezier(.16, 1, .3, 1) 400ms both;
+}
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(2):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(2) > .stats-heat-cell { animation-delay: 430ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(3):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(3) > .stats-heat-cell { animation-delay: 460ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(4):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(4) > .stats-heat-cell { animation-delay: 490ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(5):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(5) > .stats-heat-cell { animation-delay: 520ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(6):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(6) > .stats-heat-cell { animation-delay: 550ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(7):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(7) > .stats-heat-cell { animation-delay: 580ms; }
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .stats-heat-cell { animation: none; }
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .stats-heat-cell { animation: none; }
 .stats-heat-months { display: flex; gap: var(--heat-gap); margin-top: 6px; font-size: 11px; color: var(--sf-text-tertiary); }
 .stats-heat-month { width: var(--heat-row); flex-shrink: 0; overflow: visible; white-space: nowrap; }
 /* ProgressScreen board: the month row starts 10px under the last row of cells; a day button reaches 1px below its cell. */

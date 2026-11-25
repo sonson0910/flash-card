@@ -135,9 +135,6 @@ interface ShownBadge {
 /** The progress shown next to the target, such as "3 / 5". */
 const ratio = (shown: ShownBadge, separator: string) => `${formatNumber(shown.badge.value)}${separator}${formatNumber(shown.badge.target)}`;
 
-/** Ring circumference for the 66px radius of the summary ring. */
-const RING_CIRCUMFERENCE = 2 * Math.PI * 66;
-
 function Medal({ shown, index, isCrystal }: { readonly shown: ShownBadge; readonly index: number; readonly isCrystal: boolean }) {
   const { Glyph, badge } = shown;
   const tilt = badge.state === 'earned' ? (index % 3 - 1) * 4 : 0;
@@ -174,7 +171,7 @@ function BadgeFoot({ shown, isCrystal, now }: { readonly shown: ShownBadge; read
   if (badge.state === 'locked') return <p className="ach-badge-locked"><Lock size={11} strokeWidth={2.2} aria-hidden="true" />{_(text.locked)}</p>;
   return <>
     <div className="ach-badge-count"><span className="tabular-nums">{ratio(shown, ' / ')}{shown.unitLabel && ` ${shown.unitLabel}`}</span><span className="tabular-nums">{formatNumber(badge.percent)}%</span></div>
-    <span className="ach-track" aria-hidden="true"><span className="ach-fill transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${badge.percent}%` }} /></span>
+    <span className="ach-track" aria-hidden="true"><span className="ach-fill sf-grow" style={{ width: `${badge.percent}%` }} /></span>
   </>;
 }
 
@@ -183,7 +180,7 @@ function BadgeCard({ shown, index, isCrystal, isNewlyUnlocked, now }: { readonly
   const { badge } = shown;
   const name = <div className="ach-badge-name"><h3 className="ach-badge-title">{shown.name}</h3><span className="ach-badge-tier">{shown.tierLabel}</span></div>;
   // Crystal puts the medal and a small lock chip on one row and the full name below them.
-  return <article data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tier} className={`ach-badge${!isCrystal ? ' sf-lift' : ''}${isNewlyUnlocked ? ' achievement-newly-unlocked' : ''}`}>
+  return <article data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tier} className={`ach-badge${!isCrystal ? ' fx-lift' : ''}${isNewlyUnlocked ? ' achievement-newly-unlocked' : ''}`}>
     <div className="ach-badge-head">
       <Medal shown={shown} index={index} isCrystal={isCrystal} />
       {isCrystal ? badge.state === 'locked' && <span className="ach-badge-lock" aria-hidden="true">{_(text.lockedChip)}</span> : name}
@@ -307,9 +304,9 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
   const shownTitle = model.shownTitleId ? _(titleCopy[model.shownTitleId]) : null;
   const sessionsLeft = level ? sessionsToNextLevel(level.levelSpan - level.xpIntoLevel, stats.xpChartData) : null;
   const totals = { earned: formatNumber(model.earnedCount), total: formatNumber(model.badges.length) };
-  const kicker = <p className="ach-kicker">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {_({ ...earnedCount, values: totals })}</p>;
+  const kicker = <p className={`ach-kicker${!isCrystal ? ' fx-enter' : ''}`}>{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {_({ ...earnedCount, values: totals })}</p>;
   const backButton = onBackToProgress && <button type="button" onClick={onBackToProgress} className="ach-back crystal-chamfer-sm inline-flex min-h-11 cursor-pointer items-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>;
-  const grid = <div data-achievement-grid className="ach-grid">{shownBadges.map((shown, index) => <BadgeCard key={shown.badge.id} shown={shown} index={index} isCrystal={isCrystal} isNewlyUnlocked={celebratingIds.has(shown.badge.id)} now={now} />)}</div>;
+  const grid = <div data-achievement-grid className={`ach-grid${!isCrystal ? ' fx-stagger' : ''}`}>{shownBadges.map((shown, index) => <BadgeCard key={shown.badge.id} shown={shown} index={index} isCrystal={isCrystal} isNewlyUnlocked={celebratingIds.has(shown.badge.id)} now={now} />)}</div>;
 
   if (isCrystal) {
     // The profile card draws the verified state; with only the level, the emblem card keeps the badge count.
@@ -402,7 +399,7 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
     </section>;
   }
 
-  const heading = <h1 id="achievements-heading" className="ach-title text-balance">{shownTitle
+  const heading = <h1 id="achievements-heading" className="ach-title fx-title text-balance">{shownTitle
     ? <Trans {...titleHeading} values={{ title: shownTitle }} components={{ 0: <em className="ach-title-accent" /> }} />
     : <Trans {...wordGardenTitle} components={{ 0: <em className="ach-title-accent" /> }} />}</h1>;
   const tiles: Array<{ key: string; label: string; value: ReactNode }> =model.totalXp !== null
@@ -417,50 +414,56 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
       { key: 'mastered', label: _(text.mastered), value: formatNumber(stats.learned) },
     ];
   const ringFraction = level ? level.progress : model.earnedCount / model.badges.length;
+  const ringArcAngle = ringFraction * 2 * Math.PI;
+  const ringArcPath = `M141 75 A66 66 0 ${ringFraction > 0.5 ? 1 : 0} 1 ${(75 + 66 * Math.cos(ringArcAngle)).toFixed(2)} ${(75 + 66 * Math.sin(ringArcAngle)).toFixed(2)}`;
   const levelPercent = level ? Math.round(level.progress * 100) : 0;
   return <section className="achievements-board achievements-board--classic" aria-labelledby="achievements-heading">
     <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
     {backButton}
     <header className="ach-hero">
-      <div className="ach-ring" aria-hidden="true">
+      <div className="ach-ring fx-enter" aria-hidden="true">
         <svg viewBox="0 0 150 150" className="ach-ring-svg" focusable="false">
           <circle className="ach-ring-track" cx="75" cy="75" r="66" />
-          {ringFraction > 0 && <circle className="ach-ring-value" cx="75" cy="75" r="66" strokeDasharray={`${(RING_CIRCUMFERENCE * ringFraction).toFixed(1)} ${RING_CIRCUMFERENCE.toFixed(1)}`} />}
+          {ringFraction > 0 && (ringFraction >= 0.9999
+            ? <circle className="ach-ring-value sf-draw" pathLength={1} cx="75" cy="75" r="66" />
+            : <path className="ach-ring-value sf-draw" pathLength={1} d={ringArcPath} />)}
         </svg>
-        <span className="ach-ring-core"><span className="ach-ring-label">{level ? _(levelLabel) : _(text.unlocked)}</span><span className="ach-ring-number">{formatNumber(level ? level.level : model.earnedCount)}</span></span>
+        <span className="ach-ring-core"><span className="ach-ring-label">{level ? _(levelLabel) : _(text.unlocked)}</span><span className="ach-ring-number sf-tick">{formatNumber(level ? level.level : model.earnedCount)}</span></span>
       </div>
       <div className="ach-hero-main">
         {kicker}
         {heading}
         {level
-          ? <div className="ach-meter" data-learner-level={level.level}>
+          ? <div className="ach-meter fx-enter-2" data-learner-level={level.level}>
             <div className="ach-meter-row">
               <span><Trans {...levelMeter} values={{ xp: formatNumber(level.xpIntoLevel), next: formatNumber(level.levelSpan), level: formatNumber(level.level + 1) }} components={{ 0: <span className="ach-mono" /> }} /></span>
               {/* The board estimates the sessions left; without enough recent study days the share of the level stands in. */}
               <span className="tabular-nums">{sessionsLeft !== null ? _({ ...levelSessions, values: { count: sessionsLeft } }) : `${formatNumber(levelPercent)}%`}</span>
             </div>
-            <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${levelPercent}%` }} /></span>
+            <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill sf-grow" style={{ width: `${levelPercent}%` }} /></span>
           </div>
-          : <div className="ach-meter" data-featured-achievement data-badge-id={featured.badge.id}>
+          : <div className="ach-meter fx-enter-2" data-featured-achievement data-badge-id={featured.badge.id}>
             <div className="ach-meter-row">
               <span>{allEarned ? _(text.allEarned) : <Trans {...nextBadgeMeter} values={{ current: formatNumber(featured.badge.value), target: formatNumber(featured.badge.target), unit: featured.unitLabel ?? legacyUnit(featured.badge.unit), badge: featured.name }} components={{ 0: <span className="ach-mono" /> }} />}</span>
               <span className="tabular-nums">{formatNumber(allEarned ? 100 : featured.badge.percent)}%</span>
             </div>
-            <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${allEarned ? 100 : featured.badge.percent}%` }} /></span>
+            <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill sf-grow" style={{ width: `${allEarned ? 100 : featured.badge.percent}%` }} /></span>
           </div>}
       </div>
-      <dl className="ach-tiles" data-achievement-summary>
+      <dl className="ach-tiles fx-stagger" data-achievement-summary>
         {tiles.map(tile => <div key={tile.key} className="ach-tile" data-tile={tile.key}><dt>{tile.label}</dt><dd className="tabular-nums">{tile.value}</dd></div>)}
       </dl>
     </header>
-    <div className="ach-badges-head">
-      <h2 className="ach-badges-title">{_(text.badges)}</h2>
-      <ul className="ach-legend" aria-label={_(text.legendLabel)}>
-        <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--earned" />{_(text.earned)}</li>
-        <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--star" />{_(text.starTier)}</li>
-        <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--progress" />{_(text.inProgress)}</li>
-      </ul>
+    <div className="fx-enter-3">
+      <div className="ach-badges-head">
+        <h2 className="ach-badges-title">{_(text.badges)}</h2>
+        <ul className="ach-legend" aria-label={_(text.legendLabel)}>
+          <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--earned" />{_(text.earned)}</li>
+          <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--star" />{_(text.starTier)}</li>
+          <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--progress" />{_(text.inProgress)}</li>
+        </ul>
+      </div>
+      <div data-achievements-board>{grid}</div>
     </div>
-    <div data-achievements-board>{grid}</div>
   </section>;
 }

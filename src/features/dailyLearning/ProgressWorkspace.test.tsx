@@ -4,6 +4,7 @@ import { I18nProvider } from '@lingui/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
+import { ThemeProvider } from '../theme/ThemeProvider';
 import ProgressWorkspace, { formatLocalMasteredDate, hasProgressActivity } from './ProgressWorkspace';
 
 i18n.load('en', {});
@@ -196,5 +197,34 @@ describe('ProgressWorkspace learning activity gate', () => {
     expect(html).toContain('<span class="sr-only">12</span>');
     expect(html).toContain('<span class="sr-only">4</span>');
     expect(html).toContain('<span class="sr-only">3</span>');
+  });
+
+  it('applies Classic entrance and stagger roles to forecast and recently mastered without leaking to Crystal', () => {
+    const richStats = stats({
+      reviewed: 5,
+      learned: 2,
+      dueAsOfDate: '2026-09-27',
+      dueForecast: [{ date: '2026-09-28', count: 3 }],
+      recentlyMastered: [{ id: 'm-1', word: 'benefit', translation: 'lợi ích', masteredAt: '2026-09-27T18:30:00.000Z' }],
+    });
+    const classic = renderProgress(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={richStats} isStatsLoading={false} statsError={null}
+      continueReview={vi.fn()} openVocabulary={vi.fn()}
+    />);
+    expect(classic).toContain('progress-forecast crystal-chamfer min-w-0 fx-enter-3');
+    expect(classic).toContain('progress-mastered crystal-chamfer min-w-0 fx-enter-3');
+    expect(classic).toContain('progress-mastered-cards fx-stagger');
+
+    vi.stubGlobal('localStorage', { getItem: (key: string) => (key === 'sonflash_theme_family' ? 'crystal' : null) });
+    try {
+      const crystal = renderProgress(<ThemeProvider><ProgressWorkspace
+        darkMode={false} isOffline={false} stats={richStats} isStatsLoading={false} statsError={null}
+        continueReview={vi.fn()} openVocabulary={vi.fn()}
+      /></ThemeProvider>);
+      expect(crystal).not.toContain('fx-enter-3');
+      expect(crystal).not.toContain('fx-stagger');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

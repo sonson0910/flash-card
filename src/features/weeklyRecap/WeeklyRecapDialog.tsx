@@ -4,6 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { X } from 'lucide-react';
 import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
+import { useTheme } from '../theme/ThemeProvider';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import {
   availableWeeklyRecapSelectionKeys,
@@ -44,6 +45,7 @@ const defaultNow = (): Date => new Date();
 
 export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSavedStats = false, now = defaultNow }: WeeklyRecapDialogProps) {
   const { _, i18n: activeI18n } = useLingui();
+  const isCrystal = useTheme().family === 'crystal';
   const verified = useVerifiedStats();
   const data = useMemo(
     () => computeWeeklyRecap(stats.xpChartData, now(), stats.reviewActivity, verified?.state?.rewardTimeZone ?? stats.rewardTimeZone),
@@ -166,7 +168,7 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
 
   return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
-      <Dialog.Overlay className="weekly-recap-dialog-overlay" />
+      <Dialog.Overlay className={`weekly-recap-dialog-overlay${!isCrystal ? ' sf-scrim' : ''}`} />
       <Dialog.Content className="weekly-recap-dialog">
         <div className="weekly-recap-dialog__header">
           <Dialog.Title className="weekly-recap-dialog__title"><Trans {...msg({ id: 'weeklyRecap.dialog.title', message: 'Your weekly recap' })} /></Dialog.Title>

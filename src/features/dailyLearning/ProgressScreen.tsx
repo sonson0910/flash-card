@@ -18,11 +18,11 @@ import type { ProgressScreenProps } from './dailyLearningPresentation';
 
 const primaryClass = 'progress-board-cta brand-action crystal-chamfer min-h-11 px-6 py-3 font-extrabold transition duration-200 active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 
-function ProgressHeading({ model }: Pick<ProgressScreenProps, 'model'>) {
+function ProgressHeading({ model, isCrystal }: Pick<ProgressScreenProps, 'model'> & { readonly isCrystal: boolean }) {
   const assignHeading = (heading: HTMLHeadingElement | null) => {
     if (model.headingRef) model.headingRef.current = heading;
   };
-  return <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className="progress-board-title text-balance focus-visible:outline-2"><Trans {...msg({ context: 'progress.title', message: 'Progress' })} /></h1>;
+  return <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className={`progress-board-title${!isCrystal ? ' fx-title' : ''} text-balance focus-visible:outline-2`}><Trans {...msg({ context: 'progress.title', message: 'Progress' })} /></h1>;
 }
 
 function Metric({ label, value, tone }: { readonly label: React.ReactNode; readonly value: number | null; readonly tone: string }) {
@@ -74,7 +74,7 @@ function Summary({ model, actions }: Omit<ProgressScreenProps, 'children'>) {
 
 function Subtitle({ model, isCrystal }: Pick<ProgressScreenProps, 'model'> & { readonly isCrystal: boolean }) {
   if (model.status !== 'ready' || model.reviewed === null) return null;
-  return <p className="progress-board-subtitle">
+  return <p className={`progress-board-subtitle${!isCrystal ? ' fx-enter' : ''}`}>
     {!isCrystal && <ProgressLearningSince variant="subtitle" />}
     <span className="progress-board-stat"><Trans {...msg({ context: 'progress.subtitle.reviewed', message: '{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}' })} values={{ count: model.reviewed }} components={{ 0: <strong /> }} /></span>
     {model.mastered !== null && <><span className="progress-board-dot"> · </span><span className="progress-board-stat"><Trans {...msg({ context: 'progress.subtitle.mastered', message: '<0>{count}</0> mastered' })} values={{ count: model.mastered }} components={{ 0: <strong /> }} /></span></>}
@@ -99,7 +99,7 @@ export function ProgressScreen({ model, actions, children, emptyAside }: Progres
     <header className="progress-board-header">
       <div className="progress-board-titles">
         {isCrystal && <p className="progress-board-kicker"><Trans {...msg({ context: 'progress.kicker', message: 'Study diary' })} /><ProgressLearningSince variant="kicker" /></p>}
-        <ProgressHeading model={model} />
+        <ProgressHeading model={model} isCrystal={isCrystal} />
       </div>
       <Subtitle model={model} isCrystal={isCrystal} />
       {showLumi && <LumiLink model={model} />}

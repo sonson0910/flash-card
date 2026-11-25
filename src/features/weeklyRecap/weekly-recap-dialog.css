@@ -37,6 +37,48 @@
   outline: none;
 }
 
+@keyframes weekly-recap-dialog-au-k {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(0, 14px, 0) scale(.97);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+    filter: none;
+  }
+}
+
+@keyframes weekly-recap-dialog-ip-k {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(0, 22px, 0) rotate(-.8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+html.dark:not([data-theme-family="crystal"]) .weekly-recap-dialog {
+  animation: weekly-recap-dialog-au-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+html:not(.dark):not([data-theme-family="crystal"]) .weekly-recap-dialog {
+  animation: weekly-recap-dialog-ip-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .weekly-recap-dialog {
+    animation: none;
+  }
+}
+
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .weekly-recap-dialog {
+  animation: none;
+}
+
 /* The board's backdrop: a violet bloom top left and the accent pooling bottom right. */
 :root[data-theme-family="classic"].dark .weekly-recap-dialog {
   background:
@@ -598,12 +640,18 @@
   cursor: pointer;
   font-size: .8rem;
   font-weight: 650;
+}
+
+:where(html[data-theme-family=crystal]) .weekly-recap-controls__selection label {
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
 .weekly-recap-controls__selection label:hover {
   border-color: color-mix(in srgb, var(--sf-brand) 60%, var(--sf-border));
   color: var(--sf-text);
+}
+
+:where(html[data-theme-family=crystal]) .weekly-recap-controls__selection label:hover {
   transform: translateY(-1px);
 }
 
@@ -743,12 +791,20 @@
   cursor: pointer;
   font-size: 14.5px;
   font-weight: 600;
-  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
-.weekly-recap-controls__actions button:hover:not(:disabled) {
+:where(html[data-theme-family=crystal]) .weekly-recap-controls__actions button:hover:not(:disabled) {
   border-color: var(--sf-brand);
   transform: translateY(-1px);
+}
+
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__actions button:hover:not(:disabled) {
+  border-color: var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__actions .fx-press:disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }
 
 :where(html[data-theme-family=crystal]) .weekly-recap-controls__actions .brand-action {
@@ -770,10 +826,6 @@
   padding: 0 22px;
   font-size: 15px;
   font-weight: 650;
-}
-
-:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__actions .brand-action:hover:not(:disabled) {
-  filter: brightness(1.06);
 }
 
 .weekly-recap-controls__actions button:disabled {
@@ -1880,6 +1932,10 @@
   .weekly-recap-controls__actions button {
     transition: none;
   }
+}
+
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .weekly-recap-dialog__close {
+  transition: none;
 }
 
 @media (max-width: 960px) {

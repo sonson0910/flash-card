@@ -153,14 +153,17 @@
 .paths-cta:focus-visible, .paths-ghost:focus-visible, .paths-quiet-button:focus-visible, .paths-browse:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 3px; }
 .paths-quiet-button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; border: 1px solid var(--sf-border); border-radius: var(--pa-btn-radius); background: var(--sf-surface-control); padding: 0 18px; color: var(--sf-text); font-size: 14px; font-weight: 600; cursor: pointer; }
 .paths-quiet-button:hover { border-color: var(--sf-brand); }
+/* Crystal only; the family scope sits in :where() so these keep the weight they had before Classic moved to
+   the lift and press roles, and the skewed Crystal buttons below still win. */
 @media (hover: hover) and (pointer: fine) {
-  .paths-cta:not(:disabled), .paths-ghost, .paths-book { transition: transform 200ms var(--ease-out-expo, ease), filter 200ms ease, box-shadow 200ms ease; }
-  .paths-cta:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.06); }
-  .paths-book:hover { transform: translateY(-3px); }
+  :where(:root[data-theme-family='crystal']) .paths-cta:not(:disabled), :where(:root[data-theme-family='crystal']) .paths-ghost, :where(:root[data-theme-family='crystal']) .paths-book { transition: transform 200ms var(--ease-out-expo, ease), filter 200ms ease, box-shadow 200ms ease; }
+  :where(:root[data-theme-family='crystal']) .paths-cta:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.06); }
+  :where(:root[data-theme-family='crystal']) .paths-book:hover { transform: translateY(-3px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .paths-cta, .paths-ghost, .paths-book { transition: none !important; transform: none !important; }
+  :where(:root[data-theme-family='crystal']) .paths-cta, :where(:root[data-theme-family='crystal']) .paths-ghost, :where(:root[data-theme-family='crystal']) .paths-book { transition: none !important; transform: none !important; }
 }
+:where(html:not([data-theme-family=crystal])) :is(.paths-cta, .paths-ghost).fx-press:disabled:is(:hover, :active) { transform: none; filter: none; }
 /* Crystal: the ghost's skewed frame is its shape, not motion, so reduced motion keeps it; hover lifts like the
    board's nk-lift (3px up, springy settle; pressed shrinks; the ghost also brightens, the books keep their glow). */
 @media (prefers-reduced-motion: reduce) {
@@ -239,7 +242,7 @@ button.paths-book { cursor: pointer; }
 :where(html:not([data-theme-family=crystal])) .paths-shelf-title { line-height: normal; }
 /* Book foot (line 47): margin-top auto only; the 272px book leaves the room. */
 :where(html:not([data-theme-family=crystal])) .paths-book-foot { padding-top: 0; }
-/* Board books are links with sf-lift; the catalog books are buttons and carry sf-lift (CatalogScreen.tsx). The personal step
+/* Board books are links with fx-lift; the catalog books are buttons and carry fx-lift (CatalogScreen.tsx). The personal step
    books are plain list items, so they do not lift on hover. */
 :where(html:not([data-theme-family=crystal])) li.paths-book:hover { transform: none; }
 

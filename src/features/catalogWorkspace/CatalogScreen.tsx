@@ -194,7 +194,7 @@ function PersonalLibraryPaths({
     : null;
   return (
     <div className="catalog-feature-grid">
-      <section aria-labelledby="personal-paths-heading" className="catalog-personal-paths paths-hero">
+      <section aria-labelledby="personal-paths-heading" className={`catalog-personal-paths paths-hero${!isCrystal ? ' fx-enter-2' : ''}`}>
         {isCrystal && <span aria-hidden="true" className="paths-hero-art"><CrystalPathWings /></span>}
         <div className="paths-hero-main">
           <p className="paths-hero-kicker"><span className="paths-hero-dot" aria-hidden="true" /><span className="paths-hero-kicker-text"><Trans {...msg({ context: 'catalog.personal.kicker', message: 'Built from your library' })} /></span></p>
@@ -203,26 +203,26 @@ function PersonalLibraryPaths({
         </div>
         <div className="paths-hero-foot">
           <div className="paths-hero-route">
-            <div className="paths-hero-meter" aria-hidden="true"><span style={{ width: `${masteredPercent}%` }} /></div>
+            <div className="paths-hero-meter" aria-hidden="true"><span className={!isCrystal ? 'sf-grow' : undefined} style={{ width: `${masteredPercent}%` }} /></div>
             <p className="catalog-feature-count">
               <span><Trans {...msg({ id: 'paths.personal.mastered-count', message: '<0>{mastered}</0> of {total} cards mastered' })} values={{ mastered: formatNumber(library.learned), total: formatNumber(library.total) }} components={{ 0: <span className="paths-mono paths-count-strong" /> }} /></span>
               <span><Trans {...msg({ id: 'paths.personal.due-count', message: '{count} due for review today' })} values={{ count: formatNumber(library.dueToday) }} /></span>
             </p>
             <div className="paths-hero-actions">
-              {library.total > 0 && <button type="button" onClick={actions.continueReview} className={`catalog-feature-continue paths-cta brand-action${!isCrystal ? ' sf-press' : ''}`}><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></span></button>}
-              <button type="button" onClick={actions.openVocabulary} className={`paths-ghost${!isCrystal ? ' sf-press' : ''}`}><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></span></button>
+              {library.total > 0 && <button type="button" onClick={actions.continueReview} className={`catalog-feature-continue paths-cta brand-action${!isCrystal ? ' fx-press' : ''}`}><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></span></button>}
+              <button type="button" onClick={actions.openVocabulary} className={`paths-ghost${!isCrystal ? ' fx-press' : ''}`}><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></span></button>
             </div>
           </div>
           {showLumi && <LumiLink message={lumiMessage} />}
         </div>
       </section>
-      <section aria-labelledby="personal-shelf-heading" className="catalog-shelf paths-shelf">
+      <section aria-labelledby="personal-shelf-heading" className={`catalog-shelf paths-shelf${!isCrystal ? ' fx-enter-3' : ''}`}>
         <div className="paths-shelf-head">
           <h2 id="personal-shelf-heading" className="paths-shelf-title"><Trans {...msg({ context: 'paths.shelf.title', message: 'Your shelf' })} /></h2>
           {isCrystal && <span className="paths-shelf-count"><Trans {...msg({ id: 'paths.shelf.steps', message: '// {count} steps' })} values={{ count: paths.length }} /></span>}
           <button type="button" className="paths-browse" onClick={() => actions.selectMode('reviewed')}><Trans {...msg({ id: 'paths.shelf.browse', message: 'Browse catalog →' })} /></button>
         </div>
-        <ol className="paths-books" aria-label={i18n._(msg({ id: 'catalog.personal.path-label', message: 'Personal learning path: Review due → Keep learning → Mastered' }))}>
+        <ol className={`paths-books${!isCrystal ? ' fx-stagger' : ''}`} aria-label={i18n._(msg({ id: 'catalog.personal.path-label', message: 'Personal learning path: Review due → Keep learning → Mastered' }))}>
           {paths.map((path, index) => {
             const label = i18n._(path.label);
             return (
@@ -233,7 +233,7 @@ function PersonalLibraryPaths({
                 <span className="paths-book-name">{label}</span>
                 <span className="paths-book-blurb">{i18n._(path.copy)}</span>
                 <span className="paths-book-foot">
-                  <span className="paths-book-track" aria-hidden="true"><span style={{ width: `${percentOf(path.value, library.total)}%` }} /></span>
+                  <span className="paths-book-track" aria-hidden="true"><span className={!isCrystal ? 'sf-grow' : undefined} style={{ width: `${percentOf(path.value, library.total)}%` }} /></span>
                   <span className="paths-book-count paths-mono">{formatNumber(path.value)}</span>
                 </span>
               </li>
@@ -250,7 +250,7 @@ function TrackCard({ track, selected, progressAvailable, isCrystal, onSelect }: 
   const label = i18n._(copy.label);
   const progress = percentOf(track.mastered, track.total);
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className={`catalog-track-card paths-book${!isCrystal ? ' sf-lift' : ''}`} data-hue={trackBookHue[track.id]}>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className={`catalog-track-card paths-book${!isCrystal ? ' fx-lift' : ''}`} data-hue={trackBookHue[track.id]}>
       <span className="paths-book-spine" aria-hidden="true" />
       {isCrystal && <span className="paths-book-glyph" aria-hidden="true">{label.charAt(0)}</span>}
       {/* The kind chip follows the name in the DOM so the button is announced by its track name first; CSS shows the chip above it. */}
@@ -258,7 +258,7 @@ function TrackCard({ track, selected, progressAvailable, isCrystal, onSelect }: 
       <span className="paths-book-kind">{i18n._(trackKindMessages[track.id])}{selected && <Check className="paths-book-check" aria-hidden="true" />}</span>
       <span className="paths-book-blurb">{i18n._(copy.description)}</span>
       <span className="paths-book-foot">
-        <span className="paths-book-track" aria-hidden="true"><span style={{ width: `${progressAvailable ? progress : 0}%` }} /></span>
+        <span className="paths-book-track" aria-hidden="true"><span className={!isCrystal ? 'sf-grow' : undefined} style={{ width: `${progressAvailable ? progress : 0}%` }} /></span>
         {progressAvailable
           ? <span className="paths-book-count paths-mono"><span aria-hidden="true">{formatNumber(track.mastered)} / {formatNumber(track.total)}</span><span className="sr-only"><Trans {...msg({ id: 'paths.book.progress', message: '{mastered} of {total} words mastered · {started} started' })} values={{ mastered: formatNumber(track.mastered), total: formatNumber(track.total), started: formatNumber(track.started) }} /></span></span>
           : <span className="paths-book-count"><Trans {...msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })} /> · <Trans {...msg({ context: 'paths.unit.count', message: '{count} words' })} values={{ count: formatNumber(track.total) }} /></span>}
@@ -440,8 +440,8 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
         <div className="paths-header-copy">
           {isCrystal && <p className="paths-header-kicker"><Trans {...msg({ id: 'paths.crystal.kicker', message: 'Journey <0>//</0> Week {week}' })} values={{ week: isoWeekNumber(new Date()) }} components={{ 0: <span className="paths-header-kicker-slash" /> }} /></p>}
           <div className="paths-header-titles">
-            <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="paths-title"><Trans {...msg({ context: 'paths.title', message: 'Paths' })} /></h1>
-            <p className="paths-subtitle"><Trans {...msg({ id: 'paths.subtitle', message: 'Guided word sets, ordered so each word builds on the one before.' })} /></p>
+            <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className={`paths-title${!isCrystal ? ' fx-title' : ''}`}><Trans {...msg({ context: 'paths.title', message: 'Paths' })} /></h1>
+            <p className={`paths-subtitle${!isCrystal ? ' fx-enter' : ''}`}><Trans {...msg({ id: 'paths.subtitle', message: 'Guided word sets, ordered so each word builds on the one before.' })} /></p>
           </div>
         </div>
         <div className="paths-controls">
@@ -463,7 +463,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
 
       {isReady && <>
         <div className="catalog-feature-grid">
-        {activeTrack && activeTrackCopy && <section aria-labelledby="catalog-current-path-heading" className="catalog-current-path paths-hero">
+        {activeTrack && activeTrackCopy && <section aria-labelledby="catalog-current-path-heading" className={`catalog-current-path paths-hero${!isCrystal ? ' fx-enter-2' : ''}`}>
           {isCrystal && <span aria-hidden="true" className="paths-hero-art"><CrystalPathWings /></span>}
           <div className="paths-hero-main">
             <p className="paths-hero-kicker"><span className="paths-hero-dot" aria-hidden="true" /><span className="paths-hero-kicker-text">{featuredUnit && pathUnits
@@ -471,7 +471,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               : <Trans {...msg({ context: 'paths.current.kicker', message: 'Your current path' })} />}</span></p>
             <h2 id="catalog-current-path-heading" className="paths-hero-title"><span className="paths-hero-title-main">{i18n._(activeTrackCopy.label)}</span>{activeTier && <> <em className="paths-hero-title-accent">{i18n._(catalogTierMessages[activeTier.id].label)}</em></>}</h2>
             <p className="paths-hero-copy">{i18n._(activeTrackCopy.description)}.{featuredUnit && <> <Trans {...msg({ id: 'paths.hero.this-unit', message: 'This unit: <0>{title}</0>.' })} values={{ title: pathUnitTitle(featuredUnit.unit, unitLanguage) }} components={{ 0: <strong className="paths-hero-unit" /> }} /></>}</p>
-            {featuredUnit && featuredUnit.unit.preview.length > 0 && <ul className="catalog-feature-words">
+            {featuredUnit && featuredUnit.unit.preview.length > 0 && <ul className={`catalog-feature-words${!isCrystal ? ' fx-stagger' : ''}`}>
               {featuredUnit.unit.preview.map((lexeme, index) => <li key={`${lexeme.lexemeId}:${index}`} lang={model.selectedLanguage} className="crystal-chamfer-sm"><span className="paths-chip-mark" aria-hidden="true" />{lexeme.lemma}</li>)}
             </ul>}
           </div>
@@ -491,22 +491,22 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               {pathUnits && pathUnits.length > 0 && <div className="paths-hero-actions">
                 {allUnitsComplete
                   ? <p className="paths-hero-done"><Trans {...msg({ context: 'paths.unit.all-complete', message: 'All units in this path are complete.' })} /></p>
-                  : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className={`catalog-feature-continue paths-cta brand-action${!isCrystal ? ' sf-press' : ''}`}><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label">{featuredUnit
+                  : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className={`catalog-feature-continue paths-cta brand-action${!isCrystal ? ' fx-press' : ''}`}><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label">{featuredUnit
                     ? <Trans {...msg({ id: 'paths.hero.continue-unit', message: 'Continue unit {ordinal}' })} values={{ ordinal: featuredUnit.unit.ordinal }} />
                     : <Trans {...msg({ context: 'paths.action.continue', message: 'Continue' })} />}</span></button>}
-                <button type="button" onClick={() => revealSection('catalog-units-heading')} className={`paths-ghost${!isCrystal ? ' sf-press' : ''}`}><span className="paths-btn-label"><Trans {...msg({ id: 'paths.hero.see-all-units', message: 'See all units' })} /></span></button>
+                <button type="button" onClick={() => revealSection('catalog-units-heading')} className={`paths-ghost${!isCrystal ? ' fx-press' : ''}`}><span className="paths-btn-label"><Trans {...msg({ id: 'paths.hero.see-all-units', message: 'See all units' })} /></span></button>
               </div>}
             </div>
             {showLumi && <LumiLink message={lumiMessage} />}
           </div>
         </section>}
-        <section aria-labelledby="catalog-tracks-heading" className="catalog-shelf paths-shelf">
+        <section aria-labelledby="catalog-tracks-heading" className={`catalog-shelf paths-shelf${!isCrystal ? ' fx-enter-3' : ''}`}>
           <div className="paths-shelf-head">
             <h2 id="catalog-tracks-heading" className="paths-shelf-title"><Trans {...msg({ context: 'paths.shelf.title', message: 'Your shelf' })} /></h2>
             {isCrystal && <span className="paths-shelf-count"><Trans {...msg({ id: 'paths.shelf.journeys', message: '// {count, plural, one {# journey} other {# journeys}}' })} values={{ count: shelfTracks }} /></span>}
             <a href="#catalog-vocabulary-heading" className="paths-browse" onClick={event => { event.preventDefault(); revealSection('catalog-vocabulary-heading'); }}><Trans {...msg({ id: 'paths.shelf.browse', message: 'Browse catalog →' })} /></a>
           </div>
-          <div className="paths-books">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} isCrystal={isCrystal} onSelect={() => actions.selectTrack(track.id)} />)}</div>
+          <div className={`paths-books${!isCrystal ? ' fx-stagger' : ''}`}>{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} isCrystal={isCrystal} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
         </div>
 
