@@ -173,4 +173,4 @@ html[data-motion="reduced"]:not([data-theme-family="crystal"]) .spreadsheet-impo
 @keyframes spreadsheet-import-sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (max-width: 640px) { .spreadsheet-import-row dt { gap: 6px; } .spreadsheet-import-row dt small { font-size: 11.5px; } .spreadsheet-import-issues { padding-left: 16px; } .spreadsheet-import-progress-heading { flex-wrap: wrap; } .spreadsheet-import-current { width: 100%; margin-left: 27px; } }
 @media (prefers-reduced-motion: reduce) { .spreadsheet-import-indeterminate { animation: none; } }
-html[data-motion="reduced"]:not([data-theme-family="crystal"]) .spreadsheet-import-indeterminate { animation: none; }
+html[data-motion="reduced"] .spreadsheet-import-indeterminate { animation: none; }

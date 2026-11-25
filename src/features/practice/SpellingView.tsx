@@ -288,7 +288,7 @@ export function SpellingView({
                 <button
                   type="button"
                   onClick={() => playPronunciation()}
-                  className={`practice-listen__button${crystal ? " sf-press sf-pulse transition-colors" : " fx-press"} focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none`}
+                  className={`practice-listen__button${crystal ? "" : " fx-press"} focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none`}
                   aria-label={_(
                     msg({
                       id: "practice.spelling.play-pronunciation",
@@ -454,7 +454,14 @@ export function SpellingView({
                   ) : (
                     <>
                       <button data-color-role="primary" type="submit" className={`practice-primary ${actionClass}`}>
-                        <Trans {...msg({ context: 'practice.spelling.check', message: 'Check' })} />
+                        {crystal ? (
+                          <>
+                            <span className="practice-primary__shine" aria-hidden="true" />
+                            <span className="practice-primary__label"><Trans {...msg({ context: 'practice.spelling.check', message: 'Check' })} /></span>
+                          </>
+                        ) : (
+                          <Trans {...msg({ context: 'practice.spelling.check', message: 'Check' })} />
+                        )}
                         <EnterKeyHint />
                       </button>
                       {onReveal && (

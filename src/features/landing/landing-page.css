@@ -327,7 +327,7 @@ html[data-theme-family="crystal"] #top { border-bottom-color: transparent; }
 .crystal-page-glow { --crystal-beam: rgb(255 255 255 / .5); position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, rgb(255 84 112 / .18), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%); }
 html.dark .crystal-page-glow { --crystal-beam: rgb(255 255 255 / .08); background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%); }
 .crystal-page-glow > .nk-starfield { position: absolute; inset: 0; background: var(--nk-stars); }
-.crystal-page-glow > .nk-beam { position: absolute; top: -20%; height: 140%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, var(--crystal-beam), transparent); }
+.crystal-page-glow > .nk-beam { position: absolute; top: -20%; height: 140%; opacity: .45; transform: rotate(24deg); background: linear-gradient(90deg, transparent, var(--crystal-beam), transparent); }
 .crystal-page-glow > .nk-beam:nth-child(2) { left: 18%; width: 160px; filter: blur(4px); }
 .crystal-page-glow > .nk-beam:nth-child(3) { left: 58%; width: 90px; filter: blur(3px); }
 

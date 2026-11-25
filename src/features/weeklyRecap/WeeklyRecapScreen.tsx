@@ -248,9 +248,9 @@ export function WeeklyRecapScreen({
 
       <div className={`weekly-recap-controls__actions${!isCrystal ? ' fx-enter-4' : ''}`}>
         {isCrystal
-          // Skewed board buttons: the label span turns the text back upright; the shine band rests at the left edge.
+          // Skewed board buttons: the label span turns the text back upright.
           ? <>
-            <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action"><span className="weekly-recap-controls__share-shine" aria-hidden="true" /><span className="weekly-recap-controls__action-label">{shareLabel}</span></button>
+            <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action"><span className="weekly-recap-controls__action-label">{shareLabel}</span></button>
             <button type="button" onClick={actions.download} disabled={isBusy}><span className="weekly-recap-controls__action-label"><BoardDownload />{downloadLabel}</span></button>
           </>
           : <>

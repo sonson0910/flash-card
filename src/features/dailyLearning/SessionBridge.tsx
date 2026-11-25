@@ -230,7 +230,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
                     <PreviewCard card={card} flipped={flipped} turning={turning} crystal={crystal} />
                   </button>
                 );
-                return crystal ? previewButton : <span className="session-bridge-card-deal sf-deal-2">{previewButton}</span>;
+                return <span className="session-bridge-card-deal sf-deal-2">{previewButton}</span>;
               })()}
             </>
           ) : <Sparkles className="session-bridge-finale" size={92} aria-hidden="true" />}

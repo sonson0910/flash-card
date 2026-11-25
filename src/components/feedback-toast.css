@@ -276,7 +276,7 @@ html[data-theme-family="classic"] [data-notification-toast]:hover { box-shadow: 
 :where(html:not([data-theme-family=crystal])) .notification-toast-spinner { width: 18px; height: 18px; }
 
 @media (prefers-reduced-motion: no-preference) {
-  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .notification-toast-spinner { animation: sf-spin-k 900ms linear infinite; }
+  :where(html:not([data-motion="reduced"])) .notification-toast-spinner { animation: sf-spin-k 900ms linear infinite; }
 }
 
 /* The board's action chip: 30px high, 9px under the message, inside the 44px target. */
@@ -604,6 +604,6 @@ html[data-theme-family="crystal"] .undo-toast-progress { box-shadow: 0 0 8px var
   .notification-toast-spinner { animation: none !important; }
 }
 
-html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.notification-toast-spinner, .undo-toast-progress) {
+html[data-motion="reduced"] :is(.notification-toast-spinner, .undo-toast-progress) {
   animation: none !important;
 }

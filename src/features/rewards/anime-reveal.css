@@ -55,8 +55,8 @@ html[data-theme-family=crystal] .anime-reveal__prism {
   background: linear-gradient(115deg, #ffd6ec 0%, #d6ecff 24%, #bfe9ff 48%, #d0fbf2 66%, #ffe3f1 84%, #ffd6ec 100%); opacity: .55; filter: blur(22px);
 }
 html[data-theme-family=crystal] .anime-reveal__beam[data-beam=center] { top: 0; bottom: 0; left: 50%; width: 120px; margin-left: -60px; background: linear-gradient(90deg, transparent, rgb(255 255 255 / .55), transparent); filter: blur(6px); }
-html[data-theme-family=crystal] .anime-reveal__beam[data-beam=left] { top: -20%; left: calc(50% - 201.6px); width: 40px; height: 140%; transform: rotate(18deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .4), transparent); }
-html[data-theme-family=crystal] .anime-reveal__beam[data-beam=right] { top: -20%; left: calc(50% + 158.4px); width: 30px; height: 140%; transform: rotate(-18deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .35), transparent); }
+html[data-theme-family=crystal] .anime-reveal__beam[data-beam=left] { top: -20%; left: calc(50% - 201.6px); width: 40px; height: 140%; transform: rotate(18deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .4), transparent); opacity: .45; }
+html[data-theme-family=crystal] .anime-reveal__beam[data-beam=right] { top: -20%; left: calc(50% + 158.4px); width: 30px; height: 140%; transform: rotate(-18deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .35), transparent); opacity: .45; }
 html[data-theme-family=crystal] .anime-reveal__starfield {
   inset: 0 auto 0 calc(50% - 360px); width: 720px; opacity: 1;
   background: radial-gradient(2px 2px at 30% 20%, #fff, transparent), radial-gradient(1.5px 1.5px at 64% 14%, #fff, transparent), radial-gradient(2px 2px at 42% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 58% 82%, #fff, transparent), radial-gradient(2.5px 2.5px at 36% 44%, #fff, transparent), radial-gradient(1.5px 1.5px at 68% 52%, #fff, transparent);

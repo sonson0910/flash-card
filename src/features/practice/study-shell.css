@@ -23,9 +23,31 @@
 .study-shell-end { justify-self: end; gap: 10px; }
 .study-shell-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 999px; }
 .study-shell :is(.study-shell-close, .study-shell-tool) { border-color: var(--practice-line); box-shadow: inset 0 1px rgb(255 255 255 / .12); }
-html:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) {
+html:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
   border-radius: 999px;
-  transition: transform 180ms var(--ease-out-expo), border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease;
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-summary, .study-shell-learn-first, .study-shell-intro__begin) {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease;
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), box-shadow 180ms ease;
+  }
+}
+/* LangReview header (LangReview.dc.html 5 and 31): close uses fx-press, theme uses sf-ease. */
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease;
+  }
+  html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close {
+    transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease, transform 200ms cubic-bezier(.16, 1, .3, 1);
+  }
 }
 html:not([data-theme-family=crystal]).dark .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme) {
   border-color: color-mix(in srgb, var(--sf-text) 10%, transparent);
@@ -37,9 +59,55 @@ html:not([data-theme-family=crystal]):not(.dark) .study-shell :is(.study-shell-c
   background: var(--sf-surface-raised, var(--sf-surface));
   box-shadow: 0 1px 2px rgb(60 40 20 / .08);
 }
-@media (hover: hover) and (pointer: fine) {
-  html:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step):not(:disabled):hover {
-    transform: translateY(-2px);
+@media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) and (pointer: fine) {
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step):not(:disabled):hover {
+      transform: scale(1.06);
+    }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-summary, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+      transform: translateY(-3px);
+    }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px -12px rgb(60 40 20 / .45);
+    }
+    @media (min-width: 641px) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / .2));
+        box-shadow: 0 1px 2px rgb(60 40 20 / .08);
+      }
+      html:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme:not(:disabled):hover {
+        transform: none;
+        box-shadow: none;
+      }
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme:not(:disabled):hover {
+        box-shadow: 0 1px 2px rgb(60 40 20 / .08);
+      }
+    }
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-summary, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+    transform: translateY(0) scale(.97);
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+    transform: translateY(0) scale(.97);
+  }
+  @media (min-width: 641px) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):active {
+      transform: translateY(0) scale(.97);
+      filter: brightness(.98);
+    }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):active {
+      transform: translateY(1px) scale(.98);
+      filter: none;
+    }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme:not(:disabled):active {
+      transform: none;
+    }
   }
 }
 @media (min-width: 641px) {
@@ -61,17 +129,42 @@ html:not([data-theme-family=crystal]):not(.dark) .study-shell :is(.study-shell-c
 .dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 6px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
 :where(html:not([data-theme-family=crystal])) .practice-board--study.study-shell [data-study-progress-segment='current'] { background: var(--sf-brand-text); }
 .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segments] > span {
+  transition: background-color 400ms ease;
+}
 .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] {
   box-shadow: 0 0 10px color-mix(in srgb, var(--sf-brand-text) 65%, transparent);
-  animation: study-seg-pulse 1.8s ease-in-out infinite;
+  animation: au-pulse 1.6s ease-in-out infinite;
 }
-@keyframes study-seg-pulse { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+@keyframes au-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@media (min-width: 641px) {
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current'] {
+    --sf-pulse: rgb(40 211 244 / 0.45);
+    animation: sf-pulse-k 1.6s ease-out infinite;
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current']::before {
+    --sf-pulse: rgb(180 70 26 / 0.32);
+    animation: sf-pulse-k 1.6s ease-out infinite;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
-  html:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) { transition: none; transform: none; }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segments] > span { transition: none; }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'],
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current']::before { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active),
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close,
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close:is(:hover, :active),
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-theme { transition: none; transform: none; filter: none; }
 }
-html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .dark .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
-html[data-motion="reduced"]:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) { transition: none; transform: none; }
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .dark .practice-board--study.study-shell [data-study-progress-segments] > span { transition: none; }
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .dark .practice-board--study.study-shell [data-study-progress-segment='current'],
+html[data-motion="reduced"]:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current']::before { animation: none; }
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active),
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close,
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close:is(:hover, :active),
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-theme { transition: none; transform: none; filter: none; }
 .study-shell-count { flex: none; color: var(--sf-text-muted); font: 700 12px/1 var(--sf-font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Ink & Paper desktop: read the run as an editorial dotted line with a terracotta current dot; phones use bars. */
@@ -146,14 +239,15 @@ html:not([data-theme-family=crystal]):not(.dark) .study-shell-hint { font: itali
 /* The seed boards' grade tray is wider than the card: 576px in Aurora, 558px in Atelier (Aurora.dc.html 232-235, Atelier.dc.html 212-215). */
 html:not([data-theme-family=crystal]).dark .practice-board--study.study-shell [data-study-rating] { max-width: 576px; }
 html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-rating] { max-width: 558px; }
-/* Classic deals each card in from the seed boards' stack (canvas/shared.css 18 and 43; keyframes in index.css). */
-html:not([data-theme-family=crystal]).dark .study-shell-deal { animation: au-deal-a 560ms cubic-bezier(.16, 1, .3, 1) backwards; }
-html:not([data-theme-family=crystal]):not(.dark) .study-shell-deal { animation: ip-deal-a 600ms cubic-bezier(.16, 1, .3, 1) backwards; }
-@media (prefers-reduced-motion: reduce) {
-  html:not([data-theme-family=crystal]).dark .study-shell-deal,
-  html:not([data-theme-family=crystal]):not(.dark) .study-shell-deal { animation: none; }
+/* Classic deals each card in from the seed boards' stack (Aurora.dc.html 30, Atelier.dc.html 27). */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell-deal { animation: au-deal-a 560ms cubic-bezier(.16, 1, .3, 1) both; }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell-deal { animation: ip-deal-a 600ms cubic-bezier(.16, 1, .3, 1) both; }
 }
-html[data-motion="reduced"]:not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+}
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
 /* Aurora's hint and its Space key (Aurora.dc.html 241-244). */
 html:not([data-theme-family=crystal]).dark .study-shell-hint { font-size: 14px; font-weight: 400; }
 html:not([data-theme-family=crystal]).dark .study-shell-hint .study-shell-kbd { min-width: 0; height: 24px; padding: 0 8px; border-color: rgb(255 255 255 / 0.14); background: none; color: inherit; font: 400 11px/1 var(--sf-font-mono); }
@@ -452,7 +546,6 @@ html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] 
   color: #fff;
   transform: skewX(-14deg);
 }
-html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade:active:not(:disabled) { transform: skewX(-14deg) scale(.97); }
 html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-face { gap: 1px; transform: skewX(14deg); }
 html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-dot { display: none; }
 html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-label {
@@ -678,6 +771,44 @@ html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-stu
 @media (max-width: 640px) {
   /* MobileReview keeps the header and the grade tray 16px from the screen edges (MobileReview.dc.html 4 and 54). */
   html:not([data-theme-family=crystal]) .practice-board--study.study-shell { padding-inline: 16px; }
+  html:not([data-theme-family=crystal]) .study-shell-header.fx-enter { animation: none; }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell-deal { animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 80ms backwards; }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell-deal { animation: ip-in-k 480ms cubic-bezier(.16, 1, .3, 1) 60ms backwards; }
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+      transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease;
+    }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+      transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / .2));
+      }
+    }
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+      transform: translateY(0) scale(.97);
+      filter: brightness(.98);
+    }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+      transform: translateY(1px) scale(.98);
+      filter: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active) { transition: none; transform: none; filter: none; }
+  }
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active) { transition: none; transform: none; filter: none; }
   .claude-app-shell:has([data-study-session]) .claude-workspace-inner { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   .practice-board--study.study-shell [data-study-header] { display: flex; min-height: 56px; gap: 8px; margin-bottom: 4px; }
   .study-shell-start { flex: none; }
@@ -711,7 +842,6 @@ html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-stu
   /* MobileReview grades: a 2 x 2 grid, 10px apart inside 6px sides, 52px buttons slanted -12deg, 18px labels. */
   html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades-row { grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 6px; }
   html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade { height: 52px; min-height: 52px; transform: skewX(-12deg); }
-  html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade:active:not(:disabled) { transform: skewX(-12deg) scale(.97); }
   html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-face { transform: skewX(12deg); }
   html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-label { font-size: 18px; letter-spacing: .05em; }
 }

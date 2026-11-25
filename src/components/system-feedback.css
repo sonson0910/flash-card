@@ -695,15 +695,18 @@ html:not([data-theme-family='crystal']) .application-error-actions button.fx-pre
     animation: none;
   }
 
-  :where(html:not([data-theme-family=crystal])) .workspace-loading-panel .skeleton-sheen {
+  .workspace-loading-panel .skeleton-sheen {
+    background-image: none;
     animation: none;
   }
 }
 
-html[data-motion='reduced'] .workspace-loading-lumi {
+html[data-motion='reduced'] .workspace-loading-lumi,
+html[data-motion='reduced'] .workspace-loading-spinner {
   animation: none;
 }
 
-html[data-motion='reduced']:not([data-theme-family='crystal']) .workspace-loading-spinner {
+html[data-motion='reduced'] .workspace-loading-panel .skeleton-sheen {
+  background-image: none;
   animation: none;
 }

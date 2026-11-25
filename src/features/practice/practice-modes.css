@@ -1460,7 +1460,9 @@
     text-transform: uppercase;
   }
   html[data-theme-family=crystal] .practice-spelling__actions { gap: 14px; }
-  html[data-theme-family=crystal] .practice-spelling__actions .practice-primary { min-height: 58px; padding: 0 34px; gap: 12px; font-size: 19px; }
+  html[data-theme-family=crystal] .practice-spelling__actions .practice-primary { position: relative; min-height: 58px; overflow: hidden; padding: 0 34px; gap: 12px; font-size: 19px; }
+  html[data-theme-family=crystal] .practice-primary__shine { position: absolute; top: 0; bottom: 0; left: 0; width: 56px; background: rgb(255 255 255 / .4); pointer-events: none; }
+  html[data-theme-family=crystal] .practice-spelling__actions .practice-primary > :not(.practice-primary__shine) { position: relative; }
   /* The board's secondary button draws a 1px inset edge, so the chamfer's diagonal edge lines are turned off. */
   html[data-theme-family=crystal] .practice-spelling__actions .practice-secondary {
     min-height: 58px;

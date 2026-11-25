@@ -51,74 +51,148 @@
 @keyframes nk-shine-k{0%{transform:translateX(-120%) skewX(-20deg)}60%,100%{transform:translateX(220%) skewX(-20deg)}}
 @keyframes nk-rise-k{from{opacity:0;transform:translate3d(0,18px,0)}to{opacity:1;transform:none}}
 @keyframes nk-flare-k{0%,100%{opacity:.55;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(8deg)}}
-@keyframes nk-beam-k{0%,100%{opacity:.5;translate:0 0}50%{opacity:1;translate:40px 0}}
+@keyframes nk-beam-k{0%,100%{opacity:.3;translate:0 0}50%{opacity:.62;translate:40px 0}}
 @keyframes nk-starfield-k{0%,100%{opacity:.75}50%{opacity:1}}
 @keyframes nk-unfold-k{from{opacity:0;transform:scale(.4) rotate(-14deg)}to{opacity:1;transform:none}}
 @keyframes nk-banner-k{0%{opacity:0;transform:translateX(-80px) skewX(-16deg)}60%{opacity:1;transform:translateX(6px) skewX(-16deg)}100%{opacity:1;transform:skewX(-16deg)}}
+@keyframes nk-pulse-k{0%,100%{filter:drop-shadow(0 0 0 var(--sf-pulse, rgb(40 211 244 / 0.55)))}50%{filter:drop-shadow(0 0 9px var(--sf-pulse, rgb(40 211 244 / 0.55)))}}
+@keyframes nk-stamp-k{0%{opacity:0;transform:scale(2.6) rotate(-20deg)}60%{opacity:1;transform:scale(.92) rotate(2deg)}100%{opacity:1;transform:none}}
 
 /* The same first frames with the element's own transform composed in front; the missing last frame is the element's static style. */
 @keyframes nk-unfold-from-k{from{opacity:0;transform:scale(.4) rotate(-14deg)}}
 @keyframes nk-unfold-centered-k{from{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-14deg)}}
 @keyframes nk-unfold-mirrored-k{from{opacity:0;transform:scaleX(-1) scale(.4) rotate(-14deg)}}
 @keyframes nk-rise-centered-k{from{opacity:0;transform:translate(-50%,-50%) translate3d(0,18px,0)}}
-@keyframes nk-rise-tilted-left-k{from{opacity:0;transform:rotate(-14deg) translate3d(0,18px,0)}}
-@keyframes nk-rise-tilted-right-k{from{opacity:0;transform:rotate(14deg) translate3d(0,18px,0)}}
+@keyframes nk-deal-left-k{from{opacity:0;transform:rotate(-14deg) translate3d(0,60px,0) scale(.9) rotate(-8deg)}}
+@keyframes nk-deal-right-k{from{opacity:0;transform:rotate(14deg) translate3d(0,60px,0) scale(.9) rotate(-8deg)}}
+@keyframes nk-slide-skewed-k{from{opacity:0;transform:translate3d(-60px,0,0) skewX(-14deg)}}
 /* nk-rise without its fade, for an element that must paint at full opacity in its first frame. */
 @keyframes nk-rise-transform-k{from{transform:translate3d(0,18px,0)}}
 
 /*
- * Hover and press states of nk-lift. On the board an inline transform or filter beats these rules, so a
- * skewed button never moves and a button with its own drop-shadow keeps it instead of brightening; the
- * rules below copy only what the board actually shows for each element.
+ * Hover and press states of nk-lift and nk-press via individual translate and scale, so inline skewX(...)
+ * transforms and entrance keyframe transforms never fight hover/press motion.
  */
 @media (hover: hover) {
-  /* translateY(-3px) and brightness(1.06): elements with no transform or filter of their own. */
+  /* translate: 0 -3px and brightness(1.06): nk-lift elements without an own drop-shadow filter. */
   html[data-theme-family=crystal] :is(
     .streak-dialog-close,
+    .streak-dialog-primary,
+    .streak-dialog-secondary,
     .practice-topbar__close,
     .practice-topbar__theme,
+    .practice-listen__button,
+    .practice-speed__chip,
+    .practice-secondary,
+    .practice-story__row,
+    .practice-recap-chip,
+    .review-grades[data-card-look="crystal"] .review-grade,
     .anime-reveal__secondary,
     .landing-header-start,
     .landing-action,
     .landing-closing-start,
     .crystal-primary,
     .crystal-secondary,
+    .onboarding-journey__goal-card,
+    .onb-target-card,
     .onb-level-option,
     .onb-primary,
     .onb-secondary,
     .placement-exit,
-    .placement-choice
-  ):hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.06); }
-  /* Skewed with no filter of its own: the board brightens it and the skew stays. */
-  html[data-theme-family=crystal] .paths-ghost:hover { filter: brightness(1.06); }
+    .placement-choice,
+    .lesson-primary,
+    .lesson-secondary,
+    .lesson-giveup,
+    .paths-ghost,
+    .paths-book,
+    .language-practice-drill__listen,
+    .weekly-recap-controls__selection label,
+    .weekly-recap-controls__actions > button:not(.brand-action),
+    .weekly-recap-dialog__close,
+    .edit-sheet--review .edit-sheet-close,
+    .edit-sheet--review .edit-sheet-button:not(.edit-sheet-button--primary),
+    .edit-sheet-meaning-choice,
+    .practice-picker-row
+  ):hover:not(:disabled) { translate: 0 -3px; filter: brightness(1.06); }
   /*
-   * The onboarding option cards rise or pop in, and on the board that entrance's filled last frame holds their
-   * transform, so they brighten in place and do not move when pressed.
-   */
-  html[data-theme-family=crystal] :is(.onboarding-journey__goal-card, .onb-target-card):hover { filter: brightness(1.06); }
-  html[data-theme-family=crystal] :is(
-    .streak-dialog-primary,
-    .streak-dialog-secondary,
-    .onb-chip
-  ):hover:not(:disabled) { filter: brightness(1.06); }
-  /*
-   * translateY(-3px) only: the board element carries its own drop-shadow filter. Each hover rule stays at the
-   * press rule's specificity (one class), so the press below, later in the file, wins while the pointer is down.
+   * translate: 0 -3px only: nk-lift elements carrying their own drop-shadow or ring filter. Each hover rule
+   * stays at the press rule's specificity so :active later in the sheet always wins while pressed.
    */
   html[data-theme-family=crystal] :is(
     .today-crystal-start,
+    .paths-cta,
     .course-manage__cta,
+    .course-card,
     .anime-reveal__primary,
-    .placement-submit
-  ):hover:not(:disabled) { transform: translateY(-3px); }
-  html[data-theme-family=crystal] .progress-mastered-cards > li:hover { transform: translateY(-3px); }
+    .placement-submit,
+    .progress-mastered-cards > li,
+    .ww-primary,
+    .library-canvas-study,
+    .practice-primary,
+    .practice-recap-primary,
+    .weekly-recap-controls__actions > .brand-action,
+    .edit-sheet--review .edit-sheet-button--primary
+  ):hover:not(:disabled) { translate: 0 -3px; }
+  /* nk-press hover */
+  html[data-theme-family=crystal] :is(
+    .onb-skip,
+    .onb-chip,
+    .placement-skip,
+    .placement-action-row .lesson-link,
+    .progress-mastered-all,
+    .ww-article__open,
+    .landing-theme-toggle,
+    .landing-sign-in,
+    .landing-header nav a,
+    .landing-footer a,
+    .practice-option,
+    .practice-match__tile,
+    .practice-story__review-now,
+    .practice-ghost,
+    .practice-spelling__learn,
+    .empty-library__generate,
+    .empty-library__links button,
+    .sf-files-button,
+    .sf-files-kind,
+    .language-practice-drill .sf-press,
+    .notification-toast-action,
+    .notification-toast-dismiss,
+    .undo-toast-action,
+    .undo-toast-dismiss,
+    .claude-theme-quick-toggle,
+    .claude-theme-picker,
+    .claude-language-menu > button,
+    .claude-account-trigger,
+    .claude-course-switcher-trigger,
+    .course-switched-toast__back,
+    .course-panel__close,
+    .course-panel__add,
+    .course-panel__manage,
+    .card-tutor-close,
+    .card-tutor-preset,
+    .card-tutor-send,
+    .library-canvas-actions > button:not(.library-canvas-study),
+    .library-delete-dialog button
+  ):hover:not(:disabled) { translate: -2px -2px; }
 }
 html[data-theme-family=crystal] :is(
   .today-crystal-start,
+  .paths-cta,
   .course-manage__cta,
+  .course-card,
   .streak-dialog-close,
+  .streak-dialog-primary,
+  .streak-dialog-secondary,
   .practice-topbar__close,
   .practice-topbar__theme,
+  .practice-listen__button,
+  .practice-speed__chip,
+  .practice-primary,
+  .practice-secondary,
+  .practice-story__row,
+  .practice-recap-primary,
+  .practice-recap-chip,
+  .review-grades[data-card-look="crystal"] .review-grade,
   .anime-reveal__primary,
   .anime-reveal__secondary,
   .landing-header-start,
@@ -126,24 +200,92 @@ html[data-theme-family=crystal] :is(
   .landing-closing-start,
   .crystal-primary,
   .crystal-secondary,
+  .onboarding-journey__goal-card,
+  .onb-target-card,
   .onb-level-option,
   .onb-primary,
   .onb-secondary,
   .placement-exit,
   .placement-choice,
-  .placement-submit
-):active:not(:disabled) { transform: translateY(0) scale(.97); }
+  .placement-submit,
+  .lesson-primary,
+  .lesson-secondary,
+  .lesson-giveup,
+  .paths-ghost,
+  .paths-book,
+  .progress-mastered-cards > li,
+  .ww-primary,
+  .library-canvas-study,
+  .language-practice-drill__listen,
+  .weekly-recap-controls__selection label,
+  .weekly-recap-controls__actions > button,
+  .weekly-recap-dialog__close,
+  .edit-sheet--review .edit-sheet-close,
+  .edit-sheet--review .edit-sheet-button,
+  .edit-sheet-meaning-choice,
+  .practice-picker-row
+):active:not(:disabled) { translate: 0 0; scale: .97; }
+html[data-theme-family=crystal] :is(
+  .onb-skip,
+  .onb-chip,
+  .placement-skip,
+  .placement-action-row .lesson-link,
+  .progress-mastered-all,
+  .ww-article__open,
+  .landing-theme-toggle,
+  .landing-sign-in,
+  .landing-header nav a,
+  .landing-footer a,
+  .practice-option,
+  .practice-match__tile,
+  .practice-story__review-now,
+  .practice-ghost,
+  .practice-spelling__learn,
+  .empty-library__generate,
+  .empty-library__links button,
+  .sf-files-button,
+  .sf-files-kind,
+  .language-practice-drill .sf-press,
+  .notification-toast-action,
+  .notification-toast-dismiss,
+  .undo-toast-action,
+  .undo-toast-dismiss,
+  .claude-theme-quick-toggle,
+  .claude-theme-picker,
+  .claude-language-menu > button,
+  .claude-account-trigger,
+  .claude-course-switcher-trigger,
+  .course-switched-toast__back,
+  .course-panel__close,
+  .course-panel__add,
+  .course-panel__manage,
+  .card-tutor-close,
+  .card-tutor-preset,
+  .card-tutor-send,
+  .library-canvas-actions > button:not(.library-canvas-study),
+  .library-delete-dialog button
+):active:not(:disabled) { translate: 3px 3px; box-shadow: 0 0 0 transparent !important; }
 
 @media (prefers-reduced-motion: no-preference) {
   /* nk-lift */
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
     .today-crystal-start,
+    .paths-cta,
     .course-manage__cta,
+    .course-card,
     .streak-dialog-close,
     .streak-dialog-primary,
     .streak-dialog-secondary,
     .practice-topbar__close,
     .practice-topbar__theme,
+    .practice-listen__button,
+    .practice-speed__chip,
+    .practice-primary,
+    .practice-secondary,
+    .practice-story__row,
+    .practice-recap-primary,
+    .practice-recap-chip,
+    .review-grades[data-card-look="crystal"] .review-grade,
     .progress-mastered-cards > li,
     .paths-ghost,
     .paths-book,
@@ -159,11 +301,81 @@ html[data-theme-family=crystal] :is(
     .onb-level-option,
     .onb-primary,
     .onb-secondary,
-    .onb-chip,
     .placement-exit,
     .placement-choice,
-    .placement-submit
-  ) { transition: transform 220ms cubic-bezier(.34,1.56,.64,1), box-shadow 220ms ease, filter 220ms ease; }
+    .placement-submit,
+    .lesson-primary,
+    .lesson-secondary,
+    .lesson-giveup,
+    .ww-primary,
+    .library-canvas-study,
+    .language-practice-drill__listen,
+    .weekly-recap-controls__selection label,
+    .weekly-recap-controls__actions > button,
+    .weekly-recap-dialog__close,
+    .edit-sheet--review .edit-sheet-close,
+    .edit-sheet--review .edit-sheet-button,
+    .edit-sheet-meaning-choice,
+    .practice-picker-row
+  ) { transition: translate 220ms cubic-bezier(.34,1.56,.64,1), scale 220ms cubic-bezier(.34,1.56,.64,1), box-shadow 220ms ease, filter 220ms ease; }
+  /* nk-press */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .onb-skip,
+    .onb-chip,
+    .placement-skip,
+    .placement-action-row .lesson-link,
+    .progress-mastered-all,
+    .ww-article__open,
+    .landing-theme-toggle,
+    .landing-sign-in,
+    .landing-header nav a,
+    .landing-footer a,
+    .practice-option,
+    .practice-match__tile,
+    .practice-story__review-now,
+    .practice-ghost,
+    .practice-spelling__learn,
+    .empty-library__generate,
+    .empty-library__links button,
+    .sf-files-button,
+    .sf-files-kind,
+    .language-practice-drill .sf-press,
+    .notification-toast-action,
+    .notification-toast-dismiss,
+    .undo-toast-action,
+    .undo-toast-dismiss,
+    .claude-theme-quick-toggle,
+    .claude-theme-picker,
+    .claude-language-menu > button,
+    .claude-account-trigger,
+    .claude-course-switcher-trigger,
+    .course-switched-toast__back,
+    .course-panel__close,
+    .course-panel__add,
+    .course-panel__manage,
+    .card-tutor-close,
+    .card-tutor-preset,
+    .card-tutor-send,
+    .library-canvas-actions > button:not(.library-canvas-study),
+    .library-delete-dialog button
+  ) { transition: translate 160ms cubic-bezier(.34,1.56,.64,1), box-shadow 160ms ease; }
+
+  /* look-neutral transitions */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .sf-ease,
+    .claude-nav-item,
+    .claude-mobile-nav-item,
+    .progress-board-range button,
+    .ach-tabs button,
+    .paths-mode-button,
+    .paths-browse,
+    .ww-tab,
+    .ww-back,
+    .ss-menu__item,
+    .rm-day,
+    .landing-desktop-nav :is(a, button)
+  ) { transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease, transform 200ms cubic-bezier(.16,1,.3,1); }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-ease-filter { transition: filter 300ms ease; }
 
   /* nk-rise */
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
@@ -171,7 +383,6 @@ html[data-theme-family=crystal] :is(
     .today-crystal-title,
     .today-crystal-path,
     .library-canvas-title,
-    .library-canvas-card-grid,
     .paths-header-copy,
     .progress-board-header,
     .ach-side,
@@ -180,6 +391,7 @@ html[data-theme-family=crystal] :is(
     .ww-head__text,
     .practice-lumi__bubble,
     [data-quiz-question-panel],
+    .practice-speed,
     .practice-story__meta,
     .practice-story__title,
     .ach-grid > .ach-badge:nth-child(-n + 3):not(.achievement-newly-unlocked),
@@ -206,6 +418,7 @@ html[data-theme-family=crystal] :is(
     .today-crystal-row > [data-daily-goals],
     .library-lumi-hint,
     .library-canvas-rail,
+    .library-canvas-card-grid > .library-word-card:nth-child(-n + 3),
     .paths-hero,
     .catalog-note--unavailable,
     .stats-activity,
@@ -213,6 +426,7 @@ html[data-theme-family=crystal] :is(
     .course-manage__bubble,
     .ww-toolbar,
     .ww-articles > li:first-child,
+    .practice-spelling__hint,
     .practice-story__text,
     .practice-story__words,
     .practice-recap-panel--up,
@@ -227,23 +441,31 @@ html[data-theme-family=crystal] :is(
     .today-crystal-bubble,
     .today-crystal-level,
     .today-crystal-words,
+    .library-canvas-card-grid > .library-word-card:nth-child(n + 4),
     .paths-shelf,
     .progress-forecast,
     .progress-mastered,
     .course-manage__footer,
     .ww-articles > li + li,
+    .practice-spelling__feedback,
+    .practice-spelling__actions,
     .practice-story__lumi .practice-lumi__bubble,
     .practice-shadowing__lumi .practice-lumi__bubble,
     .practice-recap-panel--revisit,
     .anime-reveal__description,
     .anime-reveal__rewards,
+    .anime-reveal__actions,
     .ach-grid > .ach-badge:nth-child(n + 7):not(.achievement-newly-unlocked),
     .placement-lumi .lesson-lumi-bubble,
     .claude-onboarding-journey[data-onboarding-step=exam] .onb-countdown
   ) { animation: nk-rise-k 700ms cubic-bezier(.16,1,.3,1) 240ms backwards; }
 
-  /* nk-rise on a dialog centred by its own translate(-50%, -50%) */
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .streak-dialog[data-family=crystal] { animation: nk-rise-centered-k 700ms cubic-bezier(.16,1,.3,1) backwards; }
+  /* nk-rise on danger confirmation dialogs centred by their own translate(-50%, -50%) */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .library-dialog-frame--danger,
+    .library-dialog-frame--deck-delete,
+    .library-delete-dialog
+  ) { animation: nk-rise-centered-k 700ms cubic-bezier(.16,1,.3,1) backwards; }
 
   /* nk-pop */
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
@@ -251,7 +473,6 @@ html[data-theme-family=crystal] :is(
     .anime-reveal__tier-art,
     .anime-reveal__streak-art,
     .anime-reveal__level-art,
-    .rm-os,
     .course-manage__item[data-active=true] > .course-card:not([data-status=archived])
   ) { animation: nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) backwards; }
 
@@ -260,6 +481,11 @@ html[data-theme-family=crystal] :is(
     .practice-recap-headline,
     .anime-reveal__title
   ) { animation: nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) 140ms backwards; }
+
+  /* nk-pop-3 */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .rm-os {
+    animation: nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) 280ms backwards;
+  }
 
   /*
    * Onboarding option cards: the chosen card pops and the others rise in the board's order, the goal board's by
@@ -283,11 +509,69 @@ html[data-theme-family=crystal] :is(
     animation-delay: 0s, 0s;
   }
 
-  /* nk-slide, nk-slide-2, nk-slide-3, nk-slide-4: the recap stats in order */
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .practice-recap-stats > .practice-recap-stat:nth-child(1) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) backwards; }
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .practice-recap-stats > .practice-recap-stat:nth-child(2) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 90ms backwards; }
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .practice-recap-stats > .practice-recap-stat:nth-child(3) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 180ms backwards; }
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .practice-recap-stats > .practice-recap-stat:nth-child(4) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 270ms backwards; }
+  /* nk-slide..nk-slide-5 */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .practice-recap-stats > .practice-recap-stat:nth-child(1),
+    .today-stage-rail:not(.today-stage-rail--classic) > .today-stage:nth-child(1),
+    .onb-trial-words > .onb-trial-word:nth-child(1),
+    .progress-mastered-cards > li:nth-child(1),
+    .course-manage__item:not([data-active=true]):nth-child(1),
+    .nk-slide
+  ) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .practice-recap-stats > .practice-recap-stat:nth-child(2),
+    .today-stage-rail:not(.today-stage-rail--classic) > .today-stage:nth-child(2),
+    .onb-trial-words > .onb-trial-word:nth-child(2),
+    .placement-rungs > .placement-rung:nth-child(1),
+    .progress-mastered-cards > li:nth-child(2),
+    .course-manage__item:not([data-active=true]):nth-child(2),
+    .nk-slide-2
+  ) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 90ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .practice-recap-stats > .practice-recap-stat:nth-child(3),
+    .today-stage-rail:not(.today-stage-rail--classic) > .today-stage:nth-child(3),
+    .onb-trial-words > .onb-trial-word:nth-child(3),
+    .placement-rungs > .placement-rung:nth-child(2),
+    .progress-mastered-cards > li:nth-child(3),
+    .course-manage__item:not([data-active=true]):nth-child(3),
+    .nk-slide-3
+  ) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 180ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .practice-recap-stats > .practice-recap-stat:nth-child(4),
+    .today-stage-rail:not(.today-stage-rail--classic) > .today-stage:nth-child(4),
+    .onb-trial-words > .onb-trial-word:nth-child(n + 4),
+    .placement-rungs > .placement-rung:nth-child(n + 3),
+    .progress-mastered-cards > li:nth-child(n + 4),
+    .course-manage__item:not([data-active=true]):nth-child(n + 4),
+    .nk-slide-4
+  ) { animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 270ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .nk-slide-5 {
+    animation: nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 360ms backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .review-grades[data-card-look="crystal"][data-review-state="ready"] .review-grades-row > .review-grade:nth-child(1) {
+    animation: nk-slide-skewed-k 480ms cubic-bezier(.16,1,.3,1) backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .review-grades[data-card-look="crystal"][data-review-state="ready"] .review-grades-row > .review-grade:nth-child(2) {
+    animation: nk-slide-skewed-k 480ms cubic-bezier(.16,1,.3,1) 90ms backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .review-grades[data-card-look="crystal"][data-review-state="ready"] .review-grades-row > .review-grade:nth-child(3) {
+    animation: nk-slide-skewed-k 480ms cubic-bezier(.16,1,.3,1) 180ms backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .review-grades[data-card-look="crystal"][data-review-state="ready"] .review-grades-row > .review-grade:nth-child(4) {
+    animation: nk-slide-skewed-k 480ms cubic-bezier(.16,1,.3,1) 270ms backwards;
+  }
+
+  /* nk-stamp: rests tilted via practice-recap-star rotate: -12deg */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .practice-recap-star {
+    animation: nk-stamp-k 620ms cubic-bezier(.34,1.56,.64,1) 400ms backwards;
+  }
+
+  /* nk-pulse: chamfered upload dropzone wrapper and processing badge */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
+    .nk-pulse,
+    .sf-files-drop__tile-pulse,
+    .sf-files-status--result[data-phase="processing"] .sf-files-badge-pulse
+  ) { animation: nk-pulse-k 1.6s ease-in-out infinite; }
 
   /* nk-unfold */
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
@@ -306,8 +590,8 @@ html[data-theme-family=crystal] :is(
     .onb-card-wings
   ) { animation: nk-unfold-from-k 520ms cubic-bezier(.2,1.4,.4,1) backwards; }
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
-    .library-dialog-frame,
-    .library-delete-dialog,
+    .streak-dialog[data-family=crystal],
+    .library-dialog-frame:not(.library-dialog-frame--danger):not(.library-dialog-frame--deck-delete),
     .create-card-dialog
   ) { animation: nk-unfold-centered-k 520ms cubic-bezier(.2,1.4,.4,1) backwards; }
   /* The AI dialogue is centred by the translate property, not transform, so its unfold needs no centring frame. */
@@ -352,14 +636,18 @@ html[data-theme-family=crystal] :is(
 
   /*
    * nk-shine: the light band inside a primary button. Where the surface draws the band itself (resting at the
-   * left edge, as the board's reduced-motion render shows it) it only gets the sweep; elsewhere the band is
-   * drawn here and exists only while it moves.
+   * left edge) it sweeps while motion runs and hides under reduced motion.
    */
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
     .today-crystal-start-shine,
     .paths-hero .paths-cta-shine,
     .course-manage__cta-shine,
     .library-canvas-create-shine,
+    .placement-submit-shine,
+    .onb-primary-shine,
+    .practice-story__shine,
+    .practice-shadowing__shine,
+    .practice-primary__shine,
     .crystal-shine
   ),
   html[data-theme-family=crystal]:not([data-motion=reduced]) .ww-primary::before {
@@ -369,7 +657,6 @@ html[data-theme-family=crystal] :is(
   /* nk-flare */
   html[data-theme-family=crystal]:not([data-motion=reduced]) :is(
     .today-stage-flare,
-    .ach-feature-flare,
     .practice-recap-flare,
     .anime-reveal__flare,
     .onb-flare--1
@@ -381,13 +668,12 @@ html[data-theme-family=crystal] :is(
   /* nk-beam: translate composes with the beam's own rotate or centring transform. */
   html[data-theme-family=crystal]:not([data-motion=reduced]) .ach-emblem-card::before,
   html[data-theme-family=crystal]:not([data-motion=reduced]) .anime-reveal__prism,
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .streak-dialog-beam,
   html[data-theme-family=crystal]:not([data-motion=reduced]) .placement-word-beam,
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .practice-recap-board[data-family="crystal"]::before,
   html[data-theme-family=crystal]:not([data-motion=reduced]) .onb-beam--left { animation: nk-beam-k 9s ease-in-out infinite; }
   html[data-theme-family=crystal]:not([data-motion=reduced]) .onb-beam--right { animation: nk-beam-k 9s ease-in-out -3s infinite; }
   /*
-   * The goal and first-cards boards run the beam on the prism pillar too. The beam's opacity frames replace the
-   * pillar's resting opacity there, so while it runs the pillar shows between 0.5 and 1, as on the board.
+   * The goal and first-cards boards run the beam on the prism pillar too.
    */
   html[data-theme-family=crystal]:not([data-motion=reduced]) .claude-onboarding-journey:is([data-onboarding-step=goal], [data-onboarding-step=aha]) .onb-pillar { animation: nk-beam-k 9s ease-in-out infinite; }
   /* The reveal's two slanted side beams run the same beam out of step, at the board's -2s and -5s. */
@@ -400,12 +686,7 @@ html[data-theme-family=crystal] :is(
     .onb-starfield
   ) { animation: nk-starfield-k 4s ease-in-out infinite; }
 
-  /*
-   * nk-rim-spin. The board turns a conic gradient layer behind the rim; turning the gradient's start angle
-   * draws the same frames without a child element. The stops are the --sf-gold-rim stops (one value in both modes).
-   * The reveal's tier card has the board's layer, twice the card's fixed size, so that layer turns as on the
-   * board; as on every board, only the gold rim of a mastered word turns.
-   */
+  /* nk-rim-spin */
   html[data-theme-family=crystal]:not([data-motion=reduced]) .anime-reveal__tier-art:not([data-tier=learning], [data-tier=new]) .anime-reveal__tier-rim-spin {
     animation: nk-spin-k 6s linear infinite;
   }
@@ -421,16 +702,11 @@ html[data-theme-family=crystal] :is(
     --st-rim-mastered: conic-gradient(from calc(200deg + var(--nk-a)), #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);
     animation: nk-sweep-k 6s linear infinite;
   }
-  /* Only the gradient angle animates here; the card's own hover lift keeps the transform. The board turns the rim on grid cards only. */
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .library-canvas-card-grid[data-library-view=grid] > .library-word-card--mastered {
+  /* Only the first mastered grid card turns its rim gradient; its own hover lift keeps the transform. */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .library-canvas-card-grid[data-library-view=grid] > .library-word-card--mastered:nth-child(1 of .library-word-card--mastered) {
     --library-rim: conic-gradient(from calc(200deg + var(--nk-a)), #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #fff, #ffd166, #fff3c4);
     animation: nk-sweep-k 6s linear infinite;
   }
-  /*
-   * The milestone dialog has the board's layer too, but a turning layer twice the card's size covers the card only
-   * while the card is at most 1.73 (the square root of 3) times as tall as it is wide, and the dialog is taller than
-   * that on a 360px phone. Its layer stays still and the angle turns instead, which draws the board's frames.
-   */
   html[data-theme-family=crystal]:not([data-motion=reduced]) .streak-dialog[data-streak-state=milestone] .streak-dialog-rim {
     --cs-rim: conic-gradient(from calc(200deg + var(--nk-a)), #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);
     animation: nk-sweep-k 6s linear infinite;
@@ -443,6 +719,52 @@ html[data-theme-family=crystal] :is(
   html[data-theme-family=crystal]:not([data-motion=reduced]) .landing-pricing-panel {
     --sf-gold-rim: conic-gradient(from calc(200deg + var(--nk-a)), #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);
     animation: nk-sweep-k 6s linear infinite;
+  }
+
+  /* Look-neutral sf-* animations in Crystal */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(.sf-grow, .paths-book-track > span) {
+    transform-origin: left;
+    animation: sf-grow-k 900ms cubic-bezier(.16,1,.3,1) 400ms backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(.sf-tick, .streak-dialog[data-family=crystal] .streak-dialog-star-count) {
+    animation: sf-tick-k 520ms cubic-bezier(.16,1,.3,1) 240ms backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-tick.sf-late { animation-delay: 640ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) :is(.sf-bars > *, .progress-forecast-days > li .progress-forecast-bar > span) {
+    transform-origin: bottom;
+    animation: sf-bar-k 700ms cubic-bezier(.16,1,.3,1) backwards;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(2),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(2) .progress-forecast-bar > span { animation-delay: 40ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(3),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(3) .progress-forecast-bar > span { animation-delay: 80ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(4),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(4) .progress-forecast-bar > span { animation-delay: 120ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(5),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(5) .progress-forecast-bar > span { animation-delay: 160ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(6),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(6) .progress-forecast-bar > span { animation-delay: 200ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(7),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(7) .progress-forecast-bar > span { animation-delay: 240ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-bars > :nth-child(n + 8),
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .progress-forecast-days > li:nth-child(n + 8) .progress-forecast-bar > span { animation-delay: 280ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-draw { animation: sf-draw-k 1s cubic-bezier(.65,0,.35,1) 300ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-draw.sf-late { animation-delay: 700ms; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-draw-to { animation: sf-draw-to-k 1s cubic-bezier(.65,0,.35,1) 300ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-shake { animation: sf-shake-k 320ms ease-in-out 2; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-spin { animation: sf-spin-k 900ms linear infinite; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-scrim { animation: sf-scrim-k 240ms ease-out backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-sheet-r { animation: sf-sheet-r-k 360ms cubic-bezier(.16,1,.3,1) backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-sheet-b { animation: sf-sheet-b-k 380ms cubic-bezier(.16,1,.3,1) backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-toast { animation: sf-toast-k 420ms cubic-bezier(.16,1,.3,1) backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-wave { transform-origin: center; animation: sf-wave-k 900ms ease-in-out infinite; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-deal-1 { animation: sf-deal-k 700ms cubic-bezier(.16,1,.3,1) 250ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-deal-2 { animation: sf-deal-k 700ms cubic-bezier(.16,1,.3,1) 380ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-deal-3 { animation: sf-deal-k 700ms cubic-bezier(.16,1,.3,1) 510ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .sf-shimmer {
+    background-image: linear-gradient(90deg, transparent 0 50%, rgb(255 255 255 / .2) 75%, transparent 100%);
+    background-size: 200% 100%;
+    animation: sf-shimmer-k 1.6s linear infinite;
   }
 
   /* Signed-out landing hero, in the AnimeLanding board's order. */
@@ -458,13 +780,103 @@ html[data-theme-family=crystal] :is(
   ) { animation: nk-rise-k 700ms cubic-bezier(.16,1,.3,1) 240ms backwards; }
   /* The wing svg fills its wrapper, which carries the responsive scale, so the unfold pivots on the wings' centre at every width. */
   html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-stage-wings > svg { animation: nk-unfold-k 520ms cubic-bezier(.2,1.4,.4,1) backwards; }
-  /* The side cards rest tilted; on the board they rise inside that tilt. */
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-demo-left { animation: nk-rise-tilted-left-k 700ms cubic-bezier(.16,1,.3,1) backwards; }
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-demo-right { animation: nk-rise-tilted-right-k 700ms cubic-bezier(.16,1,.3,1) 120ms backwards; }
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-demo-main { animation: nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) backwards; }
-  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-hero-flare { animation: nk-flare-k 3.4s ease-in-out infinite; }
+  /* Demo cards follow AnimeLanding sf-deal-1/2/3 timings while preserving the side cards' resting tilt. */
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-demo-left { animation: nk-deal-left-k 700ms cubic-bezier(.16,1,.3,1) 250ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-demo-right { animation: nk-deal-right-k 700ms cubic-bezier(.16,1,.3,1) 380ms backwards; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-demo-main { animation: sf-deal-k 700ms cubic-bezier(.16,1,.3,1) 510ms backwards; }
   /* The page backdrop; nk-beam's translate adds to the beams' own rotate. */
   html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-page-glow > .nk-starfield { animation: nk-starfield-k 4s ease-in-out infinite; }
   html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-page-glow > .nk-beam { animation: nk-beam-k 9s ease-in-out infinite; }
   html[data-theme-family=crystal]:not([data-motion=reduced]) .crystal-page-glow > .nk-beam + .nk-beam { animation-delay: -3s; }
 }
+
+/* Stopped shines and shimmers stay hidden under both reduced-motion triggers; transitions snap cleanly. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-family=crystal] :is(
+    .today-crystal-start-shine,
+    .paths-hero .paths-cta-shine,
+    .course-manage__cta-shine,
+    .library-canvas-create-shine,
+    .placement-submit-shine,
+    .onb-primary-shine,
+    .practice-story__shine,
+    .practice-shadowing__shine,
+    .practice-primary__shine,
+    .crystal-shine,
+    .flashcard-reveal-shine
+  ),
+  html[data-theme-family=crystal] .ww-primary::before {
+    opacity: 0;
+    animation: none;
+    transition: none;
+  }
+  html[data-theme-family=crystal] .sf-shimmer {
+    background-image: none;
+    animation: none;
+  }
+  html[data-theme-family=crystal] .sf-fall-once {
+    display: none;
+    animation: none;
+  }
+  html[data-theme-family=crystal] :is(
+    .sf-ease,
+    .sf-ease-filter,
+    .nk-press,
+    .nk-lift,
+    .claude-nav-item,
+    .claude-mobile-nav-item,
+    .progress-board-range button,
+    .ach-tabs button,
+    .paths-mode-button,
+    .paths-browse,
+    .ww-tab,
+    .ww-back,
+    .ss-menu__item,
+    .rm-day,
+    .landing-desktop-nav :is(a, button)
+  ) { transition: none; }
+}
+
+html[data-theme-family=crystal][data-motion=reduced] :is(
+  .today-crystal-start-shine,
+  .paths-hero .paths-cta-shine,
+  .course-manage__cta-shine,
+  .library-canvas-create-shine,
+  .placement-submit-shine,
+  .onb-primary-shine,
+  .practice-story__shine,
+  .practice-shadowing__shine,
+  .practice-primary__shine,
+  .crystal-shine,
+  .flashcard-reveal-shine
+),
+html[data-theme-family=crystal][data-motion=reduced] .ww-primary::before {
+  opacity: 0;
+  animation: none;
+  transition: none;
+}
+html[data-theme-family=crystal][data-motion=reduced] .sf-shimmer {
+  background-image: none;
+  animation: none;
+}
+html[data-theme-family=crystal][data-motion=reduced] .sf-fall-once {
+  display: none;
+  animation: none;
+}
+html[data-theme-family=crystal][data-motion=reduced] :is(
+  .sf-ease,
+  .sf-ease-filter,
+  .nk-press,
+  .nk-lift,
+  .claude-nav-item,
+  .claude-mobile-nav-item,
+  .progress-board-range button,
+  .ach-tabs button,
+  .paths-mode-button,
+  .paths-browse,
+  .ww-tab,
+  .ww-back,
+  .ss-menu__item,
+  .rm-day,
+  .landing-desktop-nav :is(a, button)
+) { transition: none; }

@@ -4,6 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { cloneElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { Flashcard, type FlashcardProps } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
+import { isLanguagePackCard } from '../../components/flashcard/cardLanguage';
 import { CardTierName, CardTierStatus, type CardTier } from '../../components/flashcard/CardFront';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
@@ -447,6 +448,7 @@ export function StudyView({
   }, [needsIntroduction, _, card?.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, paused, revealed]);
 
   if (!card) return null;
+  const isPackCard = isLanguagePackCard(card);
   if (!revealed && !needsIntroduction) {
     promptCardIdRef.current = card.id;
     promptBlindRef.current = !(resolveRecallMode(card, activeRecallMode) === 'image-to-word' && imageRecallAvailable);
@@ -460,10 +462,10 @@ export function StudyView({
     : null;
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study study-shell mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-      <div data-study-header className="study-shell-header mb-3 flex w-full items-center gap-3">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-kind={isPackCard ? 'language' : undefined} data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study study-shell mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div data-study-header className={`study-shell-header${isPackCard ? ' fx-enter' : ''} mb-3 flex w-full items-center gap-3`}>
         <div className="study-shell-start">
-          <button type="button" onClick={onClose} disabled={paused} className="study-shell-close crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
+          <button type="button" onClick={onClose} disabled={paused} className="study-shell-close crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
             <X size={18} strokeWidth={1.9} aria-hidden="true" />
           </button>
           <p data-study-title className="study-shell-title">
@@ -591,7 +593,7 @@ export function StudyView({
         )}
       </div>
 
-      {!needsIntroduction && !revealed && <p data-study-hint className="study-shell-hint">
+      {!needsIntroduction && !revealed && <p data-study-hint className={`study-shell-hint${isPackCard ? ' fx-enter-4' : ''}`}>
         <Trans {...msg({ context: 'study.hint', message: 'Say it out loud first, then reveal <0>Space</0>' })} components={{ 0: <kbd className="study-shell-kbd crystal-chamfer-sm" /> }} />
       </p>}
 
@@ -602,6 +604,7 @@ export function StudyView({
           saving={reviewStatus === 'saving'}
           error={reviewError}
           lastRating={card.reviewHistory?.at(-1)?.rating}
+          cardKind={isPackCard ? 'language' : undefined}
           onRate={handleRating}
         />
       </div>}
@@ -609,11 +612,11 @@ export function StudyView({
       <CrystalFamilySlot crystal>{learnFirst}</CrystalFamilySlot>
 
       <div className="study-shell-nav flex items-center gap-4 sm:gap-6">
-        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
+        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:transition hover:border-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transform-none [html[data-theme-family=crystal]_&]:motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
           <ChevronLeft size={24} aria-hidden="true" />
         </button>
         <div className="study-shell-nav__position crystal-chamfer-sm [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
-        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
+        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:transition hover:bg-[var(--sf-brand-hover)] hover:text-white [html[data-theme-family=crystal]_&]:active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transform-none [html[data-theme-family=crystal]_&]:motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>
@@ -656,7 +659,7 @@ function StudyShellPreferences() {
   const verifiedState = useVerifiedStats()?.state ?? null;
   const streak = useMemo(() => (verifiedState ? buildStreakView(verifiedState, new Date()).length : 0), [verifiedState]);
   return <>
-    <button type="button" data-study-theme onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} aria-pressed={themeMode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))} className="study-shell-theme claude-theme-quick-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+    <button type="button" data-study-theme onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} aria-pressed={themeMode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))} className="study-shell-theme claude-theme-quick-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transition-none">
       {themeMode === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
     </button>
     {streak > 0 && <span data-study-streak role="img" className="study-shell-streak claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}>

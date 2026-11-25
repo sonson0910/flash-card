@@ -281,8 +281,8 @@ html.dark:where(:not([data-theme-family=crystal])) .empty-library__mini-card {
 }
 
 :where(html[data-theme-family=crystal]) .empty-library__generate:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+  filter: brightness(1.06);
+  translate: -2px -2px;
 }
 
 .empty-library__generate:disabled,

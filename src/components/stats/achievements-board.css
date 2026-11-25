@@ -305,6 +305,7 @@ html[data-motion="reduced"]:not([data-theme-family="crystal"]) .ach-grid.fx-stag
   top: -40%;
   width: 90px;
   height: 180%;
+  opacity: .45;
   transform: rotate(24deg);
   background: linear-gradient(90deg, transparent, var(--ach-beam), transparent);
   pointer-events: none;

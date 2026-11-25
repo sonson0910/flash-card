@@ -1363,6 +1363,7 @@ html[data-theme-family='crystal'] .placement-word-beam {
   right: 18%;
   width: 80px;
   height: 220%;
+  opacity: .45;
   background: linear-gradient(90deg, transparent, var(--lp-beam), transparent);
   filter: blur(3px);
   transform: rotate(22deg);
@@ -1562,13 +1563,18 @@ html[data-theme-family='crystal'] .placement-lumi .lesson-lumi-bubble { box-sizi
 html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .lesson-choice,
-  .lesson-token,
-  .lesson-pill,
-  .lesson-primary,
-  .lesson-secondary { transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
-  .lesson-primary:not(:disabled):active,
-  .lesson-choice:not(:disabled):active { transform: scale(.98); }
+  :where(html:not([data-theme-family=crystal])) .lesson-choice,
+  :where(html:not([data-theme-family=crystal])) .lesson-token,
+  :where(html:not([data-theme-family=crystal])) .lesson-pill,
+  :where(html:not([data-theme-family=crystal])) .lesson-primary,
+  :where(html:not([data-theme-family=crystal])) .lesson-secondary { transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+  :where(html:not([data-theme-family=crystal])) .lesson-primary:not(:disabled):active,
+  :where(html:not([data-theme-family=crystal])) .lesson-choice:not(:disabled):active { transform: scale(.98); }
+  /* Crystal answers keep the eased selection they had; its buttons take their motion from crystal-motion.css. */
+  :where(html[data-theme-family=crystal]) .lesson-choice,
+  :where(html[data-theme-family=crystal]) .lesson-token,
+  :where(html[data-theme-family=crystal]) .lesson-pill { transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+  :where(html[data-theme-family=crystal]) .lesson-choice:not(:disabled):active { transform: scale(.98); }
   .lesson-caret { animation: lesson-caret-blink 1.1s steps(2, start) infinite; }
 }
 

@@ -472,6 +472,7 @@ html[data-motion="reduced"]:not([data-theme-family="crystal"]) .progress-forecas
 /* The board's new-star cards lift on hover (nk-lift: 3px up, springy settle); their glow filter stays, as on the
    board, where the inline drop-shadow overrides nk-lift's brightness. */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  :root[data-theme-family='crystal'] .progress-mastered-cards > li { transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
-  :root[data-theme-family='crystal'] .progress-mastered-cards > li:hover { transform: translateY(-3px); }
+  :root[data-theme-family='crystal']:not([data-motion='reduced']) .progress-mastered-cards > li { transition: translate 220ms cubic-bezier(.34, 1.56, .64, 1), scale 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
+  :root[data-theme-family='crystal'] .progress-mastered-cards > li:hover { translate: 0 -3px; }
+  :root[data-theme-family='crystal'] .progress-mastered-cards > li:active { translate: 0 0; scale: .97; }
 }

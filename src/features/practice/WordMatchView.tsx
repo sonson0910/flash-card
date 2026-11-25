@@ -282,7 +282,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         aria-pressed={isSelected}
         data-kind={tile.type}
         data-state={state}
-        className={`practice-match__tile ${crystal ? 'transition-[border-color,background-color,box-shadow,transform] [html[data-theme-family=crystal]_&]:active:scale-[.98]' : 'fx-press'} focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+        className={`practice-match__tile ${crystal ? 'transition-colors' : 'fx-press'} focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
           isMismatched
             ? 'sf-shake [html[data-theme-family=crystal]_&]:motion-safe:animate-shake'
             : isSelected ? '[html[data-theme-family=crystal]_&]:ring-2' : ''
