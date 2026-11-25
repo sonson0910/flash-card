@@ -284,26 +284,10 @@ html[data-theme-family="classic"] [data-notification-toast]:hover { box-shadow: 
 
 html[data-theme-family="classic"] .notification-toast-action-label { min-height: 30px; border-radius: 9px; }
 
-html[data-theme-family="classic"] :is(.notification-toast-action, .undo-toast-action) {
-  transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease;
+html:not([data-theme-family="crystal"]) :is(.notification-toast-action, .notification-toast-dismiss, .undo-toast-action, .undo-toast-dismiss).fx-press:disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }
-
-@media (hover: hover) {
-  html[data-theme-family="classic"] :is(.notification-toast-action, .undo-toast-action):hover {
-    transform: translateY(-2px);
-    filter: brightness(1.06);
-  }
-}
-
-html[data-theme-family="classic"] :is(.notification-toast-action, .undo-toast-action):active {
-  transform: translateY(0) scale(.97);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-theme-family="classic"] :is(.notification-toast-action, .undo-toast-action) { transition: none; }
-}
-
-html[data-motion="reduced"][data-theme-family="classic"] :is(.notification-toast-action, .undo-toast-action) { transition: none; }
 
 /* As on the board, the toast itself is the unclipped wrapper that casts the drop shadow (a clip-path on the
    same element would cut the shadow away); its ::after is the chamfered fill with the tone line, and the ::before
@@ -618,4 +602,8 @@ html[data-theme-family="crystal"] .undo-toast-progress { box-shadow: 0 0 8px var
 
 @media (prefers-reduced-motion: reduce) {
   .notification-toast-spinner { animation: none !important; }
+}
+
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.notification-toast-spinner, .undo-toast-progress) {
+  animation: none !important;
 }

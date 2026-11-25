@@ -65,7 +65,7 @@ describe('app shell navigation', () => {
     );
 
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="page" class="claude-nav-item"><span>Vocabulary<\/span>/);
+    expect(html).toMatch(/aria-current="page" class="claude-nav-item sf-ease"><span>Vocabulary<\/span>/);
     expect(html).toContain('<span class="claude-level-label">Lv</span> 7');
   });
 
@@ -87,7 +87,7 @@ describe('app shell navigation', () => {
     );
 
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="page" class="claude-nav-item"><span>Today<\/span>/);
+    expect(html).toMatch(/aria-current="page" class="claude-nav-item sf-ease"><span>Today<\/span>/);
   });
 
   it('highlights Vocabulary while My files is open', () => {
@@ -108,7 +108,7 @@ describe('app shell navigation', () => {
     );
 
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="page" class="claude-nav-item"><span>Vocabulary<\/span>/);
+    expect(html).toMatch(/aria-current="page" class="claude-nav-item sf-ease"><span>Vocabulary<\/span>/);
   });
 
   it('renders desktop navigation from a vendor-neutral view model', () => {

@@ -575,7 +575,7 @@ html[data-theme-family='crystal'] .workspace-loading-spinner {
    1px top and bottom borders. The secondary's line is an inset ring at the painted edge, so its side padding
    takes the board's 18px plus that 1px line. */
 :where(html:not([data-theme-family=crystal])):not(.dark) .application-error-actions a {
-  box-shadow: var(--sf-secondary-shadow), inset 0 0 0 1px var(--sf-border);
+  box-shadow: var(--sf-secondary-shadow, none), inset 0 0 0 1px var(--sf-border);
 }
 
 :is(html[data-theme-family='classic'], html:not([data-theme-family])) .workspace-loading-panel {
@@ -585,18 +585,30 @@ html[data-theme-family='crystal'] .workspace-loading-spinner {
   backdrop-filter: var(--sf-panel-blur, none);
 }
 
-/* SystemStates motion: the skeleton bars shimmer with the board's sf-shimmer (the skeleton token over a
-   200% field, linear), the spinner turns in 900ms and the primary action takes sf-press. */
+/* SystemStates motion: skeleton bars keep a flat resting track and shimmer with the board's sf-shimmer
+   sheen only when motion is allowed, the spinner turns in 900ms, and disabled fx-press actions stay flat. */
 :where(html:not([data-theme-family=crystal])) .workspace-loading-panel .skeleton-sheen {
-  background: var(--sf-skeleton, var(--sf-surface-raised));
-  background-size: 200% 100%;
-  animation: sf-shimmer-k 1.6s linear infinite;
+  background: none;
+  background-color: var(--sf-track, var(--sf-surface-raised));
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion='reduced'])) .workspace-loading-panel .skeleton-sheen {
+    background-image: linear-gradient(90deg, transparent 0 50%, rgb(255 255 255 / 0.2) 75%, transparent 100%);
+    background-size: 200% 100%;
+    animation: sf-shimmer-k 1.6s linear infinite;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion='reduced'])) .workspace-loading-spinner {
+    animation-name: sf-spin-k;
+    animation-duration: 900ms;
+  }
 }
 
 :where(html:not([data-theme-family=crystal])) .workspace-loading-spinner {
   width: 18px;
   height: 18px;
-  animation-duration: 900ms;
 }
 
 /* The loading tile carries the board's text colour; its label stays text2. */
@@ -609,17 +621,9 @@ html[data-theme-family='crystal'] .workspace-loading-spinner {
   line-height: normal;
 }
 
-:where(html:not([data-theme-family=crystal])) .application-error-actions button {
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), filter 180ms ease;
-}
-
-:where(html:not([data-theme-family=crystal])) .application-error-actions button:hover:not(:disabled) {
-  filter: brightness(1.06);
-  transform: translateY(-2px);
-}
-
-:where(html:not([data-theme-family=crystal])) .application-error-actions button:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+html:not([data-theme-family='crystal']) .application-error-actions button.fx-press:disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }
 
 /* The error screen stands outside the shell, so it draws the board's AMBIENT itself: SystemStates places the
@@ -697,5 +701,9 @@ html[data-theme-family='crystal'] .workspace-loading-spinner {
 }
 
 html[data-motion='reduced'] .workspace-loading-lumi {
+  animation: none;
+}
+
+html[data-motion='reduced']:not([data-theme-family='crystal']) .workspace-loading-spinner {
   animation: none;
 }

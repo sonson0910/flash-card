@@ -96,7 +96,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
         <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
       </button>
       <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} onOpenLanguageSettings={openLanguageSettings} onStudyActiveCourse={onStudyActiveCourse} onOpenCourses={onOpenCourses} />
-      <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={activeView === item.view ? 'true' : undefined} aria-current={activeView === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
+      <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={activeView === item.view ? 'true' : undefined} aria-current={activeView === item.view ? 'page' : undefined} className={`claude-nav-item${family === 'classic' ? ' sf-ease' : ''}`}><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
       <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
         <ThemeMenu onOpenSettings={openAppearanceSettings} />
         {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><StreakFlame />{streak}</span>}

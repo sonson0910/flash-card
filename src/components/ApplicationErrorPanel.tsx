@@ -54,10 +54,10 @@ export function ApplicationErrorPanel({
           <p>{description}</p>
           <span className="application-error-lightning" aria-hidden="true" />
           <div className="application-error-actions">
-            <button type="button" onClick={onAction} disabled={isActionBusy}>
+            <button type="button" onClick={onAction} disabled={isActionBusy} className="fx-press">
               {isActionBusy && actionBusyLabel ? actionBusyLabel : actionLabel}
             </button>
-            {reportHref && reportLabel ? <a href={reportHref}>{reportLabel}</a> : null}
+            {reportHref && reportLabel ? <a href={reportHref} className="fx-press">{reportLabel}</a> : null}
           </div>
         </div>
       </section>

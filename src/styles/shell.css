@@ -128,7 +128,7 @@
    10px rows, and the selected row in accentSoft with the text colour (the check stays accentText); the language
    sheet is the board's 250px, 8px below the painted 40px button (6px below the 44px target). Row text keeps the board's normal line height, and rows keep the 44px
    target where the board draws 38px. The copies inside the account menu keep its own layout. */
-:is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) { margin-top: 6px; padding: 8px; border-radius: 18px; }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) { margin-top: 6px; padding: 8px; border-radius: 18px; transform-origin: top right; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) > :is([role=menuitemradio], [role=menuitem]) { padding-inline: 10px; border-radius: 10px; line-height: normal; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) > [role=menuitemradio][aria-checked=true] { color: var(--sf-text); }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-language-menu-popover:not(.account-menu-preferences *) { width: 250px; }

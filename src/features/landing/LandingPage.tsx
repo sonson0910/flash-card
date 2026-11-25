@@ -366,37 +366,37 @@ function ClassicLandingHero({
     <>
       <div className="landing-hero">
         <div className="landing-copy">
-          <p className="landing-eyebrow">
+          <p className="landing-eyebrow fx-enter">
             <span aria-hidden="true" />
             <Trans
               {...msg({ context: 'landing.hero.eyebrow', message: 'English for Vietnamese speakers' })}
             />
           </p>
-          <h1 id="landing-heading" className="landing-classic-title">
+          <h1 id="landing-heading" className="landing-classic-title fx-title">
             <Trans
               {...msg({ context: 'landing.classic-hero.title', message: 'Words<0/>that <1>stay.</1>' })}
               components={{ 0: <br />, 1: <em /> }}
             />
           </h1>
-          <p className="landing-classic-lead">
+          <p className="landing-classic-lead fx-enter-2">
             <Trans
               {...msg({ context: 'landing.classic-hero.description', message: 'Every word you meet becomes a card with a picture, its real pronunciation and a Vietnamese meaning. SonFlash brings it back just before you would forget it.' })}
             />
           </p>
-          <div className="landing-classic-actions">
+          <div className="landing-classic-actions fx-enter-3">
             <button
               type="button"
               onClick={onEnterApp}
-              className="landing-primary-action brand-action"
+              className="landing-primary-action brand-action fx-press"
             >
               <Trans {...msg({ context: 'landing.classic-hero.start', message: 'Start learning free' })} />
             </button>
-            <a href="#extension" className="landing-secondary-action">
+            <a href="#extension" className="landing-secondary-action fx-press">
               <Puzzle size={18} aria-hidden="true" />
               <Trans {...msg({ context: 'landing.classic-hero.add-to-chrome', message: 'Add to Chrome' })} />
             </a>
           </div>
-          <p className="landing-fine-print">
+          <p className="landing-fine-print fx-enter-3">
             <Trans {...msg({ context: 'landing.classic-hero.fine-print', message: 'Free to start · Web and Chrome · No credit card' })} />
           </p>
         </div>
@@ -409,20 +409,26 @@ function ClassicLandingHero({
             }),
           )}
         >
-          <span className="landing-demo-pronunciation landing-float-chip" aria-hidden="true">
-            <span><Play size={10} fill="currentColor" strokeWidth={0} /></span>
-            <span lang="en">{samplePronunciation}</span>
-          </span>
-          <span className="landing-float-chip landing-float-chip-review" aria-hidden="true">
-            <Trans {...msg({ context: 'landing.demo.next-review', message: 'Next review in 3 days' })} />
-          </span>
-          <span className="landing-float-chip landing-float-chip-source" aria-hidden="true">
-            <Trans
-              {...msg({ context: 'landing.demo.saved-from', message: 'Saved from <0>bbc.com</0>' })}
-              components={{ 0: <strong /> }}
-            />
-          </span>
-          <div className="landing-card-stage" style={{ perspective: reduceMotion ? 'none' : '1600px' }}>
+          <div aria-hidden="true" className="landing-float-chip-slot landing-demo-pronunciation-slot sf-rise-3">
+            <span className="landing-demo-pronunciation landing-float-chip sf-bob-a">
+              <span><Play size={10} fill="currentColor" strokeWidth={0} /></span>
+              <span lang="en">{samplePronunciation}</span>
+            </span>
+          </div>
+          <div aria-hidden="true" className="landing-float-chip-slot landing-float-chip-review-slot sf-rise-3">
+            <span className="landing-float-chip landing-float-chip-review sf-bob-b">
+              <Trans {...msg({ context: 'landing.demo.next-review', message: 'Next review in 3 days' })} />
+            </span>
+          </div>
+          <div aria-hidden="true" className="landing-float-chip-slot landing-float-chip-source-slot sf-rise-3">
+            <span className="landing-float-chip landing-float-chip-source sf-bob-a">
+              <Trans
+                {...msg({ context: 'landing.demo.saved-from', message: 'Saved from <0>bbc.com</0>' })}
+                components={{ 0: <strong /> }}
+              />
+            </span>
+          </div>
+          <div className="landing-card-stage sf-deal-1" style={{ perspective: reduceMotion ? 'none' : '1600px' }}>
             <div className="landing-card-aura" aria-hidden="true" />
             <div
               role="button"
@@ -501,7 +507,7 @@ function ClassicLandingHero({
       </div>
       <section
         id="how-it-works"
-        className="landing-classic-features"
+        className="landing-classic-features fx-enter-4"
         aria-labelledby="classic-features-heading"
       >
         <h2 id="classic-features-heading" className="sr-only">
@@ -637,7 +643,7 @@ export function LandingPage({
           <div className="landing-ambient" aria-hidden="true"><span /><span /></div>
           <div className="landing-grain" aria-hidden="true" />
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:px-12">
-            <header className="landing-header flex items-center gap-3">
+            <header className={`landing-header flex items-center gap-3${family === "classic" ? " fx-enter" : ""}`}>
               <a
                 href="#top"
                 aria-label="SonFlash"
@@ -659,21 +665,21 @@ export function LandingPage({
               >
                 <a
                   href="#how-it-works"
-                  className={desktopNavItemClass}
+                  className={`${desktopNavItemClass}${family === "classic" ? " sf-ease" : ""}`}
                 >
                   <Trans {...msg({ context: 'landing.nav.how-it-works', message: 'How it works' })} />
                 </a>
                 {family === "classic" ? <>
                   <a
                     href="#extension"
-                    className={desktopNavItemClass}
+                    className={`${desktopNavItemClass} sf-ease`}
                   >
                     <Trans {...msg({ context: 'landing.nav.chrome-extension', message: 'Chrome extension' })} />
                   </a>
                   <button
                     type="button"
                     onClick={onOpenCatalog ?? onEnterApp}
-                    className={desktopNavItemClass}
+                    className={`${desktopNavItemClass} sf-ease`}
                   >
                     <Trans {...msg({ context: 'landing.nav.paths', message: 'Paths' })} />
                   </button>
@@ -713,13 +719,13 @@ export function LandingPage({
                 </>}
               </nav>
               <div className="landing-header-actions ml-auto hidden items-center gap-3 md:flex">
-                <button type="button" className="landing-theme-toggle" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>{mode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}</button>
+                <button type="button" className={`landing-theme-toggle${family === "classic" ? " fx-press" : ""}`} onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>{mode === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}</button>
                 {onSignIn && !user && (
                   <button
                     type="button"
                     disabled={signInBusy}
                     onClick={() => void onSignIn()}
-                    className="landing-sign-in min-h-11 rounded-lg px-4 text-[14.5px] font-semibold hover:text-[var(--sf-brand-text)] focus-visible:outline-2"
+                    className={`landing-sign-in min-h-11 rounded-lg px-4 text-[14.5px] font-semibold hover:text-[var(--sf-brand-text)] focus-visible:outline-2${family === "classic" ? " sf-ease" : ""}`}
                   >
                     <Trans {...msg({ context: 'landing.nav.sign-in', message: 'Sign in' })} />
                   </button>
@@ -727,7 +733,7 @@ export function LandingPage({
                 <button
                   type="button"
                   onClick={onEnterApp}
-                  className="landing-header-start brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-5 text-[14.5px] font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                  className={`landing-header-start brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-5 text-[14.5px] font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm${family === "classic" ? " fx-press" : ""}`}
                 >
                   {family === "classic"
                     ? <Trans {...msg({ context: 'landing.nav.start-free', message: 'Start free' })} />
@@ -752,7 +758,7 @@ export function LandingPage({
                       message: "Open navigation menu",
                     }),
                   )}
-                  className={`${actionClass} flex size-11 min-h-0 cursor-pointer list-none items-center justify-center p-0 [&::-webkit-details-marker]:hidden`}
+                  className={`${actionClass}${family === "classic" ? " fx-press" : ""} flex size-11 min-h-0 cursor-pointer list-none items-center justify-center p-0 [&::-webkit-details-marker]:hidden`}
                 >
                   <Menu
                     size={19}
@@ -772,12 +778,12 @@ export function LandingPage({
                       message: "Mobile navigation",
                     }),
                   )}
-                  className="landing-mobile-menu absolute right-0 top-14 z-20 flex w-64 flex-col gap-1 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-[var(--sf-text)] shadow-2xl [html[data-theme-family=crystal]_&]:crystal-chamfer"
+                  className={`landing-mobile-menu absolute right-0 top-14 z-20 flex w-64 flex-col gap-1 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-[var(--sf-text)] shadow-2xl [html[data-theme-family=crystal]_&]:crystal-chamfer${family === "classic" ? " sf-pop" : ""}`}
                 >
                   <a
                     href="#how-it-works"
                     onClick={closeMobileNav}
-                    className={mobileNavItemClass}
+                    className={`${mobileNavItemClass}${family === "classic" ? " sf-ease" : ""}`}
                   >
                     <Trans
                       {...msg({ context: 'landing.nav.how-it-works', message: 'How it works' })}
@@ -787,7 +793,7 @@ export function LandingPage({
                     <a
                       href="#extension"
                       onClick={closeMobileNav}
-                      className={mobileNavItemClass}
+                      className={`${mobileNavItemClass} sf-ease`}
                     >
                       <Trans {...msg({ context: 'landing.nav.chrome-extension', message: 'Chrome extension' })} />
                     </a>
@@ -797,7 +803,7 @@ export function LandingPage({
                         closeMobileNav();
                         (onOpenCatalog ?? onEnterApp)();
                       }}
-                      className={mobileNavButtonClass}
+                      className={`${mobileNavButtonClass} sf-ease`}
                     >
                       <Trans {...msg({ context: 'landing.nav.paths', message: 'Paths' })} />
                     </button>
@@ -870,7 +876,7 @@ export function LandingPage({
                     aria-pressed={index === activeVideo}
                     onPointerDown={(event) => event.preventDefault()}
                     onClick={() => setActiveVideo(index)}
-                    className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${index === activeVideo ? "border-[var(--sf-brand)] text-[var(--sf-brand-text)]" : "border-transparent text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"}`}
+                    className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none${family === "classic" ? " sf-ease" : ""} ${index === activeVideo ? "border-[var(--sf-brand)] text-[var(--sf-brand-text)]" : "border-transparent text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"}`}
                   >
                     {video.label}
                   </button>
@@ -1065,7 +1071,7 @@ export function LandingPage({
               <button
                 type="button"
                 onClick={onOpenLibrary ?? onEnterApp}
-                className={`${actionClass} mt-7 inline-flex items-center gap-2`}
+                className={`${actionClass} mt-7 inline-flex items-center gap-2${family === "classic" ? " fx-press" : ""}`}
               >
                 <Trans
                   {...msg({ context: 'landing.methods.open-library', message: 'Open your library' })}
@@ -1157,7 +1163,7 @@ export function LandingPage({
             <button
               type="button"
               onClick={onEnterApp}
-              className="landing-closing-start brand-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-8 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none sm:w-auto [html[data-theme-family=crystal]_&]:crystal-chamfer"
+              className={`landing-closing-start brand-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-8 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none sm:w-auto [html[data-theme-family=crystal]_&]:crystal-chamfer${family === "classic" ? " fx-press" : ""}`}
             >
               <Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} />
               <ArrowRight size={18} aria-hidden="true" />
@@ -1167,7 +1173,7 @@ export function LandingPage({
                 type="button"
                 disabled={signInBusy}
                 onClick={() => void onSignIn()}
-                className={`${actionClass} w-full sm:w-auto`}
+                className={`${actionClass} w-full sm:w-auto${family === "classic" ? " fx-press" : ""}`}
               >
                 <Trans {...msg({ context: 'landing.hero.sign-in', message: 'Sign in to sync' })} />
               </button>

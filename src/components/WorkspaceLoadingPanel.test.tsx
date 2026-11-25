@@ -46,13 +46,14 @@ describe('WorkspaceLoadingPanel', () => {
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).toContain("html[data-motion='reduced'] .workspace-loading-lumi");
 
-    // Classic skeleton bars are the SystemStates sf-shimmer: the skeleton token over a 200% field.
-    const classicSkeleton = css.match(/:where\(html:not\(\[data-theme-family=crystal\]\)\) \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
-    expect(classicSkeleton).toContain('background: var(--sf-skeleton, var(--sf-surface-raised));');
-    expect(classicSkeleton).toContain('background-size: 200% 100%;');
-    expect(classicSkeleton).toContain('animation: sf-shimmer-k 1.6s linear infinite;');
-    const classicTokens = readFileSync(new URL('../styles/themes/classic.css', import.meta.url), 'utf8');
-    expect(classicTokens).toContain('--sf-skeleton: linear-gradient(90deg, rgb(29 26 22 / 0.05), rgb(29 26 22 / 0.1), rgb(29 26 22 / 0.05));');
-    expect(classicTokens).toContain('--sf-skeleton: linear-gradient(90deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.04));');
+    // Classic skeleton bars stay solid at rest and apply the SystemStates sf-shimmer sheen only when motion is allowed.
+    const classicSkeletonRest = css.match(/:where\(html:not\(\[data-theme-family=crystal\]\)\) \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(classicSkeletonRest).toContain('background: none;');
+    expect(classicSkeletonRest).toContain('background-color: var(--sf-track, var(--sf-surface-raised));');
+    expect(classicSkeletonRest).toContain('animation: none;');
+    const classicSkeletonShimmer = css.match(/:where\(html:not\(\[data-theme-family=crystal\]\):not\(\[data-motion='reduced'\]\)\) \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(classicSkeletonShimmer).toContain('background-image: linear-gradient(90deg, transparent 0 50%, rgb(255 255 255 / 0.2) 75%, transparent 100%);');
+    expect(classicSkeletonShimmer).toContain('background-size: 200% 100%;');
+    expect(classicSkeletonShimmer).toContain('animation: sf-shimmer-k 1.6s linear infinite;');
   });
 });
