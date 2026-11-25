@@ -303,7 +303,8 @@ for (const state of canvasCardStates) {
           await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
           await expectCardBackSettled(shell);
           await expect(star).toHaveAttribute('aria-pressed', 'true');
-          await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
+          // The pop plays when a word is starred, not when a card arrives already starred.
+          await expect(shell.locator('.flashcard-star-selected')).toHaveCount(0);
         }
 
         await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-${state}.png`);

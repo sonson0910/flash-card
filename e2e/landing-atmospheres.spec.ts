@@ -36,6 +36,8 @@ test('landing frame stays still and pointer clicks do not move focus', async ({ 
   await page.mouse.move(0, 0);
 
   const cardFrame = page.locator('.landing-card-stage');
+  // The frame deals in once on load; stillness is asserted from the moment that entrance has ended.
+  await cardFrame.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
   const framePositions: number[] = [];
   for (let sample = 0; sample < 8; sample += 1) {
     framePositions.push(await cardFrame.evaluate(element => element.getBoundingClientRect().top));

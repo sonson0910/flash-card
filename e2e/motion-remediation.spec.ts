@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures/firebase-emulator';
+
+const pictureCardWord = 'insight';
+const pictureUrl = 'https://images.pexels.com/photos/123/insight.jpg';
+const picture = readFileSync('docs/design/sonflash-redesign/canvas/assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg');
 
 const cards = [
   'resemblance', 'serendipity', 'eloquent', 'resilient',
@@ -15,7 +20,8 @@ const cards = [
   category: index % 2 ? 'Conversation' : 'Writing',
   partOfSpeech: 'noun',
   audioUrl: null,
-  imageUrl: null,
+  // One card keeps a picture, so the picture card's own motion stays covered; the others take the language form.
+  imageUrl: word === pictureCardWord ? pictureUrl : null,
   createdAt: new Date(2026, 6, 15, 10, index).toISOString(),
   bookmarked: false,
   difficulty: 'unrated',
@@ -23,6 +29,7 @@ const cards = [
 }));
 
 test.beforeEach(async ({ page, seedCards }) => {
+  await page.route(pictureUrl, route => route.fulfill({ body: picture, contentType: 'image/jpeg' }));
   await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
   await seedCards(cards);
 });
@@ -89,22 +96,30 @@ test('data saver disables ambient motion at desktop sizes', async ({ page, signI
   await expect.poll(() => ambientLayerStyle(page, 'display')).toBe('none');
 });
 
-test('dialog overlay and content use coordinated entrance animations', async ({ page, signIn }) => {
+// Classic takes both entrances from the board stylesheet; Crystal keeps its scripted frame entrance.
+for (const family of ['classic', 'crystal'] as const) test(`${family} dialog overlay and content use coordinated entrance animations`, async ({ page, signIn }) => {
+  await page.addInitScript(value => { localStorage.setItem('sonflash_theme_family', value); }, family);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, '/?view=library');
   await page.getByRole('button', { name: 'Manage library' }).click();
   await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Clear the entire library' }).click();
 
-  const overlay = page.locator('[data-motion-overlay]');
+  const overlay = page.locator('.library-dialog-overlay');
   const dialog = page.getByRole('alertdialog', { name: 'Clear the entire library?' });
   await expect(overlay).toBeVisible();
+  if (family === 'classic') {
+    await expect(overlay).toHaveCSS('animation-name', 'sf-scrim-k');
+    await expect(dialog).toHaveCSS('animation-name', 'ip-dialog-centered-k');
+    return;
+  }
+  await expect(overlay).toHaveAttribute('data-motion-overlay', '');
   await expect(dialog).toHaveAttribute('data-motion-dialog', 'true');
   await expect(overlay).toHaveCSS('animation-name', /motion-overlay-in/);
   await expect(dialog).toHaveAttribute('data-gsap-entrance', 'result');
 });
 
-// The boards grow the dark card's round icon buttons to 1.06 on hover and keep the light card's still.
+// The boards grow the dark picture card's round icon buttons to 1.06 on hover and keep the light card's still.
 for (const { theme, grows } of [{ theme: 'dark', grows: true }, { theme: 'light', grows: false }] as const) test(`${theme} card icon buttons ${grows ? 'grow a little' : 'stay still'} on hover`, async ({ page, signIn }) => {
   await page.addInitScript(value => { localStorage.setItem('lingoflash_theme', value); }, theme);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -142,14 +157,14 @@ for (const { theme, grows } of [{ theme: 'dark', grows: true }, { theme: 'light'
   expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
 });
 
-test('library rows render fully visible without an entrance stagger', async ({ page, signIn }) => {
+test('library rows deal in once and settle fully visible', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, '/?view=library');
-  // The row-based library dropped the card entrance stagger, so every seeded
-  // row must be on screen at full opacity instead of waiting on an animation.
+  // The board staggers the grid in from its stylesheet. No row may stay waiting on that entrance,
+  // and the scripted per-row intro it replaced must not come back.
   const rows = page.locator('[data-library-card-row]');
   await expect(rows).toHaveCount(cards.length);
   await expect(page.locator('[data-library-intro-index]')).toHaveCount(0);
-  const opacities = await rows.evaluateAll(elements => elements.map(element => getComputedStyle(element).opacity));
-  expect(opacities).toEqual(cards.map(() => '1'));
+  await expect.poll(() => rows.evaluateAll(elements => elements.map(element => getComputedStyle(element).opacity)), { timeout: 3_000 })
+    .toEqual(cards.map(() => '1'));
 });
