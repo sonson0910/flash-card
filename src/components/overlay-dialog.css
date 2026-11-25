@@ -82,6 +82,14 @@ html[data-theme-family="classic"] .overlay-dialog-frame {
   background-image: var(--sf-dialog-bg);
   box-shadow: var(--od-shadow);
 }
+@media (prefers-reduced-motion: no-preference) {
+  html.dark:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .overlay-dialog-frame {
+    animation: au-dialog-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  html:not(.dark):not([data-theme-family="crystal"]):not([data-motion="reduced"]) .overlay-dialog-frame {
+    animation: ip-dialog-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
 html[data-theme-family="crystal"] .overlay-dialog-frame { filter: var(--od-glow); }
 html[data-theme-family="crystal"] .overlay-dialog-frame::before {
   content: "";
@@ -280,7 +288,6 @@ html[data-theme-family="crystal"] .overlay-dialog-note { font-size: 12px; }
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: border-color 150ms ease;
 }
 .overlay-dialog-secondary:hover { border-color: var(--sf-brand); }
 .overlay-dialog-secondary:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }

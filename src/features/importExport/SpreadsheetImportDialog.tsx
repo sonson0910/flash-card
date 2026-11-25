@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Check, Download, Loader2, RotateCcw, X } from 'lucide-react';
 import type { RefObject } from 'react';
+import { useTheme } from '../theme/ThemeProvider';
 import type { SpreadsheetImportIssue, SpreadsheetImportProgress, SpreadsheetImportResult, SpreadsheetImportSummary } from './spreadsheetImportService';
 import '../library/library-dialog-overlays.css';
 import './spreadsheet-import-dialog.css';
@@ -75,6 +76,8 @@ export function SpreadsheetImportDialog({
   restoreFocusRef,
 }: SpreadsheetImportDialogProps) {
   const { i18n } = useLingui();
+  const { family } = useTheme();
+  const isCrystal = family === 'crystal';
   const isTerminal = !isImporting && result !== null;
   const isSuccess = result?.status === 'completed';
   const hasErrorReport = result?.status === 'partial' || result?.status === 'failed';
@@ -96,16 +99,16 @@ export function SpreadsheetImportDialog({
                 {result || progress?.summary ? <span> · <Trans {...msg({ context: 'library.import.rows-count', message: '{count, plural, one {# row} other {# rows}}' })} values={{ count: result?.summary.total ?? progress?.summary?.total ?? 0 }} /></span> : null}
               </Dialog.Description>
             </div>
-            <Dialog.Close className="library-dialog-icon-button" aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}>
+            <Dialog.Close className="library-dialog-icon-button fx-press" aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}>
               <X size={17} aria-hidden="true" />
             </Dialog.Close>
           </header>
 
-          <div className="library-dialog-body library-dialog-body--import" tabIndex={0}>
+          <div className="library-dialog-body library-dialog-body--import fx-stagger" tabIndex={0}>
             {isImporting ? (
               <div className="spreadsheet-import-progress" role="status" aria-live="polite">
                 <div className="spreadsheet-import-progress-heading">
-                  <span className="spreadsheet-import-spinner"><Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /></span>
+                  <span className="spreadsheet-import-spinner sf-spin"><Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /></span>
                   {progress && progress.total > 0 ? (
                     <strong><Trans {...msg({ context: 'library.import.progress', message: 'Importing {current, number} of {total, number}' })} values={{ current: progress.current, total: progress.total }} /></strong>
                   ) : (
@@ -113,7 +116,11 @@ export function SpreadsheetImportDialog({
                   )}
                   {progress?.word ? <span className="spreadsheet-import-current"><Trans {...msg({ context: 'library.import.current-label', message: 'current:' })} /> <b>{progress.word}</b></span> : null}
                 </div>
-                {progress && progress.total > 0 ? <progress value={progress.current} max={progress.total}><Trans {...msg({ context: 'library.import.progress-fallback', message: '{current} of {total}' })} values={{ current: progress.current, total: progress.total }} /></progress> : <div className="spreadsheet-import-indeterminate" />}
+                {progress && progress.total > 0 ? (
+                  isCrystal
+                    ? <progress value={progress.current} max={progress.total}><Trans {...msg({ context: 'library.import.progress-fallback', message: '{current} of {total}' })} values={{ current: progress.current, total: progress.total }} /></progress>
+                    : <div role="progressbar" aria-valuenow={progress.current} aria-valuemin={0} aria-valuemax={progress.total} aria-valuetext={i18n._(msg({ context: 'library.import.progress-fallback', message: '{current} of {total}' }).id, { current: progress.current, total: progress.total })} className="spreadsheet-import-bar"><div className="spreadsheet-import-bar-fill sf-grow" style={{ width: `${Math.min(100, Math.round((progress.current / progress.total) * 100))}%` }} /></div>
+                ) : <div className="spreadsheet-import-indeterminate" />}
                 <p><Trans {...msg({ context: 'library.import.background', message: 'You can close this — the import keeps running in the background.' })} /></p>
               </div>
             ) : null}
@@ -130,13 +137,13 @@ export function SpreadsheetImportDialog({
 
           <footer className="library-dialog-footer spreadsheet-import-footer">
             {hasErrorReport && onDownloadErrorReport ? (
-              <button type="button" onClick={onDownloadErrorReport} className="library-dialog-button library-dialog-button--secondary">
+              <button type="button" onClick={onDownloadErrorReport} className="library-dialog-button library-dialog-button--secondary fx-press">
                 <Download size={15} aria-hidden="true" />
                 <Trans {...msg({ context: 'library.import.download-errors', message: 'Download error report' })} />
               </button>
             ) : <span />}
             <Dialog.Close asChild>
-              <button type="button" className="library-dialog-button library-dialog-button--primary">
+              <button type="button" className="library-dialog-button library-dialog-button--primary fx-press">
                 {isSuccess ? <Check size={15} aria-hidden="true" /> : null}
                 {isImporting ? <Trans {...msg({ id: 'common.close', message: 'Close' })} /> : <Trans {...msg({ context: 'common.done', message: 'Done' })} />}
               </button>

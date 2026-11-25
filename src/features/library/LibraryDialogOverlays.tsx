@@ -3,12 +3,21 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { AlertTriangle, Check, Download, Loader2, Plus, RotateCcw, X } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { formatNumber } from '../../lib/format';
 import { useTheme } from '../theme/ThemeProvider';
 import { coverPresets, deckMonogram, defaultCoverPreset, type CoverPreset } from './customDecks';
 import './library-dialog-overlays.css';
+
+const LibraryDialogMotionFrame = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof GsapEntrance> & { isCrystal: boolean }>(
+  function LibraryDialogMotionFrame({ isCrystal, animationKey, direction, onEntered, variant, ...props }, ref) {
+    if (isCrystal) {
+      return <GsapEntrance ref={ref} animationKey={animationKey} direction={direction} onEntered={onEntered} variant={variant} {...props} />;
+    }
+    return <div ref={ref} {...props} />;
+  },
+);
 
 export type LibraryDialogPhase = 'idle' | 'working' | 'success' | 'failure';
 
@@ -123,7 +132,7 @@ export function DeckCreationDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close
-              className="library-dialog-icon-button"
+              className={`library-dialog-icon-button${isWorking ? '' : ' fx-press'}`}
               aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}
               disabled={isWorking}
             >
@@ -133,7 +142,7 @@ export function DeckCreationDialog({
 
           <form
             id="library-deck-create-form"
-            className="library-dialog-body library-dialog-body--manage"
+            className="library-dialog-body library-dialog-body--manage fx-stagger"
             onSubmit={event => {
               event.preventDefault();
               if (!isWorking && !isSuccess && value.trim()) onSubmit();
@@ -145,6 +154,7 @@ export function DeckCreationDialog({
                 ref={inputRef}
                 id="library-deck-name"
                 name="deck-name"
+                className="sf-ease"
                 value={value}
                 onChange={event => onChange(event.target.value)}
                 placeholder={i18n._(msg({ id: 'library.deck.name-placeholder', message: 'IELTS, Travel…' }))}
@@ -169,7 +179,7 @@ export function DeckCreationDialog({
                   type="button"
                   onClick={() => onChange(suggestion.message ?? '')}
                   disabled={isWorking || isSuccess}
-                  className="library-dialog-chip"
+                  className="library-dialog-chip sf-ease"
                 >
                   <span>{i18n._(suggestion)}</span>
                 </button>
@@ -192,7 +202,7 @@ export function DeckCreationDialog({
                   />
                   <label
                     htmlFor={`library-deck-cover-${choice}`}
-                    className={`library-deck-cover library-deck-cover--${choice}`}
+                    className={`library-deck-cover library-deck-cover--${choice}${isWorking || isSuccess ? '' : ' fx-lift'}`}
                     aria-label={i18n._(labels[choice])}
                   >
                     <span aria-hidden="true">{deckMonogram(value) || 'A'}</span>
@@ -218,7 +228,7 @@ export function DeckCreationDialog({
 
           <footer className="library-dialog-footer">
             <Dialog.Close asChild>
-              <button type="button" className="library-dialog-button library-dialog-button--secondary" disabled={isWorking}>
+              <button type="button" className={`library-dialog-button library-dialog-button--secondary${isWorking ? '' : ' fx-press'}`} disabled={isWorking}>
                 {isSuccess ? <Trans {...msg({ context: 'common.done', message: 'Done' })} /> : <Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} />}
               </button>
             </Dialog.Close>
@@ -226,7 +236,7 @@ export function DeckCreationDialog({
               <button
                 type="submit"
                 form="library-deck-create-form"
-                className="library-dialog-button library-dialog-button--primary"
+                className={`library-dialog-button library-dialog-button--primary${isWorking || !value.trim() ? '' : ' fx-press'}`}
                 disabled={isWorking || !value.trim()}
                 aria-busy={isWorking}
               >
@@ -268,6 +278,8 @@ export function LibraryClearDialog({
 }: LibraryClearDialogProps) {
   const [confirmation, setConfirmation] = useState('');
   const { i18n } = useLingui();
+  const { family } = useTheme();
+  const isCrystal = family === 'crystal';
   const isWorking = status === 'working';
   const isSuccess = status === 'success';
   const canConfirm = confirmation.trim().toUpperCase() === confirmationToken.toUpperCase();
@@ -290,7 +302,7 @@ export function LibraryClearDialog({
       }}
     >
       <AlertDialog.Portal>
-        <AlertDialog.Overlay data-motion-overlay className="library-dialog-overlay library-dialog-overlay--danger" />
+        <AlertDialog.Overlay data-motion-overlay={isCrystal ? '' : undefined} className="library-dialog-overlay library-dialog-overlay--danger" />
         <AlertDialog.Content
           asChild
           onCloseAutoFocus={event => restoreLibraryDialogFocus(event, restoreFocusRef)}
@@ -298,7 +310,7 @@ export function LibraryClearDialog({
             if (isWorking) event.preventDefault();
           }}
         >
-          <GsapEntrance animationKey={open} variant="result" data-motion-dialog="true" className="library-dialog-frame library-dialog-frame--danger">
+          <LibraryDialogMotionFrame isCrystal={isCrystal} animationKey={open} variant="result" data-motion-dialog={isCrystal ? 'true' : undefined} className="library-dialog-frame library-dialog-frame--danger">
           <header className="library-dialog-header">
             <div className="library-dialog-heading-with-icon">
               <span className="library-dialog-danger-icon library-dialog-danger-icon--solid" aria-hidden="true"><AlertTriangle size={22} /></span>
@@ -308,7 +320,7 @@ export function LibraryClearDialog({
               </div>
             </div>
             <AlertDialog.Cancel
-              className="library-dialog-icon-button"
+              className={`library-dialog-icon-button${isWorking ? '' : ' fx-press'}`}
               aria-label={i18n._(msg({ id: 'library.clear.close', message: 'Close clear library dialog' }))}
               disabled={isWorking}
             >
@@ -316,7 +328,7 @@ export function LibraryClearDialog({
             </AlertDialog.Cancel>
           </header>
 
-          <div className="library-dialog-body library-dialog-body--danger">
+          <div className="library-dialog-body library-dialog-body--danger fx-stagger">
             <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
               <Trans {...msg({ context: 'library.clear.description-scope', message: 'This permanently deletes every card, deck and review history on all your synced devices.' })} />{' '}
               <strong className="library-dialog-emphasis"><Trans {...msg({ context: 'library.clear.irreversible', message: 'It can’t be undone.' })} /></strong>
@@ -331,7 +343,7 @@ export function LibraryClearDialog({
             {onExport ? (
               <div className="library-dialog-export-row">
                 <span><Trans {...msg({ context: 'library.clear.export-copy', message: 'Keep a copy first — export everything.' })} /></span>
-                <button type="button" onClick={onExport} disabled={isWorking || isSuccess} className="library-dialog-button library-dialog-button--secondary library-dialog-button--compact">
+                <button type="button" onClick={onExport} disabled={isWorking || isSuccess} className={`library-dialog-button library-dialog-button--secondary library-dialog-button--compact${isWorking || isSuccess ? '' : ' fx-press'}`}>
                   <Download size={15} aria-hidden="true" />
                   <Trans {...msg({ context: 'library.clear.export', message: 'Export' })} />
                 </button>
@@ -346,9 +358,10 @@ export function LibraryClearDialog({
             ) : (
               <label className="library-dialog-field library-dialog-field--token" htmlFor="library-clear-confirmation">
                 <span className="library-dialog-field-label"><Trans {...msg({ context: 'library.clear.confirm-label', message: 'Type {token} to confirm' })} values={{ token: <strong>{confirmationToken}</strong> }} /></span>
-                <span className="library-dialog-field-control">
+                <span className="library-dialog-field-control sf-ease">
                   <input
                     id="library-clear-confirmation"
+                    className="sf-ease"
                     value={confirmation}
                     onChange={event => setConfirmation(event.target.value)}
                     disabled={isWorking}
@@ -378,15 +391,15 @@ export function LibraryClearDialog({
           <footer className="library-dialog-footer">
             {isSuccess ? (
               <AlertDialog.Cancel asChild>
-                <button type="button" className="library-dialog-button library-dialog-button--primary"><Trans {...msg({ context: 'common.done', message: 'Done' })} /></button>
+                <button type="button" className="library-dialog-button library-dialog-button--primary fx-press"><Trans {...msg({ context: 'common.done', message: 'Done' })} /></button>
               </AlertDialog.Cancel>
             ) : (
               <>
-                <AlertDialog.Cancel className="library-dialog-button library-dialog-button--secondary" disabled={isWorking}>
+                <AlertDialog.Cancel className={`library-dialog-button library-dialog-button--secondary${isWorking ? '' : ' fx-press'}`} disabled={isWorking}>
                   <Trans {...msg({ context: 'library.clear.keep', message: 'Keep library' })} />
                 </AlertDialog.Cancel>
                 <AlertDialog.Action
-                  className="library-dialog-button library-dialog-button--danger"
+                  className={`library-dialog-button library-dialog-button--danger${isWorking || !canConfirm ? '' : ' fx-press-danger'}`}
                   disabled={isWorking || !canConfirm}
                   aria-busy={isWorking}
                   onClick={event => {
@@ -400,7 +413,7 @@ export function LibraryClearDialog({
               </>
             )}
           </footer>
-          </GsapEntrance>
+          </LibraryDialogMotionFrame>
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>
@@ -479,7 +492,7 @@ export function LibraryInsightsDialog({
               <Dialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.insights.title', message: 'Learning insights' })} /></Dialog.Title>
               <Dialog.Description className="library-dialog-description"><Trans {...msg({ context: 'library.insights.description', message: 'A truthful view of your memory strength and review momentum.' })} /></Dialog.Description>
             </div>
-            <Dialog.Close className="library-dialog-icon-button" aria-label={i18n._(msg({ id: 'library.insights.close', message: 'Close learning insights' }))}>
+            <Dialog.Close className="library-dialog-icon-button fx-press" aria-label={i18n._(msg({ id: 'library.insights.close', message: 'Close learning insights' }))}>
               <X size={17} aria-hidden="true" />
             </Dialog.Close>
           </header>
@@ -495,13 +508,13 @@ export function LibraryInsightsDialog({
               <div className="library-dialog-empty" role="alert">
                 <AlertTriangle size={24} aria-hidden="true" />
                 <p>{errorMessage ?? <Trans {...msg({ context: 'library.insights.failure', message: 'Could not load learning insights. Try again.' })} />}</p>
-                {onRetry ? <button type="button" onClick={onRetry} className="library-dialog-button library-dialog-button--secondary"><RotateCcw size={15} aria-hidden="true" /><Trans {...msg({ context: 'common.retry', message: 'Retry' })} /></button> : null}
+                {onRetry ? <button type="button" onClick={onRetry} className="library-dialog-button library-dialog-button--secondary fx-press"><RotateCcw size={15} aria-hidden="true" /><Trans {...msg({ context: 'common.retry', message: 'Retry' })} /></button> : null}
               </div>
             ) : !hasStats ? (
               <div className="library-dialog-empty" role="status"><Trans {...msg({ context: 'library.insights.empty', message: 'There is not enough learning data to show insights yet.' })} /></div>
             ) : (
               <>
-                <div className="library-dialog-stat-grid library-dialog-stat-grid--four">
+                <div className="library-dialog-stat-grid library-dialog-stat-grid--four fx-stagger">
                   <InsightMetric label={<Trans {...msg({ context: 'library.insights.total', message: 'Total cards' })} />} value={stats.total} />
                   <InsightMetric label={<Trans {...msg({ context: 'library.insights.mastered', message: 'Mastered' })} />} value={stats.learned} />
                   <InsightMetric label={<Trans {...msg({ context: 'library.insights.learning', message: 'Learning' })} />} value={stats.learning} />
@@ -513,7 +526,7 @@ export function LibraryInsightsDialog({
                     <h3 id="library-insights-category-title"><Trans {...msg({ context: 'library.insights.category', message: 'By category' })} /></h3>
                     {stats.categoryChart.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-category', message: 'No category data yet.' })} /></p> : (
                       <ul className="library-insights-bars">
-                        {stats.categoryChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track"><span style={{ width: `${Math.round((item.value / maxCategory) * 100)}%` }} /></span></li>)}
+                        {stats.categoryChart.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{formatNumber(item.value)}</strong></div><span className="library-insights-track"><span className="sf-grow" style={{ width: `${Math.round((item.value / maxCategory) * 100)}%` }} /></span></li>)}
                       </ul>
                     )}
                     {stats.categoryChartIsPartial ? <p className="library-dialog-note"><Trans {...msg({ context: 'library.insights.category-partial', message: 'Some cloud categories are still loading.' })} /></p> : null}
@@ -546,7 +559,7 @@ export function LibraryInsightsDialog({
                         <>
                           <svg className="library-insights-spark" viewBox="0 0 560 90" preserveAspectRatio="none">
                             <path className="library-insights-spark-area" d={xpSpark.area} />
-                            <path className="library-insights-spark-line" d={xpSpark.line} />
+                            <path className="library-insights-spark-line sf-draw" pathLength={1} d={xpSpark.line} />
                             <circle className="library-insights-spark-end" cx={xpSpark.end[0]} cy={xpSpark.end[1]} r="5" />
                           </svg>
                           <div className="library-insights-spark-dates"><span>{stats.xpChartData[0].date}</span><span>{stats.xpChartData[stats.xpChartData.length - 1].date}</span></div>
@@ -562,7 +575,7 @@ export function LibraryInsightsDialog({
           <footer className="library-dialog-footer">
             {onOpenProgress ? <button type="button" onClick={onOpenProgress} className="library-dialog-link"><Trans {...msg({ context: 'library.insights.open-progress', message: 'Open full Progress →' })} /></button> : <span />}
             <Dialog.Close asChild>
-              <button type="button" className="library-dialog-button library-dialog-button--secondary"><Trans {...msg({ id: 'common.close', message: 'Close' })} /></button>
+              <button type="button" className="library-dialog-button library-dialog-button--secondary fx-press"><Trans {...msg({ id: 'common.close', message: 'Close' })} /></button>
             </Dialog.Close>
           </footer>
         </Dialog.Content>

@@ -97,6 +97,11 @@ html[data-theme-family="classic"] .practice-picker-row-name { color: var(--sf-te
   border-radius: 50%;
   animation: practice-picker-spin 900ms linear infinite;
 }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .sf-spin {
+    animation: sf-spin-k 900ms linear infinite;
+  }
+}
 @keyframes practice-picker-spin { to { transform: rotate(360deg); } }
 
 .practice-picker-row-lock {
@@ -243,6 +248,11 @@ html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { c
 /* Below 640px the picker is a bottom sheet: grab handle, short title, chevrons instead of key
    hints, and a tinted icon per mode. The footer's keyboard hint has no use on touch. */
 @media (max-width: 639px) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .practice-picker.overlay-dialog-frame {
+      animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+    }
+  }
   .practice-picker.overlay-dialog-frame {
     inset: auto 0 0;
     width: 100%;

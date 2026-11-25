@@ -694,7 +694,6 @@
     0 1px 2px rgb(60 40 20 / .08),
     0 16px 30px -20px rgb(60 40 20 / .4);
   cursor: pointer;
-  transition: transform .18s ease, box-shadow .18s ease, filter .22s ease;
 }
 
 /* Midnight Aurora: a 1.5px tier rim drawn as a border-box gradient. */
@@ -1435,6 +1434,18 @@
   z-index: 100;
   inset: 0;
   background: var(--sf-dialog-veil);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) :is(.library-card-detail-overlay, .library-delete-overlay) {
+    animation: sf-scrim-k 240ms ease-out both;
+  }
+  :where(html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"])) :is(.library-card-detail-dialog, .library-delete-dialog) {
+    animation: au-dialog-centered-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  :where(html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"])) :is(.library-card-detail-dialog, .library-delete-dialog) {
+    animation: ip-dialog-centered-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
 }
 
 .library-card-detail-dialog {
@@ -2770,10 +2781,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .library-word-card { transition: none; }
+  :where(html:not([data-theme-family=crystal])) :is(.library-card-detail-overlay, .library-delete-overlay, .library-card-detail-dialog, .library-delete-dialog) { animation: none; }
   :root[data-theme-family="crystal"] .library-word-card,
   :root[data-theme-family="crystal"] .library-word-cover img { transition: none; }
   :root[data-theme-family="crystal"] .library-word-card:hover .library-word-cover img { transform: none; }
 }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.library-card-detail-overlay, .library-delete-overlay, .library-card-detail-dialog, .library-delete-dialog) { animation: none; }
 
 /* Crystal desktop heading: Lumi stands beside a column that holds her one-line
    bubble above the search field and the create button. The hint wrapper

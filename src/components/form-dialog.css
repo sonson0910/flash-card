@@ -15,6 +15,14 @@
   background-image: var(--sf-dialog-bg);
   box-shadow: var(--sf-dialog-shadow);
 }
+@media (prefers-reduced-motion: no-preference) {
+  :root.dark:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .form-dialog {
+    animation: au-dialog-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  :root:not(.dark):not([data-theme-family="crystal"]):not([data-motion="reduced"]) .form-dialog {
+    animation: ip-dialog-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
 :root.dark:not([data-theme-family="crystal"]) .form-dialog { --fd-fr: 14px; }
 :root:not([data-theme-family="crystal"]) .form-dialog-title {
   color: var(--sf-text-strong);

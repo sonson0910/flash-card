@@ -49,8 +49,8 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[100] dialog-veil backdrop-blur-sm" />
-        <Dialog.Content className="form-dialog crystal-chamfer fixed left-1/2 top-1/2 z-[101] w-[min(92vw,30rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]">
+        <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[100] dialog-veil sf-scrim backdrop-blur-sm" />
+        <Dialog.Content className="form-dialog fx-dialog crystal-chamfer fixed left-1/2 top-1/2 z-[101] w-[min(92vw,30rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]">
           <div className="form-dialog-header flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
             <div>
               <p className="premium-kicker text-[11px] uppercase tracking-[.14em]"><Trans {...msg({ context: 'cardReport.kicker', message: 'Card quality' })} /></p>
@@ -59,7 +59,7 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
                 <Trans {...msg({ context: 'cardReport.description', message: 'Reporting “{cardWord}”. The card content and your note will be sent to the operator for review.' })} values={{ cardWord }} />
               </Dialog.Description>
             </div>
-            <Dialog.Close aria-label={_(msg({ id: 'cardReport.dialog.close', message: 'Close' }))} className="form-dialog-close liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+            <Dialog.Close aria-label={_(msg({ id: 'cardReport.dialog.close', message: 'Close' }))} className="form-dialog-close fx-press liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
               <X size={18} aria-hidden="true" />
             </Dialog.Close>
           </div>
@@ -69,7 +69,7 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
               <Trans {...msg({ context: 'cardReport.submitted', message: 'Thank you. Your report has been sent for review.' })} />
             </div>
           ) : (
-            <form className="form-dialog-body space-y-4 px-5 py-5 sm:px-7" onSubmit={submit}>
+            <form className="form-dialog-body fx-stagger space-y-4 px-5 py-5 sm:px-7" onSubmit={submit}>
               <label className="block text-sm font-bold" htmlFor={`card-report-reason-${cardId}`}>
                 <Trans {...msg({ context: 'cardReport.reason.label', message: 'Reason' })} />
                 <select
@@ -99,7 +99,7 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
                 <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
                 <Trans {...msg({ context: 'cardReport.privacy-hint', message: 'Don\'t include personal information or private content in the note.' })} />
               </p>
-              <button type="submit" disabled={submitting} className="form-dialog-primary flex min-h-11 w-full items-center justify-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] bg-[var(--sf-brand)] px-4 font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-60 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+              <button type="submit" disabled={submitting} className={`form-dialog-primary ${!submitting ? 'fx-press ' : ''}flex min-h-11 w-full items-center justify-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] bg-[var(--sf-brand)] px-4 font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-60 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm`}>
                 {submitting && <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                 {submitting ? <Trans {...msg({ context: 'cardReport.submit.busy', message: 'Sending…' })} /> : <Trans {...msg({ context: 'cardReport.submit', message: 'Send report' })} />}
               </button>

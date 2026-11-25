@@ -331,7 +331,7 @@ export function DeckDeletionDialogContent({
             </div>
           </div>
           <AlertDialog.Cancel
-            className="library-dialog-icon-button"
+            className={`library-dialog-icon-button${isDeleting ? '' : ' fx-press'}`}
             aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}
             disabled={isDeleting}
           >
@@ -339,7 +339,7 @@ export function DeckDeletionDialogContent({
           </AlertDialog.Cancel>
         </header>
 
-        <div className="library-dialog-body">
+        <div className="library-dialog-body fx-stagger">
           <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
             {assignedCardCount === undefined ? (
               <Trans
@@ -381,7 +381,7 @@ export function DeckDeletionDialogContent({
         </div>
 
         <footer className="library-dialog-footer">
-          <AlertDialog.Cancel disabled={isDeleting} className="library-dialog-button library-dialog-button--secondary"><Trans {...msg({ context: 'library.deck.keep', message: 'Keep deck' })} /></AlertDialog.Cancel>
+          <AlertDialog.Cancel disabled={isDeleting} className={`library-dialog-button library-dialog-button--secondary${isDeleting ? '' : ' fx-press'}`}><Trans {...msg({ context: 'library.deck.keep', message: 'Keep deck' })} /></AlertDialog.Cancel>
           <AlertDialog.Action
             disabled={isDeleting}
             aria-busy={isDeleting}
@@ -389,7 +389,7 @@ export function DeckDeletionDialogContent({
               event.preventDefault();
               if (!isDeleting) onConfirm();
             }}
-            className="library-dialog-button library-dialog-button--danger"
+            className={`library-dialog-button library-dialog-button--danger${isDeleting ? '' : ' fx-press-danger'}`}
           >
             {isDeleting ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
             {isDeleting ? <Trans {...msg({ context: 'library.deck.deleting', message: 'Deleting…' })} /> : error ? <Trans {...msg({ context: 'library.deck.delete-again', message: 'Try deleting again' })} /> : <Trans {...msg({ context: 'library.deck.delete', message: 'Delete deck' })} />}

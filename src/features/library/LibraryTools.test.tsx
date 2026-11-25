@@ -336,7 +336,7 @@ describe('library touch targets', () => {
     const dialogSource = readFileSync(fileURLToPath(new URL('./LibraryDialogOverlays.tsx', import.meta.url)), 'utf8');
     const dialogCss = readFileSync(fileURLToPath(new URL('./library-dialog-overlays.css', import.meta.url)), 'utf8');
 
-    expect(dialogSource).toContain('className="library-dialog-button library-dialog-button--primary"');
+    expect(dialogSource).toContain('className="library-dialog-button library-dialog-button--primary');
     expect(dialogCss).toMatch(/\.library-dialog-button\s*\{[^}]*min-height:\s*2\.75rem/);
     expect(source).toContain('flex size-11 items-center justify-center rounded-lg');
     expect(source).toContain('flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1');

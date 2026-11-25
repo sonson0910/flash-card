@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { forwardRef, lazy, Suspense, useEffect, useRef, useState, type ComponentPropsWithoutRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -7,6 +7,7 @@ import type { SharedDeckEarlierShare, SharedDeckIncomingPreview, SharedDeckLangu
 import { cn } from '../lib/cn';
 import { copyTextToClipboard } from '../lib/recoverableActions';
 import { formatNumber } from '../lib/format';
+import { useTheme } from '../features/theme/ThemeProvider';
 import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
@@ -106,6 +107,15 @@ interface AppOverlaysProps {
 const overlayClass = 'crystal-starfield fixed inset-0 z-50 dialog-veil';
 const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]';
 
+const DialogMotionFrame = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof GsapEntrance> & { isCrystal: boolean }>(
+  function DialogMotionFrame({ isCrystal, animationKey, direction, onEntered, variant, ...props }, ref) {
+    if (isCrystal) {
+      return <GsapEntrance ref={ref} animationKey={animationKey} direction={direction} onEntered={onEntered} variant={variant} {...props} />;
+    }
+    return <div ref={ref} {...props} />;
+  },
+);
+
 const categoryTitle = (category: string, allLibraryLabel: string): string =>
   category === 'All' ? allLibraryLabel : category;
 
@@ -176,6 +186,8 @@ export function AppOverlays({
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary, onOpenProgress,
 }: AppOverlaysProps) {
   const { _, i18n } = useLingui();
+  const { family } = useTheme();
+  const isCrystal = family === 'crystal';
   const ownerCardCount = useOwnerCardCount(showClearConfirm, loadOwnerCardCount);
   const clearFigures = clearLibraryFigures(
     { total: statsData.total, learned: statsData.learned, ...(deckCount === undefined ? {} : { deckCount }) },
@@ -291,14 +303,14 @@ export function AppOverlays({
         }
       }}>
         <Dialog.Portal>
-          <Dialog.Overlay data-motion-overlay className={overlayClass} />
+          <Dialog.Overlay data-motion-overlay={isCrystal ? '' : undefined} className={cn(overlayClass, !isCrystal && 'sf-scrim')} />
           <Dialog.Content
             asChild
             onCloseAutoFocus={event => restoreFocus(event, shareOpenerRef)}
             onEscapeKeyDown={event => { if (isSharing) event.preventDefault(); }}
             onInteractOutside={event => { if (isSharing) event.preventDefault(); }}
           >
-            <GsapEntrance animationKey={`${incomingSharePreview?.shareId ?? shareLink}-${shareDialogOpen}`} variant="result" data-motion-dialog="true" data-share-dialog-frame={incomingSharePreview ? 'incoming' : 'outgoing'} className={cn('share-dialog-frame fixed inset-0 z-50 m-auto flex h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] flex-col text-[var(--sf-text)]', incomingSharePreview ? 'max-w-[36.25rem]' : 'max-w-[35rem]')}>
+            <DialogMotionFrame isCrystal={isCrystal} animationKey={`${incomingSharePreview?.shareId ?? shareLink}-${shareDialogOpen}`} variant="result" data-motion-dialog={isCrystal ? 'true' : undefined} data-share-dialog-frame={incomingSharePreview ? 'incoming' : 'outgoing'} className={cn('share-dialog-frame', !isCrystal && 'fx-dialog', 'fixed inset-0 z-50 m-auto flex h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] flex-col text-[var(--sf-text)]', incomingSharePreview ? 'max-w-[36.25rem]' : 'max-w-[35rem]')}>
               <div data-share-dialog-body className="share-dialog-body relative flex min-h-0 flex-col overflow-hidden text-[var(--sf-text)]">
               <span aria-hidden="true" className="share-dialog-ornament share-dialog-ornament-top" />
               <span aria-hidden="true" className="share-dialog-ornament share-dialog-ornament-bottom" />
@@ -323,7 +335,7 @@ export function AppOverlays({
                         : <Trans {...msg({ context: 'shell.share.outgoing-description', message: 'Anyone with the link can preview this deck and copy it into their own library.' })} />}
                   </Dialog.Description>
                 </div>
-                <Dialog.Close disabled={isSharing} className="share-dialog-close relative flex size-11 shrink-0 items-center justify-center bg-transparent p-0 text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none" aria-label={_(msg({ id: 'shell.share.close', message: 'Close share dialog' }))}>
+                <Dialog.Close disabled={isSharing} className={cn('share-dialog-close relative flex size-11 shrink-0 items-center justify-center bg-transparent p-0 text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none', !isSharing && 'fx-press')} aria-label={_(msg({ id: 'shell.share.close', message: 'Close share dialog' }))}>
                   <span aria-hidden="true" className="share-dialog-close-surface"><X size={16} /></span>
                 </Dialog.Close>
               </div>
@@ -361,14 +373,14 @@ export function AppOverlays({
               </div>
               {!incomingSharePreview && (shareLink || !isSharing) ? (
                 <div className="share-dialog-footer flex shrink-0 items-center gap-2 border-t border-[var(--sf-border)] px-5 py-4 sm:px-[26px]">
-                  {canRevokeShare && shareLink ? <button type="button" disabled={isSharing} onClick={() => void revokeShare()} className="share-dialog-revoke min-h-11 border-0 bg-transparent px-1 text-sm font-semibold text-[var(--sf-danger)] underline-offset-4 hover:underline disabled:cursor-wait disabled:opacity-60">{isSharing ? <Trans {...msg({ context: 'shell.share.revoking', message: 'Revoking…' })} /> : <Trans {...msg({ context: 'shell.share.revoke', message: 'Revoke link' })} />}</button> : null}
-                  <Dialog.Close disabled={isSharing} className="share-dialog-action share-dialog-action-primary ml-auto flex min-h-11 items-center gap-2 px-5 text-sm font-bold shadow-[0_12px_28px_-14px_var(--sf-shadow)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"><Trans {...msg({ context: 'shell.share.done', message: 'Done' })} /></Dialog.Close>
+                  {canRevokeShare && shareLink ? <button type="button" disabled={isSharing} onClick={() => void revokeShare()} className={cn('share-dialog-revoke min-h-11 border-0 bg-transparent px-1 text-sm font-semibold text-[var(--sf-danger)] underline-offset-4 hover:underline disabled:cursor-wait disabled:opacity-60', !isSharing && 'fx-press-danger')}>{isSharing ? <Trans {...msg({ context: 'shell.share.revoking', message: 'Revoking…' })} /> : <Trans {...msg({ context: 'shell.share.revoke', message: 'Revoke link' })} />}</button> : null}
+                  <Dialog.Close disabled={isSharing} className={cn('share-dialog-action share-dialog-action-primary ml-auto flex min-h-11 items-center gap-2 px-5 text-sm font-bold shadow-[0_12px_28px_-14px_var(--sf-shadow)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60', !isSharing && 'fx-press')}><Trans {...msg({ context: 'shell.share.done', message: 'Done' })} /></Dialog.Close>
                 </div>
               ) : incomingSharePreview ? (
                 <ShareImportActions preview={incomingSharePreview} isSharing={isSharing} onAccept={() => void acceptSharedDeck()} onCancel={cancelSharedDeck} />
               ) : null}
               </div>
-            </GsapEntrance>
+            </DialogMotionFrame>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -379,9 +391,9 @@ export function AppOverlays({
 
       <Dialog.Root open={isPracticeMenuOpen} onOpenChange={setIsPracticeMenuOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay data-motion-overlay className={overlayClass} />
+          <Dialog.Overlay data-motion-overlay={isCrystal ? '' : undefined} className={cn(overlayClass, !isCrystal && 'sf-scrim')} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)} onKeyDown={runPracticeShortcut}>
-            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" data-practice-picker className="overlay-dialog-frame practice-picker">
+            <DialogMotionFrame isCrystal={isCrystal} animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog={isCrystal ? 'true' : undefined} data-practice-picker className={cn('overlay-dialog-frame practice-picker', !isCrystal && 'fx-dialog')}>
               <div className="overlay-dialog-body">
                 <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-top" />
                 <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-bottom" />
@@ -396,11 +408,11 @@ export function AppOverlays({
                     <p className="practice-picker-count"><Trans {...msg({ context: 'shell.practice-menu.library-count', message: 'From your library · {count, plural, one {# card} other {# cards}}' })} values={{ count: visibleLibraryCount }} /></p>
                     <Dialog.Description className="overlay-dialog-sub"><Trans {...msg({ context: 'shell.practice-menu.description', message: 'Choose a different way to practice with words from your library.' })} /></Dialog.Description>
                   </div>
-                  {practiceLanguageName && <p className="practice-picker-scope crystal-chamfer-sm"><span className="sr-only"><Trans {...msg({ context: 'shell.practice-menu.scope', message: 'Course language:' })} /> </span>{practiceLanguageName}</p>}
-                  <Dialog.Close className="overlay-dialog-close" aria-label={_(msg({ id: 'shell.practice-menu.close', message: 'Close practice menu' }))}><span aria-hidden="true" className="overlay-dialog-close-surface"><X /></span></Dialog.Close>
+                  {practiceLanguageName && <p className="practice-picker-scope sf-ease crystal-chamfer-sm"><span className="sr-only"><Trans {...msg({ context: 'shell.practice-menu.scope', message: 'Course language:' })} /> </span>{practiceLanguageName}</p>}
+                  <Dialog.Close className="overlay-dialog-close fx-press" aria-label={_(msg({ id: 'shell.practice-menu.close', message: 'Close practice menu' }))}><span aria-hidden="true" className="overlay-dialog-close-surface"><X /></span></Dialog.Close>
                 </div>
 
-                <div className="practice-picker-list">
+                <div className="practice-picker-list fx-stagger">
                   <PracticeModeChoices practiceCards={practiceCards} visibleLibraryCount={visibleLibraryCount} practiceAction={practiceAction} actions={practiceActions} onRun={runPracticeAction} />
                   <PracticeChoice modeId="text" icon={MessagesSquare} title={_(msg({ context: 'app-overlays.text-practice.title', message: 'Text practice' }))} duration={_(msg({ context: 'app-overlays.text-practice.duration', message: '6 turns' }))} description={textPracticeDescription} locked={!textPracticeAvailable} disabled={practiceAction !== null} shortcut={textPracticeShortcut} onClick={() => { setIsPracticeMenuOpen(false); setIsTextPracticeOpen(true); }} />
                 </div>
@@ -411,10 +423,10 @@ export function AppOverlays({
                       ? <Trans {...msg({ context: 'shell.practice-menu.keys-unlock', message: '<0>Press</0> <1/> to pick · add cards to unlock more' })} components={{ 0: <span className="practice-picker-note-press" />, 1: <PracticeKeyRange last={textPracticeShortcut} /> }} />
                       : <Trans {...msg({ context: 'shell.practice-menu.keys', message: '<0>Press</0> <1/> to pick' })} components={{ 0: <span className="practice-picker-note-press" />, 1: <PracticeKeyRange last={textPracticeShortcut} /> }} />}
                   </p>
-                  <Dialog.Close className="overlay-dialog-secondary"><Trans {...msg({ context: 'shell.practice-menu.cancel', message: 'Cancel' })} /></Dialog.Close>
+                  <Dialog.Close className="overlay-dialog-secondary fx-press"><Trans {...msg({ context: 'shell.practice-menu.cancel', message: 'Cancel' })} /></Dialog.Close>
                 </div>
               </div>
-            </GsapEntrance>
+            </DialogMotionFrame>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -438,9 +450,9 @@ export function AppOverlays({
         if (!open && activeListenPracticeHandoff) onDismissListenPractice();
       }}>
         <Dialog.Portal>
-          <Dialog.Overlay data-motion-overlay className={overlayClass} />
+          <Dialog.Overlay data-motion-overlay={isCrystal ? '' : undefined} className={cn(overlayClass, !isCrystal && 'sf-scrim')} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
-            <GsapEntrance animationKey={isTextPracticeOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'app-text-practice max-w-lg p-3 sm:p-4')}>
+            <DialogMotionFrame isCrystal={isCrystal} animationKey={isTextPracticeOpen} variant="result" data-motion-dialog={isCrystal ? 'true' : undefined} className={cn(modalClass, !isCrystal && 'fx-dialog', 'app-text-practice max-w-lg p-3 sm:p-4')}>
               <Dialog.Title className="sr-only"><Trans {...msg({ context: 'app-overlays.text-practice-mission', message: 'Text practice mission' })} /></Dialog.Title>
               <Dialog.Description className="sr-only"><Trans {...msg({ context: 'app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation', message: 'Practise your vocabulary in a bounded text conversation.' })} /></Dialog.Description>
               <TextConversationPanel
@@ -459,7 +471,7 @@ export function AppOverlays({
               />
               <span aria-hidden="true" className="app-text-practice-ribbon" />
               <span aria-hidden="true" className="app-text-practice-tail" />
-            </GsapEntrance>
+            </DialogMotionFrame>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -518,7 +530,7 @@ export function IncomingSharePreview({ preview, isSharing, error, onDismissError
       </div>
       {samples.length > 0 ? (
         <div tabIndex={0} role="region" aria-label={_(msg({ id: 'shell.share.sample-vocabulary', message: 'Sample vocabulary' }))} className="share-dialog-sample-rail mt-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px]">
-          <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 fx-stagger">
             {samples.map((word, index) => (
               <li key={`${word.value}-${index}`} className="share-dialog-sample-item min-w-0" lang={word.language ?? undefined}>
                 <div className="share-dialog-sample-shell">
@@ -564,8 +576,8 @@ export function ShareImportActions({ preview, isSharing, onAccept, onCancel }: {
 }) {
   const canAddCards = preview.cardCount > 0;
   return <div className="share-dialog-footer flex shrink-0 items-center justify-end gap-2.5 border-t border-[var(--sf-border)] px-5 py-4 sm:px-[26px]">
-    <button type="button" disabled={isSharing} onClick={onCancel} className="share-dialog-action share-dialog-action-secondary min-h-11 px-4 text-sm font-semibold text-[var(--sf-text)] shadow-[0_1px_2px_var(--sf-shadow)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-60"><Trans {...msg({ context: 'shell.share.cancel', message: 'Cancel' })} /></button>
-    <button type="button" disabled={isSharing || !canAddCards} aria-busy={isSharing} onClick={onAccept} className="share-dialog-action share-dialog-action-primary flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-[0_12px_28px_-14px_var(--sf-shadow)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55">
+    <button type="button" disabled={isSharing} onClick={onCancel} className={cn('share-dialog-action share-dialog-action-secondary min-h-11 px-4 text-sm font-semibold text-[var(--sf-text)] shadow-[0_1px_2px_var(--sf-shadow)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-60', !isSharing && 'fx-press')}><Trans {...msg({ context: 'shell.share.cancel', message: 'Cancel' })} /></button>
+    <button type="button" disabled={isSharing || !canAddCards} aria-busy={isSharing} onClick={onAccept} className={cn('share-dialog-action share-dialog-action-primary flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-[0_12px_28px_-14px_var(--sf-shadow)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55', !isSharing && canAddCards && 'fx-press')}>
       {isSharing ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
       {isSharing ? <Trans {...msg({ context: 'shell.share.adding', message: 'Adding…' })} /> : canAddCards ? <Trans {...msg({ context: 'shell.share.add-count', message: 'Add {count} cards' })} values={{ count: formatNumber(preview.cardCount) }} /> : <Trans {...msg({ context: 'shell.share.add-none', message: 'No cards to add' })} />}
     </button>
@@ -624,7 +636,7 @@ export function OutgoingShareDetails({
   const expiry = formatShareDate(expiresAt ?? data?.expiresAt, i18n.locale);
   const languagePairs = useLanguagePairLabels(preview?.languagePairs ?? [], i18n.locale);
   return (
-    <div data-share-preview="outgoing" className="space-y-4">
+    <div data-share-preview="outgoing" className="fx-stagger space-y-4">
       {isSharing ? <div role="status" className="flex items-center gap-2 [html:not([data-theme-family=crystal])_&]:rounded-xl border border-[var(--sf-info-line,var(--sf-brand))] bg-[var(--sf-info-bg,color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface)))] px-3 py-2.5 text-sm font-semibold text-[var(--sf-text)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /><Trans {...msg({ context: 'shell.share.updating', message: 'Updating this share link…' })} /></div> : null}
       <div className="share-dialog-deck-summary flex items-center gap-4 rounded-[var(--sf-card-radius,14px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5">
         <ShareDeckCover title={title} />
@@ -644,7 +656,7 @@ export function OutgoingShareDetails({
         <span className="share-dialog-link-shell flex h-[50px] items-center gap-2 rounded-[var(--sf-card-radius,14px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] pl-3.5 pr-1.5 text-[var(--sf-text)]">
           <Link2 size={15} className="shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" />
           <input type="text" readOnly value={shareLink} aria-label={_(msg({ id: 'shell.share.link-input', message: 'Vocabulary deck share link' }))} className="share-dialog-link-input min-h-11 min-w-0 flex-1 bg-transparent font-mono text-[12px] text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--sf-brand)]" />
-          <button type="button" onClick={onCopy} className="share-dialog-copy-action flex h-[44px] min-w-11 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--sf-success)]/30 bg-[color-mix(in_srgb,var(--sf-success)_12%,transparent)] px-3 text-xs font-semibold text-[var(--sf-success)] transition-colors hover:bg-[color-mix(in_srgb,var(--sf-success)_20%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'shell.share.copy-link', message: 'Copy share link' }))}>
+          <button type="button" onClick={onCopy} className={cn('share-dialog-copy-action fx-press flex h-[44px] min-w-11 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--sf-success)]/30 bg-[color-mix(in_srgb,var(--sf-success)_12%,transparent)] px-3 text-xs font-semibold text-[var(--sf-success)] transition-colors hover:bg-[color-mix(in_srgb,var(--sf-success)_20%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none', copied && 'fx-correct')} aria-label={_(msg({ id: 'shell.share.copy-link', message: 'Copy share link' }))}>
             {copied ? <><Check size={13} aria-hidden="true" /><Trans {...msg({ context: 'shell.share.copied', message: 'Copied' })} /></> : <><Copy size={14} aria-hidden="true" /><Trans {...msg({ context: 'shell.share.copy-short', message: 'Copy' })} /></>}
           </button>
         </span>
@@ -704,7 +716,7 @@ function EarlierShareLinks({ shares, isSharing, onRevoke }: {
                 disabled={isSharing}
                 onClick={() => void onRevoke(share.shareId)}
                 aria-label={_({ ...msg({ context: 'shell.share.earlier-revoke-label', message: 'Revoke the link for {title}' }), values: { title } })}
-                className="share-dialog-revoke min-h-11 shrink-0 border-0 bg-transparent px-1 text-sm font-semibold text-[var(--sf-danger)] underline-offset-4 hover:underline disabled:cursor-wait disabled:opacity-60"
+                className={cn('share-dialog-revoke min-h-11 shrink-0 border-0 bg-transparent px-1 text-sm font-semibold text-[var(--sf-danger)] underline-offset-4 hover:underline disabled:cursor-wait disabled:opacity-60', !isSharing && 'fx-press-danger')}
               ><Trans {...msg({ context: 'shell.share.earlier-revoke', message: 'Revoke' })} /></button>
             </li>
           );
@@ -728,7 +740,7 @@ export function ShareManagementButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-24 right-4 z-40 flex min-h-11 items-center gap-2 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-sm font-bold text-[var(--sf-text)] shadow-xl transition-transform hover:-translate-y-0.5 lg:bottom-6"
+      className="fx-press fixed bottom-24 right-4 z-40 flex min-h-11 items-center gap-2 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-sm font-bold text-[var(--sf-text)] shadow-xl transition-transform hover:-translate-y-0.5 lg:bottom-6"
     >
       <Share2 size={17} aria-hidden="true" />
       <Trans {...msg({ context: 'shell.share.manage', message: 'Manage shared link' })} />
@@ -809,7 +821,7 @@ function PracticeChoice({ modeId, icon, title, duration, description, shortDescr
       data-practice-choice={modeId}
       data-practice-key={key}
       data-state={busy ? 'loading' : locked ? 'locked' : 'ready'}
-      className="practice-picker-row crystal-chamfer-sm"
+      className={cn('practice-picker-row crystal-chamfer-sm', !locked && !busy && !disabled && 'fx-lift')}
     >
       <span aria-hidden="true" className="practice-picker-row-strip" />
       <span aria-hidden="true" className="practice-picker-row-icon"><PracticeGlyph modeId={modeId} icon={icon} /></span>
@@ -819,7 +831,7 @@ function PracticeChoice({ modeId, icon, title, duration, description, shortDescr
         <span className="practice-picker-row-desc-short">{locked && unavailableLabel ? unavailableLabel : shortDescription ?? description}</span>
       </span>
       {busy
-        ? <span role="status" className="practice-picker-row-status"><span aria-hidden="true" className="practice-picker-spinner" /><Trans {...msg({ context: 'shell.practice-menu.preparing', message: 'Preparing…' })} /></span>
+        ? <span role="status" className="practice-picker-row-status"><span aria-hidden="true" className="practice-picker-spinner sf-spin" /><Trans {...msg({ context: 'shell.practice-menu.preparing', message: 'Preparing…' })} /></span>
         : locked && unavailableLabel
           ? <span className="practice-picker-row-lock"><Lock aria-hidden="true" />{unavailableLabel}</span>
           : key ? <span aria-hidden="true" className="practice-picker-row-key">{key}</span> : null}

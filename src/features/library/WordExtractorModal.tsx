@@ -268,19 +268,22 @@ export function WordExtractorContent({
   const passageEdited = hasResults && highlights?.text !== inputText;
   const unassignedLabel = translate(msg({ id: 'library.extract.deck-unassigned', message: 'Unassigned' }));
   const ownedCount = scopedExtractedWords.filter(item => existingWordKeys.has(normalizeCardWord(item.word))).length;
-  const extractButton = (variant: 'primary' | 'link') => (
-    <button
-      type="button"
-      onClick={handleExtract}
-      disabled={isLoading || !inputText.trim()}
-      className={variant === 'primary' ? 'library-dialog-button library-dialog-button--primary' : 'library-dialog-link word-extractor-rerun'}
-    >
-      {isLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Sparkles size={16} aria-hidden="true" />}
-      <span>{isLoading
-        ? translate(msg({ id: 'library.extract.loading', message: 'AI is analyzing the text…' }))
-        : translate(msg({ id: 'library.extract.submit', message: 'Extract vocabulary' }))}</span>
-    </button>
-  );
+  const extractButton = (variant: 'primary' | 'link') => {
+    const disabled = isLoading || !inputText.trim();
+    return (
+      <button
+        type="button"
+        onClick={handleExtract}
+        disabled={disabled}
+        className={variant === 'primary' ? `library-dialog-button library-dialog-button--primary${disabled ? '' : ' fx-press'}` : 'library-dialog-link word-extractor-rerun'}
+      >
+        {isLoading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Sparkles size={16} aria-hidden="true" />}
+        <span>{isLoading
+          ? translate(msg({ id: 'library.extract.loading', message: 'AI is analyzing the text…' }))
+          : translate(msg({ id: 'library.extract.submit', message: 'Extract vocabulary' }))}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="word-extractor" aria-busy={isLoading}>
@@ -299,7 +302,7 @@ export function WordExtractorContent({
         <button
           type="button"
           onClick={onClose}
-          className="library-dialog-icon-button"
+          className="library-dialog-icon-button fx-press"
           aria-label={translate(msg({ id: 'library.close', message: 'Close' }))}
         >
           <X size={16} aria-hidden="true" />
@@ -364,7 +367,7 @@ export function WordExtractorContent({
                   else setSelectedWords(new Set(selectableWords.map(w => w.word)));
                 }}
                 disabled={selectableWords.length === 0}
-                className="library-dialog-link word-extractor-toggle"
+                className={`library-dialog-link word-extractor-toggle${selectableWords.length > 0 ? ' fx-press' : ''}`}
               >
                 {allSelectableWordsSelected
                   ? translate(msg({ id: 'library.extract.deselect-all', message: 'Clear selection' }))
@@ -372,7 +375,7 @@ export function WordExtractorContent({
               </button>
             </div>
 
-            <div className="word-extractor-grid">
+            <div className="word-extractor-grid fx-stagger">
               {scopedExtractedWords.map((item, i) => {
                 const isExisting = existingWordKeys.has(normalizeCardWord(item.word));
                 const isSelected = importableSelectedWords.includes(item);
@@ -387,7 +390,7 @@ export function WordExtractorContent({
                     disabled={isExisting}
                     aria-disabled={isExisting}
                     aria-pressed={isSelected}
-                    className={`word-extractor-row${isSelected ? ' is-selected' : ''}${isExisting ? ' is-owned' : ''}`}
+                    className={`word-extractor-row${isSelected ? ' is-selected' : ''}${isExisting ? ' is-owned' : ' sf-ease'}`}
                   >
                     <span className="word-extractor-check" aria-hidden="true">
                       {isSelected && <Check size={13} strokeWidth={3} />}
@@ -405,7 +408,7 @@ export function WordExtractorContent({
 
       <footer className="library-dialog-footer word-extractor-footer">
         {hasResults ? (
-          <label className="word-extractor-deck">
+          <label className="word-extractor-deck sf-ease">
             <span className="word-extractor-deck-value" aria-hidden="true">
               {translate(msg({ id: 'library.extract.deck-value', message: 'Deck: {deck}' }), { deck: targetDeck || unassignedLabel })}
             </span>
@@ -421,7 +424,7 @@ export function WordExtractorContent({
           </label>
         ) : <span />}
         {passageEdited ? extractButton('link') : null}
-        <button type="button" onClick={onClose} className="library-dialog-button library-dialog-button--secondary">
+        <button type="button" onClick={onClose} className="library-dialog-button library-dialog-button--secondary fx-press">
           {translate(msg({ id: 'common.cancel', message: 'Cancel' }))}
         </button>
         {hasResults ? (
@@ -429,7 +432,7 @@ export function WordExtractorContent({
             type="button"
             onClick={handleAddAllSelected}
             disabled={importableSelectedWords.length === 0}
-            className="library-dialog-button library-dialog-button--primary"
+            className={`library-dialog-button library-dialog-button--primary${importableSelectedWords.length > 0 ? ' fx-press' : ''}`}
           >
             <span>{translate(msg({ id: 'library.extract.save-selected', message: 'Save {count, plural, one {# card} other {# cards}}' }), { count: importableSelectedWords.length })}</span>
           </button>
