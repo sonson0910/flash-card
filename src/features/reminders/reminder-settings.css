@@ -130,6 +130,7 @@
 :where(html:not([data-theme-family=crystal])) .rm-channel__title { margin-top: 10px; font-size: 14px; }
 :where(html:not([data-theme-family=crystal])) .rm-channel__sub { margin-top: 2px; font-size: 12px; }
 :where(html:not([data-theme-family=crystal])) .rm-preview__title { margin: 0; }
+html:not([data-theme-family="crystal"]) .rm-os.sf-pop { transform-origin: 100% 0; }
 :where(html:not([data-theme-family=crystal])) .rm-os__body { line-height: 1.45; }
 :where(html:not([data-theme-family=crystal])) .rm-toolbar__caption { margin: 8px 0 0; }
 

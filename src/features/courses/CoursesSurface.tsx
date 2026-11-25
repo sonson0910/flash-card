@@ -79,7 +79,7 @@ function CourseCard({ course, index, active, due, cards, pending, onSwitch, onMa
   const goal = primaryGoal(course);
   const goalSummary = goalSummaryText(course, goal, _);
   const progress = cards && cards.total > 0 ? cards : null;
-  return <li className="course-manage__item" data-active={active}><div className="course-card crystal-chamfer" data-active={active} data-status={course.status} data-course-language={course.targetLanguage}>
+  return <li className="course-manage__item" data-active={active}><div className={`course-card${archived ? '' : ' fx-lift'} crystal-chamfer`} data-active={active} data-status={course.status} data-course-language={course.targetLanguage}>
     <button type="button" className="course-card__select" aria-current={active ? 'true' : undefined} disabled={pending || archived} onClick={() => { if (!active) onSwitch(); }}>
       <span className="course-card__top">
         <span className="course-card__index"><Trans {...msg({ context: 'course.manage.card-index', message: 'Course {number}' })} values={{ number: String(index + 1).padStart(2, '0') }} /></span>
@@ -112,15 +112,15 @@ function CourseCard({ course, index, active, due, cards, pending, onSwitch, onMa
       {active && <span className="sr-only"><Trans {...msg({ context: 'course.status.active', message: 'Active course' })} /></span>}
     </button>
     <span className="course-card__actions">
-      {!archived && <button type="button" className="course-card__action crystal-chamfer-sm" disabled={pending} onClick={onManageGoals}
+      {!archived && <button type="button" className="course-card__action sf-ease crystal-chamfer-sm" disabled={pending} onClick={onManageGoals}
         aria-label={_(msg({ id: 'course.action.manage-goals', message: 'Manage goals' }))} title={_(msg({ id: 'course.action.manage-goals', message: 'Manage goals' }))}>
         <Flag size={16} aria-hidden="true" />
       </button>}
-      {!archived && <button type="button" className="course-card__action crystal-chamfer-sm" disabled={pending} onClick={() => void actions.archiveCourse(course.id)}
+      {!archived && <button type="button" className="course-card__action sf-ease crystal-chamfer-sm" disabled={pending} onClick={() => void actions.archiveCourse(course.id)}
         aria-label={_(msg({ id: 'course.action.archive', message: 'Archive course' }))} title={_(msg({ id: 'course.action.archive', message: 'Archive course' }))}>
         <Archive size={16} aria-hidden="true" />
       </button>}
-      {archived && <button type="button" className="course-card__action crystal-chamfer-sm" disabled={pending} onClick={() => void actions.reopenCourse(course.id)}
+      {archived && <button type="button" className="course-card__action sf-ease crystal-chamfer-sm" disabled={pending} onClick={() => void actions.reopenCourse(course.id)}
         aria-label={_(msg({ id: 'course.action.reopen', message: 'Reopen course' }))} title={_(msg({ id: 'course.action.reopen', message: 'Reopen course' }))}>
         <RotateCcw size={16} aria-hidden="true" />
       </button>}
@@ -132,7 +132,7 @@ function NewLanguageCard({ available, pending, onAddLanguage }: {
   readonly available: readonly CourseTargetLanguage[]; readonly pending: boolean; readonly onAddLanguage: (language?: CourseTargetLanguage) => void;
 }) {
   const { _ } = useLingui();
-  return <li className="course-manage__item"><div className="course-card course-card--new crystal-chamfer">
+  return <li className="course-manage__item"><div className="course-card course-card--new fx-lift crystal-chamfer">
     <button type="button" className="course-card__new" disabled={pending} onClick={() => onAddLanguage()}>
       <span className="course-card__plus" aria-hidden="true"><Plus size={22} strokeWidth={2.5} /></span>
       <span className="course-card__new-title"><Trans {...msg({ context: 'course.manage.new-language', message: 'New language' })} /></span>
@@ -142,7 +142,7 @@ function NewLanguageCard({ available, pending, onAddLanguage }: {
         const exam = goalKindsFor(language)[0];
         const name = translatedTargetName(language, _) ?? TARGET_ENDONYM[language];
         return <li key={language}>
-          <button type="button" className="course-chip crystal-chamfer-sm" disabled={pending} onClick={() => onAddLanguage(language)}
+          <button type="button" className="course-chip sf-ease crystal-chamfer-sm" disabled={pending} onClick={() => onAddLanguage(language)}
             aria-label={_({ ...msg({ context: 'course.manage.add-language', message: 'Add {language}' }), values: { language: name } })}>
             <span className="course-chip__glyph" lang={language} aria-hidden="true">{TARGET_GLYPH[language]}</span>
             {exam && <span aria-hidden="true">{_(exam.label)}</span>}
@@ -206,7 +206,7 @@ export function CoursesSurface({
   return <div className="course-manage__frame">
     <header className="course-manage__header">
       <div className="course-manage__heading">
-        <p className="course-manage__kicker">
+        <p className="course-manage__kicker fx-enter">
           {meaningsLanguage
             ? <Trans {...msg({ context: 'course.manage.kicker', message: 'My languages · {count} active · meanings in {language}' })} values={{ count: activeCount, language: meaningsLanguage }} />
             : <Trans {...msg({ context: 'course.manage.kicker.no-active', message: 'My languages · {count} active' })} values={{ count: activeCount }} />}
@@ -227,7 +227,7 @@ export function CoursesSurface({
       ? <div className="course-manage__goals crystal-chamfer"><CourseGoalsPanel course={goalsCourse} onClose={() => setGoalsCourseId(null)} /></div>
       : <>
         <div className="course-manage__body" data-lumi={showLumi}>
-          <ul className="course-manage__cards">
+          <ul className="course-manage__cards fx-stagger">
             {courses.map((course, index) => <CourseCard key={course.id} course={course} index={index} active={course.id === profile?.activeCourseId}
               due={dueCounts[course.targetLanguage]} cards={course.status === 'active' ? cardCounts[course.targetLanguage] : undefined} pending={model.pending}
               onSwitch={() => onSwitch(course)} onManageGoals={() => setGoalsCourseId(course.id)} />)}
@@ -243,12 +243,12 @@ export function CoursesSurface({
           </aside>}
         </div>
         {activeCourse && <div className="course-manage__footer">
-          {onStudy && <button type="button" className="course-manage__cta crystal-chamfer" onClick={onStudy}>
+          {onStudy && <button type="button" className="course-manage__cta fx-press crystal-chamfer" onClick={onStudy}>
             <span className="course-manage__cta-shine" aria-hidden="true" />
             <span className="course-manage__cta-title"><Trans {...msg({ context: 'course.manage.study', message: 'Start {language} lesson' })} values={{ language: <span lang={activeCourse.targetLanguage}>{TARGET_ENDONYM[activeCourse.targetLanguage]}</span> }} /></span>
             {activeDue !== undefined && <span className="course-manage__cta-sub"><Trans {...msg({ context: 'course.due-count', message: '{count} due' })} values={{ count: activeDue }} /></span>}
           </button>}
-          <dl className="course-manage__loadout crystal-chamfer">
+          <dl className="course-manage__loadout fx-enter-3 crystal-chamfer">
             <div><dt><Trans {...msg({ context: 'course.manage.extension-saves-to', message: 'Extension saves to' })} /></dt><dd lang={activeCourse.targetLanguage}>{TARGET_ENDONYM[activeCourse.targetLanguage]}</dd></div>
             {readingAid && <div><dt><Trans {...msg({ context: 'course.manage.reading-aid', message: 'Reading aid' })} /></dt><dd>{readingAid}</dd></div>}
             <div><dt><Trans {...msg({ context: 'course.manage.meanings-in', message: 'Meanings in' })} /></dt><dd lang={activeCourse.nativeLanguage}>{NATIVE_ENDONYM[activeCourse.nativeLanguage]}</dd></div>

@@ -313,10 +313,14 @@ html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary
 
 @media (prefers-reduced-motion: no-preference) {
   .course-target-card { transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease; }
-  /* LangCourses pops the dialog in (.sf-pop, canvas shared.css L73-L74; it centres with translate, so the pop's
-     transform stays free) and its primary button takes .sf-press (L51-L53). */
-  :where(html:not([data-theme-family=crystal])) .course-add { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both; transform-origin: 120px 0; }
-  :where(html:not([data-theme-family=crystal])) .course-add__primary { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
-  :where(html:not([data-theme-family=crystal])) .course-add__primary:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-2px); }
-  :where(html:not([data-theme-family=crystal])) .course-add__primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]):not([data-motion="reduced"]) .course-add.fx-dialog {
+    animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .course-add :is(.fx-press, .fx-lift):disabled:is(:hover, :active),
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .course-add .course-target-card[data-state='added']:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }

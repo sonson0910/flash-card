@@ -43,11 +43,11 @@ function GradeButtons({ onGrade }: { readonly onGrade?: (value: TrialGrade) => v
     ? { className: 'onb-trial-grade', role: 'group', 'aria-label': _(msg({ context: 'onboarding.trial.grade-label', message: 'Did you know this word?' })) }
     : { className: 'onb-trial-grade onb-trial-reserve', 'aria-hidden': true };
   return <div {...group}>
-    <button type="button" className="onb-trial-again crystal-chamfer-sm" onClick={() => onGrade?.('again')}>
+    <button type="button" className="onb-trial-again fx-press crystal-chamfer-sm" onClick={() => onGrade?.('again')}>
       <RotateCcw aria-hidden="true" size={16} />
       <Trans {...msg({ context: 'onboarding.trial.again', message: 'Forgot' })} />
     </button>
-    <button type="button" className="onb-trial-known crystal-chamfer-sm" onClick={() => onGrade?.('known')}>
+    <button type="button" className="onb-trial-known fx-press crystal-chamfer-sm" onClick={() => onGrade?.('known')}>
       <Check aria-hidden="true" size={16} />
       <Trans {...msg({ context: 'onboarding.trial.known', message: 'Got it' })} />
     </button>
@@ -101,7 +101,7 @@ export function StarterCardTrial({ cards, eyebrow, meaningsFollowEarlierLanguage
       {!done && <GradeButtons onGrade={grade} />}
     </div>
 
-    <ul className="onb-trial-list" aria-label={_({ ...msg({ context: 'onboarding.trial.list-label', message: 'Your first {total} cards' }), values: { total: cards.length } })}>
+    <ul className="onb-trial-list fx-stagger" aria-label={_({ ...msg({ context: 'onboarding.trial.list-label', message: 'Your first {total} cards' }), values: { total: cards.length } })}>
       {cards.map(card => {
         const state: TrialGrade | 'pending' = grades[card.id] ?? 'pending';
         return <li key={card.id} className="onb-trial-word crystal-chamfer-sm" data-state={state}>
@@ -152,7 +152,7 @@ export function StarterCardTrialLoading({ count, eyebrow, heading, status }: Sta
       <GradeButtons />
     </div>
 
-    <ul className="onb-trial-list" aria-hidden="true">
+    <ul className="onb-trial-list fx-stagger" aria-hidden="true">
       {Array.from({ length: count }, (_, index) => <li key={index} className="onb-trial-word crystal-chamfer-sm" data-state="pending" />)}
     </ul>
   </div>;

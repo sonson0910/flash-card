@@ -39,7 +39,7 @@ function CourseRow({ course, isActive, due, pending, onSwitch }: {
   const translated = translatedTargetName(course.targetLanguage, _);
   const goal = goalSummaryText(course, primaryGoal(course), _);
   return <li className="claude-course-row">
-    <button type="button" className="course-row crystal-chamfer-sm" disabled={pending} onClick={onSwitch} aria-current={isActive ? 'true' : undefined}>
+    <button type="button" className="course-row sf-ease crystal-chamfer-sm" disabled={pending} onClick={onSwitch} aria-current={isActive ? 'true' : undefined}>
       <CourseTile language={course.targetLanguage} />
       <span className="course-row__text">
         <span className="course-row__name"><span lang={course.targetLanguage}>{TARGET_ENDONYM[course.targetLanguage]}</span>{translated && <span className="course-row__translated">{translated}</span>}</span>
@@ -66,7 +66,7 @@ function SwitchedToast({ record, dueCounts, canGoBack, pending, onBack, onDismis
     return () => window.clearTimeout(timer);
   }, [paused, onDismiss, record.id]);
   const due = dueCounts[record.to];
-  return <div className="course-switched-toast crystal-chamfer-sm" role="status"
+  return <div className="course-switched-toast sf-toast crystal-chamfer-sm" role="status"
     onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}
     onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
     {record.from && <><CourseTile language={record.from} className="course-switched-toast__from" />
@@ -80,7 +80,7 @@ function SwitchedToast({ record, dueCounts, canGoBack, pending, onBack, onDismis
       {due !== undefined && <span className="course-switched-toast__due"> · <Trans {...msg({ context: 'course.due-count', message: '{count} due' })} values={{ count: due }} /></span>}
       <span className="course-switched-toast__note"> · <Trans {...msg({ context: 'course.switcher.switched-extension', message: 'the extension now saves new words here' })} /></span>
     </p>
-    {canGoBack && record.from && <button type="button" className="course-switched-toast__back crystal-chamfer-sm" disabled={pending} onClick={onBack}>
+    {canGoBack && record.from && <button type="button" className="course-switched-toast__back fx-press crystal-chamfer-sm" disabled={pending} onClick={onBack}>
       <Trans {...msg({ context: 'course.switcher.switch-back', message: 'Back to {language}' })} values={{ language: <span lang={record.from}>{TARGET_ENDONYM[record.from]}</span> }} />
     </button>}
   </div>;
@@ -163,7 +163,7 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
     style={{ '--course-scrim-top': `${scrimTop}px` } as CSSProperties}>
     <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={popoverOpen}
       onClick={() => setView(current => current === 'popover' ? 'closed' : 'popover')}
-      className="claude-course-switcher-trigger" data-course-language={activeCourse?.targetLanguage}
+      className="claude-course-switcher-trigger fx-press" data-course-language={activeCourse?.targetLanguage}
       data-switched={switched && view !== 'manage' ? 'true' : undefined}>
       {activeCourse ? <>
         <CourseTile language={activeCourse.targetLanguage} className="course-trigger__glyph" />
@@ -174,25 +174,25 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
       <ChevronDown size={14} strokeWidth={2.25} aria-hidden="true" className="course-trigger__chevron" />
     </button>
     {popoverOpen && <>
-      <div className="course-switcher-scrim" aria-hidden="true" onClick={closeAndFocus} />
-      <div role="dialog" aria-label={_(msg({ id: 'course.switcher.dialog-label', message: 'Courses' }))} className="claude-course-switcher-panel crystal-chamfer">
+      <div className="course-switcher-scrim sf-scrim" aria-hidden="true" onClick={closeAndFocus} />
+      <div role="dialog" aria-label={_(msg({ id: 'course.switcher.dialog-label', message: 'Courses' }))} className="claude-course-switcher-panel sf-pop crystal-chamfer">
         <span className="course-panel__handle" aria-hidden="true" />
         <div className="course-panel__header">
           <h2 className="course-panel__title"><Trans {...msg({ context: 'course.switcher.heading', message: 'Your <0>courses</0>' })} components={{ 0: <em /> }} /></h2>
           <p className="course-panel__subline"><Trans {...msg({ context: 'course.switcher.shared-progress', message: 'Level, XP and streak are shared' })} /></p>
-          <button type="button" onClick={closeAndFocus} className="course-panel__close crystal-chamfer-sm" aria-label={_(msg({ id: 'course.switcher.close', message: 'Close' }))}><X size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={closeAndFocus} className="course-panel__close fx-press crystal-chamfer-sm" aria-label={_(msg({ id: 'course.switcher.close', message: 'Close' }))}><X size={16} aria-hidden="true" /></button>
         </div>
         {model.errorCode && <p role="alert" className="course-panel__error">
           <Trans {...msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' })} /></p>}
-        <ul className="claude-course-list">
+        <ul className="claude-course-list fx-stagger">
           {openCourses.map(course => <CourseRow key={course.id} course={course} isActive={course.id === profile.activeCourseId} pending={model.pending}
             due={dueCounts[course.targetLanguage]}
             onSwitch={() => { if (course.id === profile.activeCourseId) closeAndFocus(); else void switchTo(course, false); }} />)}
         </ul>
         <div className="course-panel__actions">
-          {canAddCourse && <button type="button" onClick={() => openAdd('popover')} className="course-panel__add crystal-chamfer-sm">
+          {canAddCourse && <button type="button" onClick={() => openAdd('popover')} className="course-panel__add fx-press crystal-chamfer-sm">
             <Plus size={16} aria-hidden="true" /><Trans {...msg({ context: 'course.switcher.add', message: 'Add a language' })} /></button>}
-          <button type="button" onClick={() => { if (!onOpenCourses) { setView('manage'); return; } setView('closed'); onOpenCourses(); }} className="course-panel__manage crystal-chamfer-sm">
+          <button type="button" onClick={() => { if (!onOpenCourses) { setView('manage'); return; } setView('closed'); onOpenCourses(); }} className="course-panel__manage fx-press crystal-chamfer-sm">
             <Trans {...msg({ context: 'course.switcher.manage', message: 'Manage courses' })} /></button>
         </div>
         <p className="course-panel__extension"><MessageSquare size={14} aria-hidden="true" />
@@ -202,7 +202,7 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
             <span lang={appLanguage}>{NATIVE_ENDONYM[appLanguage]}</span></p>
           {activeCourse && <p><span className="course-panel__languages-label"><Trans {...msg({ context: 'course.manage.meanings-in', message: 'Meanings in' })} /></span>
             <span lang={activeCourse.nativeLanguage}>{NATIVE_ENDONYM[activeCourse.nativeLanguage]}</span></p>}
-          {onOpenLanguageSettings && <button type="button" className="course-panel__change" onClick={() => { setView('closed'); onOpenLanguageSettings(); }}>
+          {onOpenLanguageSettings && <button type="button" className="course-panel__change sf-ease" onClick={() => { setView('closed'); onOpenLanguageSettings(); }}>
             <Trans {...msg({ context: 'course.switcher.change-languages', message: 'Change' })} /></button>}
         </div>
       </div>

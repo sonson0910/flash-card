@@ -49,7 +49,7 @@ interface LibraryManagementMenuProps {
   readonly preferences?: ReactNode;
 }
 
-const menuItemClass = 'account-menu-item flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
+const menuItemClass = 'account-menu-item sf-ease flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 const PlanUsageMeter = lazy(() => Promise.all([
   import('../../features/plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
 ]).then(([module]) => ({ default: module.PlanUsageMeter })));
@@ -244,12 +244,12 @@ export function LibraryManagementMenu({
         onClick={() => setIsOpen(open => !open)}
         onKeyDown={handleTriggerKeyDown}
         data-equipped-frame={equippedFrameId ?? undefined}
-        className="account-menu-trigger claude-account-trigger flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+        className="account-menu-trigger claude-account-trigger fx-press flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
         <AccountAvatar identity={syncIdentity} compact imageClassName="account-menu-avatar-image" />
       </button>
       {isOpen && (
-        <div ref={panelRef} className="account-menu-panel absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
+        <div ref={panelRef} className="account-menu-panel sf-pop absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
           <div ref={surfaceRef} className="account-menu-surface">
             <div className="account-menu-identity">
               <span className="account-menu-avatar" data-equipped-frame={equippedFrameId ?? undefined}><AccountAvatar identity={syncIdentity} imageClassName="account-menu-avatar-image" /></span>

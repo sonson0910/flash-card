@@ -372,7 +372,21 @@ html[data-theme-family=crystal] .course-manage__goals { --sf-chamfer-fill: var(-
 /* The board's start button lifts on hover (nk-lift: 3px up, springy settle; pressed shrinks). Its inline glow
    filter overrides nk-lift's brightness on the board, so the lift does not brighten. */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  html[data-theme-family=crystal] .course-manage__cta { transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
-  html[data-theme-family=crystal] .course-manage__cta:hover:not(:disabled) { transform: translateY(-3px); }
-  html[data-theme-family=crystal] .course-manage__cta:active:not(:disabled) { transform: scale(.97); }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .course-manage__cta { transition: translate 220ms cubic-bezier(.34, 1.56, .64, 1), scale 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
+  html[data-theme-family=crystal] .course-manage__cta:hover:not(:disabled) { translate: 0 -3px; }
+  html[data-theme-family=crystal] .course-manage__cta:active:not(:disabled) { translate: 0 0; scale: .97; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.dark:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .course-manage__title {
+    animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 80ms backwards;
+  }
+  html:not(.dark):not([data-theme-family="crystal"]):not([data-motion="reduced"]) .course-manage__title {
+    animation: ip-ink 700ms cubic-bezier(.65, 0, .35, 1) 60ms backwards;
+  }
+}
+
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .course-manage__frame :is(.fx-press, .fx-lift, .sf-ease):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }

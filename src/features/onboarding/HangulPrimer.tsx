@@ -47,24 +47,24 @@ export function HangulPrimer({ eyebrow, romanization, onChoose }: HangulPrimerPr
   return <div className="onb-primer">
     <div className="onb-primer-copy">
       {eyebrow}
-      <h2 className="onb-title"><Trans {...msg({ context: 'onboarding.primer.heading', message: 'Read <0>Hangul</0> before your first words' })} components={{ 0: <em className="onb-accent" /> }} /></h2>
-      <p className="onb-subtitle"><Trans {...msg({ context: 'onboarding.primer.subtitle', message: 'Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word.' })} /></p>
-      <div className="onb-primer-choices" role="group" aria-label={_(msg({ context: 'onboarding.primer.choice-label', message: 'Reading aid' }))}>
-        <button type="button" aria-pressed={romanization === true} className="onb-option onb-primer-choice crystal-chamfer" onClick={() => onChoose(true)}>
+      <h2 className="onb-title fx-title"><Trans {...msg({ context: 'onboarding.primer.heading', message: 'Read <0>Hangul</0> before your first words' })} components={{ 0: <em className="onb-accent" /> }} /></h2>
+      <p className="onb-subtitle fx-enter-2"><Trans {...msg({ context: 'onboarding.primer.subtitle', message: 'Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word.' })} /></p>
+      <div className="onb-primer-choices fx-stagger" role="group" aria-label={_(msg({ context: 'onboarding.primer.choice-label', message: 'Reading aid' }))}>
+        <button type="button" aria-pressed={romanization === true} className="onb-option onb-primer-choice fx-lift crystal-chamfer" onClick={() => onChoose(true)}>
           <span className="onb-option-name"><Trans {...msg({ context: 'onboarding.primer.learning', message: 'I’m still learning to read' })} /></span>
           <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.primer.learning.description', message: 'Save romanization as my reading aid for this course.' })} /></span>
         </button>
-        <button type="button" aria-pressed={romanization === false} className="onb-option onb-primer-choice crystal-chamfer" onClick={() => onChoose(false)}>
+        <button type="button" aria-pressed={romanization === false} className="onb-option onb-primer-choice fx-lift crystal-chamfer" onClick={() => onChoose(false)}>
           <span className="onb-option-name"><Trans {...msg({ context: 'onboarding.primer.reader', message: 'I can already read Hangul' })} /></span>
           <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.primer.reader.description', message: 'Save Hangul alone as my reading aid.' })} /></span>
         </button>
       </div>
-      <p className="onb-primer-note"><Trans {...msg({ context: 'onboarding.primer.note', message: 'Every Korean card has its own Romanization switch. You can change this choice any time in Settings.' })} /></p>
+      <p className="onb-primer-note fx-enter-3"><Trans {...msg({ context: 'onboarding.primer.note', message: 'Every Korean card has its own Romanization switch. You can change this choice any time in Settings.' })} /></p>
     </div>
-    <div className="onb-primer-board crystal-chamfer">
+    <div className="onb-primer-board fx-enter-2 crystal-chamfer">
       <section className="onb-primer-block" aria-label={_(msg({ context: 'onboarding.primer.block.label', message: 'Build one syllable block' }))}>
         <p className="onb-primer-set-head"><span><Trans {...msg({ context: 'onboarding.primer.block.title', message: 'Build one syllable block' })} /></span><span><Trans {...msg({ context: 'onboarding.primer.block.parts', message: 'first consonant + vowel + final consonant' })} /></span></p>
-        <div className="onb-primer-equation">
+        <div className="onb-primer-equation fx-stagger">
           {BLOCK_PARTS.map(([jamo, sound], index) => <span key={jamo} className="onb-primer-part">
             {index > 0 && <span className="onb-primer-op" aria-hidden="true">+</span>}
             <span className="onb-primer-jamo crystal-chamfer-sm"><span lang="ko" className="onb-primer-jamo-glyph">{jamo}</span><span className="onb-primer-jamo-sound">{sound}</span></span>

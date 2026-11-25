@@ -72,13 +72,13 @@ function AddCourseForm({ courses, pending, initialTarget, defaultNativeLanguage,
   return <form className="course-add__form" onSubmit={event => { event.preventDefault(); void submit(); }}>
     <fieldset className="course-add__languages" disabled={busy}>
       <legend className="course-add__label course-add__label--caps"><Trans {...msg({ context: 'course.add.languages-label', message: 'I want to learn' })} /></legend>
-      <div className="course-add__grid">
+      <div className="course-add__grid fx-stagger">
         {COURSE_TARGET_LANGUAGES.map(language => {
           const taken = takenTargets.has(language);
           const selected = target === language;
           const translated = translatedTargetName(language, _);
           const exams = goalKindsFor(language).filter(definition => EXAM_GOAL_KINDS.has(definition.kind)).map(definition => _(definition.label)).join(', ');
-          return <label key={language} className="course-target-card crystal-chamfer-sm" data-course-language={language} data-state={taken ? 'added' : selected ? 'selected' : 'idle'}>
+          return <label key={language} className={`course-target-card${taken ? '' : ' fx-lift'} crystal-chamfer-sm`} data-course-language={language} data-state={taken ? 'added' : selected ? 'selected' : 'idle'}>
             <input type="radio" className="course-target-card__input" name={groupName} value={language} checked={selected} disabled={taken}
               onChange={() => { setTarget(language); setGoalKind(''); }} />
             <span className="course-target-card__glyph" lang={language} aria-hidden="true">{TARGET_GLYPH[language]}</span>
@@ -95,7 +95,7 @@ function AddCourseForm({ courses, pending, initialTarget, defaultNativeLanguage,
     <div className="course-add__fields">
       <div className="course-add__field">
         <label className="course-add__label" htmlFor={`${groupName}-native`}><Trans {...msg({ context: 'course.add.native-label', message: 'Explain meanings in' })} /></label>
-        <span className="course-add__select crystal-chamfer-sm">
+        <span className="course-add__select sf-ease crystal-chamfer-sm">
           <select id={`${groupName}-native`} value={native} disabled={busy} aria-describedby={profileNativeLanguage === native ? nativeHintId : undefined}
             onChange={event => setNative(event.target.value as CourseNativeLanguage)}>
             {COURSE_NATIVE_LANGUAGES.map(code => <option key={code} value={code} lang={code}>{NATIVE_ENDONYM[code]}</option>)}
@@ -106,7 +106,7 @@ function AddCourseForm({ courses, pending, initialTarget, defaultNativeLanguage,
       </div>
       <div className="course-add__field">
         <label className="course-add__label" htmlFor={`${groupName}-goal`}><Trans {...msg({ context: 'course.goal.add.kind-label', message: 'Goal' })} /></label>
-        <span className="course-add__select crystal-chamfer-sm">
+        <span className="course-add__select sf-ease crystal-chamfer-sm">
           <select id={`${groupName}-goal`} value={goalKind} disabled={busy || !target} onChange={event => setGoalKind(event.target.value)}>
             <option value="">{_(msg({ context: 'onboarding.goal.none', message: 'No specific goal yet' }))}</option>
             {goalOptions.map(option => <option key={option.kind} value={option.kind}>{_(option.label)}</option>)}
@@ -117,12 +117,12 @@ function AddCourseForm({ courses, pending, initialTarget, defaultNativeLanguage,
     </div>
     {failed && <p className="course-add__error" role="alert"><Trans {...msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' })} /></p>}
     <div className="course-add__actions">
-      <button type="submit" className="course-add__primary crystal-chamfer-sm" disabled={busy || !target}>
+      <button type="submit" className="course-add__primary fx-press crystal-chamfer-sm" disabled={busy || !target}>
         {target
           ? <Trans {...msg({ context: 'course.add.submit', message: 'Add {language}' })} values={{ language: <span lang={target}>{TARGET_ENDONYM[target]}</span> }} />
           : <Trans {...msg({ context: 'course.create.submit', message: 'Create course' })} />}
       </button>
-      <Dialog.Close type="button" className="course-add__secondary crystal-chamfer-sm"><Trans {...msg({ context: 'course.create.cancel', message: 'Cancel' })} /></Dialog.Close>
+      <Dialog.Close type="button" className="course-add__secondary fx-press crystal-chamfer-sm"><Trans {...msg({ context: 'course.create.cancel', message: 'Cancel' })} /></Dialog.Close>
     </div>
   </form>;
 }
@@ -136,14 +136,14 @@ export function AddCourseDialog({ open, onOpenChange, onCloseAutoFocus, ...formP
   const { _ } = useLingui();
   return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
-      <Dialog.Overlay className="course-dialog-overlay" />
-      <Dialog.Content className="course-add crystal-chamfer" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
+      <Dialog.Overlay className="course-dialog-overlay sf-scrim" />
+      <Dialog.Content className="course-add fx-dialog crystal-chamfer" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
         <div className="course-add__head">
           <div>
             <Dialog.Title className="course-add__title"><Trans {...msg({ context: 'course.add.title', message: 'Add a <0>language</0>' })} components={{ 0: <em /> }} /></Dialog.Title>
             <p className="course-add__subtitle"><Trans {...msg({ context: 'course.add.subtitle', message: 'Your current courses stay as they are. Each language gets its own cards, goals and daily queue.' })} /></p>
           </div>
-          <Dialog.Close className="course-add__close crystal-chamfer-sm" aria-label={_(msg({ id: 'course.switcher.close', message: 'Close' }))}><X size={16} aria-hidden="true" /></Dialog.Close>
+          <Dialog.Close className="course-add__close fx-press crystal-chamfer-sm" aria-label={_(msg({ id: 'course.switcher.close', message: 'Close' }))}><X size={16} aria-hidden="true" /></Dialog.Close>
         </div>
         <AddCourseForm {...formProps} onDone={() => onOpenChange(false)} />
       </Dialog.Content>

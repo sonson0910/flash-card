@@ -26,7 +26,7 @@ export function ReminderPhonePreview({ cardCount, time = null, countdown = null,
     <div className="onb-phone-screen">
       {time && <p className="onb-phone-time">{time}</p>}
       <p className="onb-phone-date">{formatDay(today, i18n.locale)}</p>
-      {cardCount !== null && cardCount > 0 && <div className="onb-phone-note crystal-chamfer-sm">
+      {cardCount !== null && cardCount > 0 && <div className="onb-phone-note sf-pop crystal-chamfer-sm">
         <span className="onb-phone-app" aria-hidden="true">{'S'}</span>
         <span className="onb-phone-note-text">
           <span className="onb-phone-note-head"><span>SonFlash</span><span><Trans {...msg({ context: 'onboarding.phone.now', message: 'now' })} /></span></span>

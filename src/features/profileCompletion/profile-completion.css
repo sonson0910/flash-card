@@ -405,6 +405,11 @@
   @media (prefers-reduced-motion: no-preference) {
     .profile-gate__sheet { animation: profile-gate-enter 240ms ease-out both; }
   }
+  :where(html:not([data-theme-family=crystal])) .profile-gate__sheet { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .profile-gate :is(.fx-press, .sf-ease):disabled:is(:hover, :active) {
+    transform: none;
+    filter: none;
+  }
 
   @keyframes profile-gate-enter {
     from { opacity: 0; transform: translateY(6px); }

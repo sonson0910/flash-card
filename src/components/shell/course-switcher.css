@@ -424,15 +424,36 @@ html[data-theme-family=crystal] .course-switched-toast__back:focus-visible { out
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .course-trigger__chevron { transition: transform 160ms ease; }
-  .claude-course-switcher-trigger { transition: border-color 160ms ease, box-shadow 160ms ease; }
-  .claude-course-switcher-panel, .course-switched-toast { animation: course-switcher-rise 180ms ease-out; }
-  /* LangCourses pops its course popover and switched toast in (.sf-pop, canvas shared.css L73-L74). */
-  :where(html:not([data-theme-family=crystal])) :is(.claude-course-switcher-panel, .course-switched-toast) { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both; transform-origin: 120px 0; }
+  html:not([data-motion="reduced"]) .course-trigger__chevron { transition: transform 160ms ease; }
+  html:not([data-motion="reduced"]) .claude-course-switcher-trigger { transition: border-color 160ms ease, box-shadow 160ms ease; }
+  html:not([data-motion="reduced"]) :is(.claude-course-switcher-panel, .course-switched-toast) { animation: course-switcher-rise 180ms ease-out; }
+  html:not([data-theme-family="crystal"]) .claude-course-switcher-panel.sf-pop { transform-origin: 120px 0; }
 }
-/* LangMobile raises its course sheet (.sf-rise, canvas shared.css L58-L59). */
+@media (min-width: 1024px) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .claude-course-list.fx-stagger > * { animation: none; }
+}
+/* LangMobile raises its course sheet (sf-sheet-b, canvas shared.css). */
+@media (max-width: 1023px) {
+  html:not([data-theme-family="crystal"]) .claude-course-switcher-panel.sf-pop { transform-origin: center; }
+}
 @media (prefers-reduced-motion: no-preference) and (max-width: 1023px) {
-  :where(html:not([data-theme-family=crystal])) .claude-course-switcher-panel { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) both; }
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .claude-course-switcher-panel.sf-pop {
+    animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .claude-course-switcher-panel.sf-pop {
+    animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) backwards;
+  }
+}
+html[data-motion="reduced"] :is(.claude-course-switcher-panel.sf-pop, .course-switched-toast.sf-toast) {
+  animation: none;
+}
+html[data-motion="reduced"] :is(.course-trigger__chevron, .claude-course-switcher-trigger) {
+  transition: none;
+}
+
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) :is(.claude-course-switcher, .course-switched-toast) :is(.fx-press, .sf-ease):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }
 
 @keyframes course-switcher-rise {

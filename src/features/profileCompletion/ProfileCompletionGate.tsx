@@ -106,7 +106,7 @@ function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, signOutFa
       <span className="profile-gate__pill crystal-chamfer-sm"><Trans {...msg({ id: 'profile-completion.account-access', message: 'Account access' })} /></span>
       <div className="profile-gate__bar-end">
         {returnStatus}
-        <button type="button" className="profile-gate__close crystal-chamfer-sm" disabled={signOutDisabled} onClick={onSignOut}
+        <button type="button" className="profile-gate__close fx-press crystal-chamfer-sm" disabled={signOutDisabled} onClick={onSignOut}
           aria-label={_(msg({ id: 'profile-completion.sign-out', message: 'Sign out' }))}>
           <X aria-hidden="true" size={18} className="profile-gate__close-desktop" />
           <ChevronLeft aria-hidden="true" size={20} className="profile-gate__close-mobile" />
@@ -169,13 +169,13 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
     return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} signOutFailed={signOutFailed} footer={null} offerAccountData={false}>
       <section className="profile-gate__sheet profile-gate__sheet--single max-md:crystal-chamfer max-md:surface-glass" aria-labelledby="profile-gate-title">
         <div className="profile-gate__intro">
-          <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.account-access', message: 'Account access' })} /></p>
-          <h1 id="profile-gate-title" ref={headingRef} tabIndex={-1} className="profile-gate__title"><Trans {...msg({ id: 'profile-completion.error.title', message: 'We could not check your account.' })} /></h1>
-          <p className="profile-gate__lede"><Trans {...msg({ id: 'profile-completion.error.lede', message: 'Check your connection and try again. Nothing was changed.' })} /></p>
+          <p className="profile-gate__eyebrow fx-enter"><Trans {...msg({ id: 'profile-completion.account-access', message: 'Account access' })} /></p>
+          <h1 id="profile-gate-title" ref={headingRef} tabIndex={-1} className="profile-gate__title fx-title"><Trans {...msg({ id: 'profile-completion.error.title', message: 'We could not check your account.' })} /></h1>
+          <p className="profile-gate__lede fx-enter"><Trans {...msg({ id: 'profile-completion.error.lede', message: 'Check your connection and try again. Nothing was changed.' })} /></p>
         </div>
         <div className="profile-gate__actions">
-          <button type="button" className="profile-gate__primary crystal-chamfer-sm" onClick={retry}><Trans {...msg({ id: 'profile-completion.error.retry', message: 'Try again' })} /></button>
-          <button type="button" className="profile-gate__secondary crystal-chamfer-sm" disabled={signingOut} onClick={signOut}><Trans {...msg({ id: 'profile-completion.sign-out', message: 'Sign out' })} /></button>
+          <button type="button" className="profile-gate__primary fx-press crystal-chamfer-sm" onClick={retry}><Trans {...msg({ id: 'profile-completion.error.retry', message: 'Try again' })} /></button>
+          <button type="button" className="profile-gate__secondary fx-press crystal-chamfer-sm" disabled={signingOut} onClick={signOut}><Trans {...msg({ id: 'profile-completion.sign-out', message: 'Sign out' })} /></button>
         </div>
       </section>
     </GateFrame>;
@@ -185,12 +185,12 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
     return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} signOutFailed={signOutFailed} footer={null} offerAccountData>
       <div className="profile-gate__sheet max-md:crystal-chamfer max-md:surface-glass" data-screen="restricted">
         <div className="profile-gate__intro">
-          <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.restricted.eyebrow', message: 'Age restricted' })} /></p>
-          <h1 id="profile-gate-title" ref={headingRef} tabIndex={-1} className="profile-gate__title">{_(RESTRICTED_TITLE[family])}</h1>
-          <p className="profile-gate__lede"><Trans {...msg({ id: 'profile-completion.restricted.lede', message: 'The birth year does not meet the current account age requirement.' })} /></p>
+          <p className="profile-gate__eyebrow fx-enter"><Trans {...msg({ id: 'profile-completion.restricted.eyebrow', message: 'Age restricted' })} /></p>
+          <h1 id="profile-gate-title" ref={headingRef} tabIndex={-1} className="profile-gate__title fx-title">{_(RESTRICTED_TITLE[family])}</h1>
+          <p className="profile-gate__lede fx-enter"><Trans {...msg({ id: 'profile-completion.restricted.lede', message: 'The birth year does not meet the current account age requirement.' })} /></p>
         </div>
         <div className="profile-gate__columns">
-          <section className="profile-gate__panel md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-status">
+          <section className="profile-gate__panel fx-enter-2 md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-status">
             <p className="profile-gate__panel-eyebrow"><Trans {...msg({ id: 'profile-completion.restricted.eyebrow', message: 'Age restricted' })} /></p>
             <h2 id="profile-gate-status" className="profile-gate__panel-title"><Trans {...msg({ id: 'profile-completion.restricted.status', message: 'Account status' })} /></h2>
             <dl className="profile-gate__facts">
@@ -206,11 +206,11 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
             <p className="profile-gate__note profile-gate__note--warning crystal-chamfer-sm">
               <Trans {...msg({ id: 'profile-completion.restricted.note', message: 'Your birth year was not saved. If it was entered by mistake, contact support.' })} />
             </p>
-            <button type="button" className="profile-gate__primary crystal-chamfer-sm" disabled={signingOut} onClick={signOut}>
+            <button type="button" className="profile-gate__primary fx-press crystal-chamfer-sm" disabled={signingOut} onClick={signOut}>
               <Trans {...msg({ id: 'profile-completion.restricted.return', message: 'Return to sign in' })} />
             </button>
           </section>
-          <aside className="profile-gate__panel profile-gate__outcomes md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-outcomes">
+          <aside className="profile-gate__panel profile-gate__outcomes fx-enter-3 md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-outcomes">
             <p className="profile-gate__panel-eyebrow"><Trans {...msg({ id: 'profile-completion.outcomes.eyebrow', message: 'Return + outcomes' })} /></p>
             <h2 id="profile-gate-outcomes" className="profile-gate__panel-title">{_(OUTCOMES_TITLE[family])}</h2>
             <div className="profile-gate__tile profile-gate__tile--warning crystal-chamfer-sm">
@@ -239,17 +239,17 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
   >
     <div className="profile-gate__sheet max-md:crystal-chamfer max-md:surface-glass" data-screen="complete">
       <div className="profile-gate__intro">
-        <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.eyebrow', message: 'Complete signup · once' })} /></p>
-        <h1 id="profile-gate-title" ref={headingRef} tabIndex={-1} className="profile-gate__title">{_(COMPLETE_TITLE[family])}</h1>
-        <p className="profile-gate__lede"><Trans {...msg({ id: 'profile-completion.lede', message: 'Set the language details that travel with your account.' })} /></p>
+        <p className="profile-gate__eyebrow fx-enter"><Trans {...msg({ id: 'profile-completion.eyebrow', message: 'Complete signup · once' })} /></p>
+        <h1 id="profile-gate-title" ref={headingRef} tabIndex={-1} className="profile-gate__title fx-title">{_(COMPLETE_TITLE[family])}</h1>
+        <p className="profile-gate__lede fx-enter"><Trans {...msg({ id: 'profile-completion.lede', message: 'Set the language details that travel with your account.' })} /></p>
       </div>
       <div className="profile-gate__columns">
-        <section className="profile-gate__panel md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-details">
+        <section className="profile-gate__panel fx-enter-2 md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-details">
           <p className="profile-gate__panel-eyebrow"><Trans {...msg({ id: 'profile-completion.details.eyebrow', message: 'Complete signup' })} /></p>
           <h2 id="profile-gate-details" className="profile-gate__panel-title"><Trans {...msg({ id: 'profile-completion.details.title', message: 'Your account details' })} /></h2>
           <ProfileCompletionForm submit={submit} />
         </section>
-        <aside className="profile-gate__panel profile-gate__outcomes md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-outcomes">
+        <aside className="profile-gate__panel profile-gate__outcomes fx-enter-3 md:crystal-chamfer md:surface-glass" aria-labelledby="profile-gate-outcomes">
           <p className="profile-gate__panel-eyebrow"><Trans {...msg({ id: 'profile-completion.outcomes.eyebrow', message: 'Return + outcomes' })} /></p>
           <h2 id="profile-gate-outcomes" className="profile-gate__panel-title">{_(OUTCOMES_TITLE[family])}</h2>
           <p className="profile-gate__tile profile-gate__tile--success crystal-chamfer-sm">
@@ -347,7 +347,7 @@ function ProfileCompletionForm({ submit }: { submit: AccountProfileGate['submit'
           ref={birthYearRef}
           id={`${id}-birth-year`}
           name="birthYear"
-          className="profile-gate__control crystal-chamfer-sm"
+          className="profile-gate__control sf-ease crystal-chamfer-sm"
           inputMode="numeric"
           autoComplete="bday-year"
           maxLength={4}
@@ -364,13 +364,13 @@ function ProfileCompletionForm({ submit }: { submit: AccountProfileGate['submit'
       </div>
       <div className="profile-gate__field">
         <label htmlFor={`${id}-locale`}><Trans {...msg({ id: 'profile-completion.locale', message: 'App language' })} /></label>
-        <select id={`${id}-locale`} name="uiLocale" className="profile-gate__control crystal-chamfer-sm" value={locale} onChange={event => changeLocale(event.target.value)}>
+        <select id={`${id}-locale`} name="uiLocale" className="profile-gate__control sf-ease crystal-chamfer-sm" value={locale} onChange={event => changeLocale(event.target.value)}>
           {ACCOUNT_UI_LOCALES.map(option => <option key={option} value={option} lang={option}>{UI_LOCALES[option].autonym}</option>)}
         </select>
       </div>
       <div className="profile-gate__field">
         <label htmlFor={`${id}-native`}><Trans {...msg({ id: 'profile-completion.native-language', message: 'Native language' })} /></label>
-        <select id={`${id}-native`} name="nativeLanguage" className="profile-gate__control crystal-chamfer-sm" value={nativeLanguage}
+        <select id={`${id}-native`} name="nativeLanguage" className="profile-gate__control sf-ease crystal-chamfer-sm" value={nativeLanguage}
           onChange={event => {
             if (!isAccountNativeLanguage(event.target.value)) return;
             setNativeLanguage(event.target.value);
@@ -414,7 +414,7 @@ function ProfileCompletionForm({ submit }: { submit: AccountProfileGate['submit'
       <Trans {...msg({ id: 'profile-completion.note', message: 'We keep your birth year only to confirm the 18+ requirement. It is part of your account data download and is removed when you delete the account.' })} />
     </p>
     <div role="alert" className="profile-gate__alert">{submitProblem ? _(SUBMIT_PROBLEM[submitProblem]) : null}</div>
-    <button type="submit" className="profile-gate__primary crystal-chamfer-sm" disabled={pending}>
+    <button type="submit" className="profile-gate__primary fx-press crystal-chamfer-sm" disabled={pending}>
       {pending
         ? <Trans {...msg({ id: 'profile-completion.saving', message: 'Saving…' })} />
         : <Trans {...msg({ id: 'profile-completion.save', message: 'Save and continue' })} />}

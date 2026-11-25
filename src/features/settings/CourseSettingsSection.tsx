@@ -98,20 +98,20 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
     </div>
     <span className="ss-lang-select">
       <Globe size={16} aria-hidden="true" className="ss-lang-select__globe" />
-      <select className="ss-select crystal-chamfer-sm" aria-label={appLanguageLabel} value={uiLocale} onChange={event => void setUiLocale(event.target.value as UiLocale)}>
+      <select className="ss-select sf-ease crystal-chamfer-sm" aria-label={appLanguageLabel} value={uiLocale} onChange={event => void setUiLocale(event.target.value as UiLocale)}>
         {ENABLED_UI_LOCALES.map(locale => <option key={locale} value={locale}>{UI_LOCALES[locale].autonym}</option>)}
       </select>
     </span>
   </div>;
   const appLanguageChips = <div className="ss-lang-chips" role="group" aria-label={appLanguageLabel}>
-    {ENABLED_UI_LOCALES.map(locale => <button key={locale} type="button" lang={locale} className="ss-lang-chip" aria-pressed={uiLocale === locale} onClick={() => void setUiLocale(locale)}><span className="ss-lang-chip__face">{UI_LOCALES[locale].autonym}</span></button>)}
+    {ENABLED_UI_LOCALES.map(locale => <button key={locale} type="button" lang={locale} className="ss-lang-chip" aria-pressed={uiLocale === locale} onClick={() => void setUiLocale(locale)}><span className="ss-lang-chip__face sf-ease">{UI_LOCALES[locale].autonym}</span></button>)}
   </div>;
 
   if (model.status !== 'ready' || !model.profile) {
     return <section aria-label={_(msg({ id: 'settings.course.region', message: 'Language & courses' }))} className="ss-split ss-split--language">
       {heading && <div className="ss-split__head">{heading}</div>}
       <div className="ss-split__main">
-        <div data-settings-course-language className="ss-panel ss-lang-card crystal-chamfer">{appLanguage}{appLanguageChips}</div>
+        <div data-settings-course-language className="ss-panel ss-lang-card fx-enter-2 crystal-chamfer">{appLanguage}{appLanguageChips}</div>
       </div>
     </section>;
   }
@@ -166,10 +166,10 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
 
   return <section aria-label={_(msg({ id: 'settings.course.region', message: 'Language & courses' }))} className="ss-split ss-split--language">
     {heading && <div className="ss-split__head">{heading}</div>}
-    <aside aria-label={_(msg({ id: 'settings.course.list.label', message: 'Your courses' }))} className="ss-split__aside ss-courses">
+    <aside aria-label={_(msg({ id: 'settings.course.list.label', message: 'Your courses' }))} className="ss-split__aside ss-courses fx-enter-3">
       <div className="ss-courses__head">
         <h2 className="ss-eyebrow"><Trans {...msg({ context: 'settings.course.list.title', message: 'Your courses · {count}' })} values={{ count: courses.filter(course => course.status === 'active').length }} /></h2>
-        {addableTargets.length > 0 && <button type="button" className="ss-courses__add sf-press" onClick={() => { addLanguageRef.current?.scrollIntoView?.({ block: 'nearest' }); addLanguageRef.current?.querySelector('button')?.focus(); }}><Plus size={14} aria-hidden="true" /><Trans {...msg({ context: 'settings.course.add', message: 'Add a language' })} /></button>}
+        {addableTargets.length > 0 && <button type="button" className="ss-courses__add fx-press" onClick={() => { addLanguageRef.current?.scrollIntoView?.({ block: 'nearest' }); addLanguageRef.current?.querySelector('button')?.focus(); }}><Plus size={14} aria-hidden="true" /><Trans {...msg({ context: 'settings.course.add', message: 'Add a language' })} /></button>}
       </div>
 
       {activeCourse && <div data-settings-active-course className="ss-course-active crystal-chamfer">
@@ -183,12 +183,12 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
         <div data-settings-course-preferences className="ss-course-rows">
           <label className="ss-row ss-switch-row">
             <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.romanization', message: 'Show romanization' })} /></span><span className="ss-row__sub">{activeCourse.targetLanguage === 'en' ? <Trans {...msg({ context: 'settings.course.romanization.description-en', message: 'Your saved choice for this course.' })} /> : <Trans {...msg({ context: 'settings.course.romanization.description', message: 'Your saved choice for this course. Each card has its own reading switch.' })} />}</span></span>
-            <input type="checkbox" role="switch" disabled={model.pending} checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} />
+            <input type="checkbox" role="switch" className="sf-ease" disabled={model.pending} checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} />
           </label>
           <div data-settings-course-voice className="ss-row">
             <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.voice', message: 'Voice' })} /></span>{voiceStatus ? <span data-settings-voice-status role="status" className="ss-row__sub">{voiceStatus}</span> : <span className="ss-row__sub"><Trans {...msg({ context: 'settings.voice.description', message: 'Read words aloud with a voice on this device' })} /></span>}</span>
             <select
-              className="ss-select crystal-chamfer-sm"
+              className="ss-select sf-ease crystal-chamfer-sm"
               aria-label={voiceLabel}
               disabled={model.pending || voices === false || targetVoices.length === 0}
               value={savedVoiceKey ?? ''}
@@ -204,24 +204,24 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
           </div>}
           {activeCourse.targetLanguage === 'zh' && <div className="ss-row">
             <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} /></span></span>
-            <select className="ss-select crystal-chamfer-sm" aria-label={_(msg({ id: 'settings.course.script.label', message: 'Chinese script' }))} disabled={model.pending} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
+            <select className="ss-select sf-ease crystal-chamfer-sm" aria-label={_(msg({ id: 'settings.course.script.label', message: 'Chinese script' }))} disabled={model.pending} value={activeCourse.preferences.zhScript ?? 'hans'} onChange={event => updatePreferences({ zhScript: event.target.value as 'hans' | 'hant' })}>
               <option value="hans"><Trans {...msg({ context: 'settings.course.script.simplified', message: 'Simplified' })} /></option>
               <option value="hant"><Trans {...msg({ context: 'settings.course.script.traditional', message: 'Traditional' })} /></option>
             </select>
           </div>}
           <div className="ss-row">
             <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.pace', message: 'Daily pace' })} /></span><span className="ss-row__sub"><Trans {...msg({ context: 'settings.course.pace.description', message: 'Cards you aim to study each day' })} /></span></span>
-            <select className="ss-select crystal-chamfer-sm" aria-label={_(msg({ id: 'settings.course.pace.label', message: 'Daily pace' }))} value={pace} onChange={event => changePace(Number(event.target.value) as DailyPace)}>
+            <select className="ss-select sf-ease crystal-chamfer-sm" aria-label={_(msg({ id: 'settings.course.pace.label', message: 'Daily pace' }))} value={pace} onChange={event => changePace(Number(event.target.value) as DailyPace)}>
               {DAILY_PACE_OPTIONS.map(option => <option key={option} value={option}>{_(msg({ id: 'settings.course.pace.option', message: '{count} cards / day' }).id, { count: option })}</option>)}
             </select>
           </div>
         </div>
         {otherActiveCourses.length > 0 && <div className="ss-course-active__foot">
-          <button type="button" className="ss-link-button" disabled={model.pending} onClick={() => runCourseAction(() => actions.archiveCourse(activeCourse.id))}><Trans {...msg({ context: 'settings.course.archive', message: 'Archive course' })} /></button>
+          <button type="button" className="ss-link-button sf-ease" disabled={model.pending} onClick={() => runCourseAction(() => actions.archiveCourse(activeCourse.id))}><Trans {...msg({ context: 'settings.course.archive', message: 'Archive course' })} /></button>
         </div>}
       </div>}
 
-      {otherActiveCourses.map(course => <button key={course.id} type="button" className="ss-course-other crystal-chamfer" disabled={model.pending} onClick={() => runCourseAction(() => actions.switchCourse(course.id))}>
+      {otherActiveCourses.map(course => <button key={course.id} type="button" className="ss-course-other fx-lift crystal-chamfer" disabled={model.pending} onClick={() => runCourseAction(() => actions.switchCourse(course.id))}>
         <span className="ss-course-glyph ss-course-glyph--small" lang={course.targetLanguage} aria-hidden="true">{TARGET_ENDONYM[course.targetLanguage].glyph}</span>
         <span className="ss-course-other__text"><span className="ss-course-other__name" lang={course.targetLanguage}>{TARGET_ENDONYM[course.targetLanguage].name}</span><span className="ss-course-other__meta">{courseMeta(course.targetLanguage, course.nativeLanguage)}</span></span>
         <ChevronRight size={18} aria-hidden="true" className="ss-course-other__chevron" />
@@ -230,7 +230,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
       {archivedCourses.length > 0 && <div className="ss-course-add crystal-chamfer">
         <h3 className="ss-eyebrow"><Trans {...msg({ context: 'settings.course.archived', message: 'Archived courses' })} /></h3>
         <div className="ss-course-add__options">
-          {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.reopenCourse(course.id))} className="ss-course-add__option crystal-chamfer-sm sf-lift">
+          {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.reopenCourse(course.id))} className="ss-course-add__option crystal-chamfer-sm fx-lift">
             <span className="ss-course-add__name" lang={course.targetLanguage}>{TARGET_ENDONYM[course.targetLanguage].name}</span>
             <span className="ss-course-add__sub">{_(TARGET_LANGUAGE_LABEL[course.targetLanguage])} · <Trans {...msg({ context: 'settings.course.reopen', message: 'Reopen' })} /> <RotateCcw size={11} aria-hidden="true" className="inline" /></span>
           </button>)}
@@ -240,7 +240,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
       {addableTargets.length > 0 && <div ref={addLanguageRef} className="ss-course-add crystal-chamfer">
         <h3 className="ss-eyebrow"><Trans {...msg({ context: 'settings.course.add.title', message: 'Start another language' })} /></h3>
         <div className="ss-course-add__options">
-          {addableTargets.map(language => <button key={language} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.createCourse({ targetLanguage: language, nativeLanguage: newCourseNative }))} className="ss-course-add__option crystal-chamfer-sm sf-lift">
+          {addableTargets.map(language => <button key={language} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.createCourse({ targetLanguage: language, nativeLanguage: newCourseNative }))} className="ss-course-add__option crystal-chamfer-sm fx-lift">
             <span className="ss-course-add__name" lang={language}>{TARGET_ENDONYM[language].name}</span>
             <span className="ss-course-add__sub">{courseMeta(language, newCourseNative)}</span>
           </button>)}
@@ -248,14 +248,14 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
       </div>}
     </aside>
     <div className="ss-split__main">
-      <div data-settings-course-language className="ss-panel ss-lang-card crystal-chamfer">
+      <div data-settings-course-language className="ss-panel ss-lang-card fx-enter-2 crystal-chamfer">
         {appLanguage}
         {appLanguageChips}
         {activeCourse && <fieldset className="ss-lang-meaning">
           <legend className="ss-lang-meaning__legend"><span className="ss-lang-row__title block"><Trans {...msg({ context: 'settings.course.meaning-language.title', message: 'Meanings and explanations in' })} /></span></legend>
           <p className="ss-lang-row__sub"><Trans {...msg({ context: 'settings.course.meaning-language.scope', message: 'Applies to new cards. Existing card meanings do not change.' })} /></p>
           <div className="ss-lang-meaning__options">
-            {COURSE_NATIVE_LANGUAGES.map(language => <label key={language} className="ss-lang-meaning__option crystal-chamfer-sm" data-checked={activeCourse.nativeLanguage === language ? 'true' : undefined}>
+            {COURSE_NATIVE_LANGUAGES.map(language => <label key={language} className="ss-lang-meaning__option sf-ease crystal-chamfer-sm" data-checked={activeCourse.nativeLanguage === language ? 'true' : undefined}>
               <input type="radio" className="sr-only" name="settings-meaning-language" value={language} disabled={model.pending} checked={activeCourse.nativeLanguage === language} onChange={() => updateCourse({ nativeLanguage: language })} />
               <span className="ss-lang-meaning__name">{_(NATIVE_LANGUAGE_LABEL[language])}</span>
               <span className="ss-lang-meaning__sub" lang={language}>{NATIVE_AUTONYM[language]}</span>
@@ -270,7 +270,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
           </div>}
         </fieldset>}
       </div>
-      <p className="ss-lang-note crystal-chamfer-sm"><Info size={16} aria-hidden="true" /><span><strong><Trans {...msg({ context: 'settings.course.note.title', message: 'Switching the app language never changes your cards.' })} /></strong> <Trans {...msg({ context: 'settings.course.note.body', message: 'Meanings stay in the language they were written in.' })} /></span></p>
+      <p className="ss-lang-note fx-enter-2 crystal-chamfer-sm"><Info size={16} aria-hidden="true" /><span><strong><Trans {...msg({ context: 'settings.course.note.title', message: 'Switching the app language never changes your cards.' })} /></strong> <Trans {...msg({ context: 'settings.course.note.body', message: 'Meanings stay in the language they were written in.' })} /></span></p>
       {saveError && <p role="alert" className="ss-alert">
         {saveError === 'course'
           ? <Trans {...msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' })} />

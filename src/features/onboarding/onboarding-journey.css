@@ -830,28 +830,29 @@ html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-co
   .onboarding-journey__goal-card { transition: none; }
 }
 
-/* The board's motion (canvas shared.css): each step rises in, the choice cards lift on hover and the primary
-   action presses; the level list and the chips stay still, as drawn. */
-:where(html:not([data-theme-family=crystal])) .onb-content { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) backwards; }
-:where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option)) { transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease; }
-:where(html:not([data-theme-family=crystal])) .onb-primary { position: relative; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
-:where(html:not([data-theme-family=crystal])) .onb-primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+/* Primary hover retains a bottom-edge hit extension so a pointer on the resting edge never oscillates. */
+:where(html:not([data-theme-family=crystal])) .onb-primary { position: relative; }
 
 @media (hover: hover) and (pointer: fine) {
-  :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option)):hover { transform: translateY(-6px) rotate(-.6deg); }
-  :where(html:not([data-theme-family=crystal])) .onb-primary:hover:not(:disabled):not(:active) { transform: translateY(-2px); filter: brightness(1.06); }
-  /* The lifted button still covers where it rested. Without this a pointer on its bottom edge loses the button
-     as it rises, the button drops back under the pointer and rises again, without end. */
-  :where(html:not([data-theme-family=crystal])) .onb-primary:hover:not(:disabled):not(:active)::after { position: absolute; inset: 0 0 -2px; content: ''; }
+  :where(html:not([data-theme-family=crystal])) .onb-primary.fx-press:hover:not(:disabled):not(:active)::after { position: absolute; inset: 0 0 -2px; content: ''; }
+}
+
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .claude-onboarding-journey :is(.fx-press, .fx-lift):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .onb-projection-number {
+  animation: sf-tick-k 520ms cubic-bezier(.16, 1, .3, 1) 240ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(html:not([data-theme-family=crystal])) .onb-content { animation: none; }
-  :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option), .onb-primary) { transition: none; }
+  :where(html:not([data-theme-family=crystal])) .onb-primary.fx-press:hover::after { content: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .onb-projection-number { animation: none; }
 }
 
-:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .onb-content { animation: none; }
-:where(html[data-motion=reduced]:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option), .onb-primary) { transition: none; }
+:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .onb-primary.fx-press:hover::after { content: none; }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .onb-projection-number { animation: none; }
 
 /* Shared step pieces ---------------------------------------------------------------------- */
 .onb-kicker {
@@ -1120,14 +1121,16 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
     --flashcard-back-shadow: var(--flashcard-tier-shadow);
   }
   :where(html:not(.dark):not([data-theme-family=crystal])) .onb-trial-deck .onb-trial-card .flashcard-shell[data-card-look][data-card-tier] .flashcard-face { box-shadow: var(--sf-card-shadow); }
-  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=aha] .onb-content { animation: none; }
   :where(html:not([data-theme-family=crystal])) .onb-trial-card > * { animation: sf-deal-k 700ms cubic-bezier(.16, 1, .3, 1) 250ms both; }
-  :where(html:not([data-theme-family=crystal])) :is(.onb-trial-head, .onb-trial-list) { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) 120ms both; }
+  html.dark:not([data-theme-family="crystal"]) .onb-trial-head .onb-title { animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 80ms backwards; }
+  html:not(.dark):not([data-theme-family="crystal"]) .onb-trial-head .onb-title { animation: ip-ink 700ms cubic-bezier(.65, 0, .35, 1) 60ms backwards; }
+  html.dark:not([data-theme-family="crystal"]) .onb-trial-head .onb-subtitle { animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 80ms backwards; }
+  html:not(.dark):not([data-theme-family="crystal"]) .onb-trial-head .onb-subtitle { animation: ip-in-k 480ms cubic-bezier(.16, 1, .3, 1) 60ms backwards; }
 }
 @media (prefers-reduced-motion: reduce) {
-  :where(html:not([data-theme-family=crystal])) :is(.onb-trial-card > *, .onb-trial-head, .onb-trial-list) { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) :is(.onb-trial-card > *, .onb-trial-head .onb-title, .onb-trial-head .onb-subtitle) { animation: none; }
 }
-:where(html[data-motion=reduced]:not([data-theme-family=crystal])) :is(.onb-trial-card > *, .onb-trial-head, .onb-trial-list) { animation: none; }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.onb-trial-card > *, .onb-trial-head .onb-title, .onb-trial-head .onb-subtitle) { animation: none; }
 :where(html:not([data-theme-family=crystal])) .onb-trial-head .onb-subtitle { margin-top: 16px; }
 :where(html:not([data-theme-family=crystal])) .onb-trial-grade > button { min-height: 44px; font-size: 13px; }
 :where(html:not([data-theme-family=crystal])) .onb-trial-grade > .onb-trial-again { font-weight: 600; }
@@ -1190,6 +1193,7 @@ html[data-theme-family='crystal'] .onb-starfield { inset: 0; background: var(--n
 html[data-theme-family='crystal'] .onb-beam {
   top: -20%;
   height: 140%;
+  opacity: .45;
   background: linear-gradient(90deg, transparent, var(--onb-beam), transparent);
   transform: rotate(24deg);
 }
@@ -2156,18 +2160,18 @@ html[data-theme-family='crystal'] .onb-target-card .onb-mark {
 .onb-level-option .onb-option-name { font-size: 17px; }
 .onb-level-option .onb-mark { top: 50%; right: 18px; transform: translateY(-50%); }
 /* The board's level step: the 664px left column of its 1140px grid, 60px rows 8px apart (14px radius, 0 16px,
-   14px gap), a 34px Geist Mono 13/500 number tile, the name 15/650 over its 12.5px line, and no check mark. */
+   14px gap), a 34px Geist Mono 13/500 number tile, the name 15/650 over its 12.5px line, and the check mark on the right. */
 @media (min-width: 640px) {
   :where(html:not([data-theme-family=crystal])) [data-onboarding-step=level] .onb-main .onb-content { width: min(1140px, 100%); }
   :where(html:not([data-theme-family=crystal])) [data-onboarding-step=level] .onb-content > :is(.onb-eyebrow, .onb-title, .onb-subtitle) { max-width: 664px; }
   :where(html:not([data-theme-family=crystal])) .onb-level-list { max-width: 664px; margin-top: 24px; gap: 8px; }
-  :where(html:not([data-theme-family=crystal])) .onb-level-list > .onb-level-option { min-height: 60px; gap: 14px; padding: 0 16px; }
+  :where(html:not([data-theme-family=crystal])) .onb-level-list > .onb-level-option { min-height: 60px; gap: 14px; padding: 0 54px 0 16px; }
 }
 :where(html:not([data-theme-family=crystal])) .onb-level-index { width: 34px; height: 34px; font-size: 13px; font-weight: 500; }
 :where(html:not([data-theme-family=crystal])) .onb-level-text { flex: 1; gap: 0; }
 :where(html:not([data-theme-family=crystal])) .onb-level-option .onb-option-name { font-family: var(--sf-font-body); font-size: 15px; font-weight: 650; line-height: normal; }
 :where(html:not([data-theme-family=crystal])) .onb-level-option .onb-option-sub { margin-top: 1px; font-size: 12.5px; line-height: normal; }
-:where(html:not([data-theme-family=crystal])) .onb-level-option .onb-mark { display: none; }
+:where(html:not([data-theme-family=crystal])) .onb-level-option .onb-mark { right: 16px; }
 
 .onb-primer {
   display: grid;
@@ -2453,13 +2457,18 @@ html:not([data-theme-family='crystal']).dark .onb-phone-screen {
 :where(html:not([data-theme-family=crystal])) .onb-phone-time { font-size: 64px; letter-spacing: normal; line-height: normal; }
 :where(html:not([data-theme-family=crystal])) .onb-phone-date { margin: 0; line-height: normal; }
 :where(html:not([data-theme-family=crystal])) :is(.onb-phone-note, .onb-phone-date + .onb-phone-countdown) { margin-top: 40px; }
-:where(html:not([data-theme-family=crystal])) .onb-phone-note { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both; transform-origin: 120px 0; }
+html:not([data-theme-family="crystal"]) .onb-phone-note.sf-pop { transform-origin: 50% 0; }
 :where(html:not([data-theme-family=crystal])) .onb-phone-note + .onb-phone-countdown { margin-top: 10px; }
 :where(html:not([data-theme-family=crystal])) .onb-phone-countdown { line-height: normal; }
-@media (prefers-reduced-motion: reduce) {
-  :where(html:not([data-theme-family=crystal])) .onb-phone-note { animation: none; }
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 639px) {
+  html.dark:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .onb-footer:not(.fx-enter-4) .onb-primary {
+    animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 380ms backwards;
+  }
+  html:not(.dark):not([data-theme-family="crystal"]):not([data-motion="reduced"]) .onb-footer:not(.fx-enter-4) .onb-primary {
+    animation: ip-in-k 480ms cubic-bezier(.16, 1, .3, 1) 480ms backwards;
+  }
 }
-:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .onb-phone-note { animation: none; }
 
 @media (max-width: 1023px) {
   .onb-primer,

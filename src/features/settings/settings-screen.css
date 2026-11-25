@@ -226,8 +226,22 @@
 /* These options sit on the page backdrop, so they take the glass fill. The fill is a background-image layer and must be an image. */
 :root[data-theme-family="crystal"] .ss-course-add__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-fill: linear-gradient(var(--sf-glass-surface), var(--sf-glass-surface)); }
 :where(html:not([data-theme-family=crystal])) .ss-course-add__option { color: var(--sf-text); text-align: left; }
-/* A busy (disabled) option does not lift on hover. */
-:where(html:not([data-theme-family=crystal])) .ss-course-add__option.sf-lift:disabled:hover { transform: none; }
+/* A busy (disabled) control stays still on hover and active, and Classic switches follow sf-ease. */
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .sf-settings-scope :is(.fx-press, .fx-lift, .sf-ease):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .sf-settings-scope input[role="switch"].sf-ease {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease, transform 200ms cubic-bezier(.16, 1, .3, 1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-theme-family="crystal"]) .sf-settings-scope input[role="switch"].sf-ease,
+  html:not([data-theme-family="crystal"]) .sf-settings-scope input[role="switch"].sf-ease::before { transition: none; }
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .sf-settings-scope input[role="switch"].sf-ease,
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .sf-settings-scope input[role="switch"].sf-ease::before { transition: none; }
 /* Course names and sample words take the board's endonym faces: Fraunces for Latin script, Noto Sans (dark) or
    Noto Serif (light, where the device has it) for Korean, Japanese and Chinese. */
 :where(html:not([data-theme-family=crystal])) .sf-settings-scope :is(.ss-course-glyph, .ss-course-add__name) { font-family: var(--sf-font-display); }

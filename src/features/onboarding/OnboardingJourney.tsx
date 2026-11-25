@@ -40,14 +40,14 @@ import {
   SCRIPT_PRIMER_LANGUAGES, targetAfterNativeLanguageChange, writeOnboardingResumeStep, type OnboardingStepId,
 } from './onboardingModel';
 
-const primaryButtonClass = 'onb-primary';
-const secondaryButtonClass = 'onb-secondary';
+const primaryButtonClass = 'onb-primary fx-press';
+const secondaryButtonClass = 'onb-secondary fx-press';
 const responsivePrimaryButtonClass = `${primaryButtonClass} w-full sm:w-auto`;
 const responsiveSecondaryButtonClass = `${secondaryButtonClass} w-full sm:w-auto`;
-const optionButtonClass = 'onb-option crystal-chamfer min-h-20';
-const stepTitleClass = 'onb-title';
-const stepSubtitleClass = 'onb-subtitle';
-const goalFieldClass = 'onb-field';
+const optionButtonClass = 'onb-option fx-lift crystal-chamfer min-h-20';
+const stepTitleClass = 'onb-title fx-title';
+const stepSubtitleClass = 'onb-subtitle fx-enter';
+const goalFieldClass = 'onb-field sf-ease';
 const goalIconClass = 'onb-goal-icon';
 const goalCardTextClass = 'onb-goal-text';
 const goalCardTitleClass = 'onb-goal-title';
@@ -66,7 +66,7 @@ const goalIcon = (kind: string) => {
   return GraduationCap;
 };
 
-const goalCardClass = 'onboarding-journey__goal-card crystal-chamfer';
+const goalCardClass = 'onboarding-journey__goal-card fx-lift crystal-chamfer';
 
 /** What each non-exam goal card promises; exam goals share one card that leads to the exam step. */
 const GOAL_DESCRIPTION: Readonly<Record<string, MessageDescriptor>> = {
@@ -84,6 +84,7 @@ const PACE_TAG: Readonly<Record<DailyPace, MessageDescriptor>> = {
 
 /** Steps whose content can run past a phone screen; their footer stays on screen while it scrolls. */
 const STICKY_FOOTER_STEPS: ReadonlySet<OnboardingStepId> = new Set(['goal', 'exam', 'level', 'script']);
+const LANG_FOOTER_STEPS: ReadonlySet<OnboardingStepId> = new Set(['language', 'target', 'level', 'script']);
 
 const LEVEL_LABEL: Readonly<Record<StartingTier, MessageDescriptor>> = {
   foundation: msg({ context: 'onboarding.level.foundation', message: 'Foundation' }),
@@ -124,7 +125,7 @@ const BOARD_GOAL_PATH: Readonly<Record<string, string>> = {
 
 function SelectionMark({ on }: { readonly on: boolean }) {
   const { family } = useTheme();
-  return <span className="onb-mark" data-on={on} aria-hidden="true">
+  return <span className={on ? 'onb-mark fx-correct sf-late' : 'onb-mark'} data-on={on} aria-hidden="true">
     {family === 'crystal' ? <BoardIcon d={BOARD_CHECK_PATH} size={14} stroke={3} /> : <Check size={14} strokeWidth={3} />}
   </span>;
 }
@@ -156,7 +157,7 @@ function GoalEmblem({ kind, crystal }: { readonly kind: string; readonly crystal
 }
 
 function StepEyebrow({ index, total, label }: { readonly index: number; readonly total: number; readonly label: string }) {
-  return <p className="onb-eyebrow">
+  return <p className="onb-eyebrow fx-enter">
     <span><Trans {...msg({ context: 'onboarding.eyebrow.step', message: 'Step {step} of {total}' })} values={{ step: index, total }} /></span>
     <span className="onb-eyebrow-sep" aria-hidden="true" />
     <span>{label}</span>
@@ -195,16 +196,16 @@ function GoalCountdown({ days, goal, exam }: { readonly days: number | null; rea
   const { _ } = useLingui();
   const weeks = days !== null && days >= 0 ? countdownWeeks(days) : 0;
   const bars = Math.min(weeks, MAX_COUNTDOWN_WEEKS);
-  return <section className="onb-countdown crystal-chamfer" aria-label={_(msg({ context: 'onboarding.countdown.label', message: 'Countdown' }))} data-state={days === null ? 'empty' : days < 0 ? 'past' : 'set'}>
+  return <section className="onb-countdown fx-enter-2 crystal-chamfer" aria-label={_(msg({ context: 'onboarding.countdown.label', message: 'Countdown' }))} data-state={days === null ? 'empty' : days < 0 ? 'past' : 'set'}>
     <p className="onb-kicker"><Trans {...msg({ context: 'onboarding.countdown.kicker', message: 'Countdown' })} /></p>
     {days === null && <p className="onb-countdown-empty"><Trans {...msg({ context: 'onboarding.countdown.empty', message: 'Pick a date to start your countdown.' })} /></p>}
     {days !== null && days < 0 && <p className="onb-countdown-empty"><Trans {...msg({ context: 'onboarding.countdown.past', message: 'This date has already passed. Pick a date ahead.' })} /></p>}
     {days !== null && days >= 0 && <>
       <p className="onb-countdown-days">
-        <span className="onb-countdown-number">{days}</span>
+        <span className="onb-countdown-number sf-tick">{days}</span>
         <span className="onb-countdown-unit"><Trans {...msg({ context: 'onboarding.countdown.days', message: '{days, plural, one {day to {goal}} other {days to {goal}}}' })} values={{ days, goal }} /></span>
       </p>
-      <span className="onb-weeks" aria-hidden="true">
+      <span className="onb-weeks fx-stagger" aria-hidden="true">
         {Array.from({ length: bars }, (_unused, index) => <span key={index} data-week={index === 0 ? 'now' : index === bars - 1 ? 'goal' : 'ahead'} />)}
       </span>
       <p className="onb-countdown-note">
@@ -459,8 +460,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     content = <>
       {eyebrow}
       <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.language.heading', message: 'Choose your <0>language</0>' })} components={accent} /></h2>
-      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.language.subtitle', message: 'This sets the app\'s interface and the language your explanations will be written in.' })} /></p>
-      <div className="onb-language-grid">
+      <p className="onb-subtitle fx-enter-2"><Trans {...msg({ context: 'onboarding.language.subtitle', message: 'This sets the app\'s interface and the language your explanations will be written in.' })} /></p>
+      <div className="onb-language-grid fx-stagger">
         {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" aria-pressed={nativeLanguage === locale} className={optionButtonClass}
           onClick={() => {
             setNativeLanguage(locale);
@@ -487,8 +488,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     content = <>
       {eyebrow}
       <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.target.heading', message: 'What are you <0>learning?</0>' })} components={accent} /></h2>
-      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.target.subtitle', message: 'Each language is its own course, with its own cards and goals. You can add another later.' })} /></p>
-      <div className="onb-target-grid">
+      <p className="onb-subtitle fx-enter-2"><Trans {...msg({ context: 'onboarding.target.subtitle', message: 'Each language is its own course, with its own cards and goals. You can add another later.' })} /></p>
+      <div className="onb-target-grid fx-stagger">
         {targetOptions.map(language => {
           const exam = goalKindsFor(language)[0];
           return <button key={language} type="button" aria-pressed={targetLanguage === language} className={`${optionButtonClass} onb-target-card`} onClick={() => {
@@ -507,7 +508,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           </button>;
         })}
       </div>
-      {targetLanguage === 'zh' && <div className="onb-target-options"><label className={goalLabelClass}><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} />
+      {targetLanguage === 'zh' && <div className="onb-target-options fx-enter-3"><label className={goalLabelClass}><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} />
         <select className={goalFieldClass} value={zhScript ?? 'hans'} onChange={event => setZhScript(event.target.value as 'hans' | 'hant')}>
           <option value="hans">{_(msg({ context: 'settings.course.script.simplified', message: 'Simplified' }))}</option>
           <option value="hant">{_(msg({ context: 'settings.course.script.traditional', message: 'Traditional' }))}</option>
@@ -525,7 +526,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       {eyebrow}
       <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.goal.heading', message: 'What are you <0>learning for?</0>' })} components={accent} /></h2>
       <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.goal.subtitle', message: 'Pick one. You can change it any time from the course switcher.' })} /></p>
-      <div className="onboarding-journey__goal-grid" data-goal-count={cardCount}>
+      <div className="onboarding-journey__goal-grid fx-stagger" data-goal-count={cardCount}>
         {examOptions.length > 0 && <button type="button" aria-pressed={examGoal} className={goalCardClass} onClick={() => { if (!examGoal) chooseGoal(examOptions[0].kind); }}>
           <span className={goalIconClass}><GoalEmblem kind="exam" crystal={crystal} /></span>
           <span className={goalCardTextClass}>
@@ -569,10 +570,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             ? <Trans {...msg({ context: 'onboarding.exam.subtitle', message: 'Your target and test date. Both are optional and you can change them later.' })} />
             : <Trans {...msg({ context: 'onboarding.exam.level-subtitle', message: 'Both are optional and you can change them later.' })} />}
         </p>
-        {examGoal && <div className="onb-chip-row" role="group" aria-label={_(msg({ context: 'onboarding.exam.choice-label', message: 'Exam' }))}>
-          {examOptions.map(option => <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className="onb-chip crystal-chamfer-sm" onClick={() => chooseGoal(option.kind)}>{crystal ? <span>{_(option.label)}</span> : _(option.label)}</button>)}
+        {examGoal && <div className="onb-chip-row fx-enter-2" role="group" aria-label={_(msg({ context: 'onboarding.exam.choice-label', message: 'Exam' }))}>
+          {examOptions.map(option => <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className="onb-chip sf-ease crystal-chamfer-sm" onClick={() => chooseGoal(option.kind)}>{crystal ? <span>{_(option.label)}</span> : _(option.label)}</button>)}
         </div>}
-        <div className="onb-goal-fields" data-goal-kind={selectedGoal.kind}>
+        <div className="onb-goal-fields fx-enter-3" data-goal-kind={selectedGoal.kind}>
           {selectedGoal.kind === IELTS_GOAL_KIND
             ? <>
               <div className="onb-goal-band"><IeltsBandPicker value={goalLevel || null} onChange={setGoalLevel} /></div>
@@ -603,7 +604,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       {eyebrow}
       <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.level.heading', message: 'Where are you <0>starting from?</0>' })} components={accent} /></h2>
       <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.level.subtitle', message: 'Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional.' })} values={{ language: languageName }} /></p>
-      <div className="onb-level-list" role="group" aria-label={_(msg({ context: 'onboarding.level.label', message: 'Starting level' }))}>
+      <div className="onb-level-list fx-stagger" role="group" aria-label={_(msg({ context: 'onboarding.level.label', message: 'Starting level' }))}>
         {STARTING_TIERS.map((tier, index) => <button key={tier} type="button" aria-pressed={startingTier === tier} data-tier={tier} className={`${optionButtonClass} onb-level-option`} onClick={() => setStartingTier(tier)}>
           <span className="onb-level-index" aria-hidden="true">{index + 1}</span>
           <span className="onb-level-text"><span className="onb-option-name">{_(LEVEL_LABEL[tier])}</span><span className="onb-option-sub">{_(LEVEL_DESCRIPTION[tier])}</span></span>
@@ -630,7 +631,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       {eyebrow}
       <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.pace.heading', message: 'How many cards <0>each day?</0>' })} components={accent} /></h2>
       <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.pace.subtitle', message: 'Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings.' })} values={{ limit: MAXIMUM_NEW_WORDS_PER_DAY }} /></p>
-      <div className="onboarding-pace-grid onb-pace-grid grid sm:grid-cols-4">
+      <div className="onboarding-pace-grid onb-pace-grid fx-stagger grid sm:grid-cols-4">
         {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={`${optionButtonClass} onb-pace-card`} onClick={() => setPace(option)}>
           <span className="onb-pace-number">{option}</span>
           <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.pace.unit', message: 'cards / day' })} /></span>
@@ -639,7 +640,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           <SelectionMark on={pace === option} />
         </button>)}
       </div>
-      <p className="onb-projection crystal-chamfer-sm">
+      <p className="onb-projection fx-enter-3 crystal-chamfer-sm">
         <span className="onb-projection-number">{formatCount(planDays !== null ? pace * planDays : pace * 7, i18n.locale)}</span>
         <span className="onb-projection-text">
           {planDays !== null
@@ -672,7 +673,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           <h2 className={stepTitleClass}>{heading}</h2>
           {ahaOutcome === null && <>
             <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.aha.subtitle', message: 'Five common words to get you started.' })} /></p>
-            {starterCount > 0 && <div className="onb-actions"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></PrimaryLabel></button></div>}
+            {starterCount > 0 && <div className="onb-actions fx-enter-3"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></PrimaryLabel></button></div>}
           </>}
           {ahaOutcome === 'already-added' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.already-added', message: 'Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time.' })} /></p>}
           {ahaOutcome === 'error' && <p className="onb-message" data-tone="danger" role="alert"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>}
@@ -722,7 +723,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     <div className="onb-frame" role="dialog" aria-modal="true" aria-label={_(msg({ id: 'onboarding.title', message: 'Set up your course' }))}>
       <header className="onb-header">
         {/* Classic phones carry Back as the header's round button; wider screens and Crystal keep it in the footer. */}
-        {!crystal && step !== steps[0] && <button type="button" className="onb-header-back" disabled={step === 'reminder' && reminderSaveLocked} onClick={goBack} aria-label={_(msg({ context: 'onboarding.back', message: 'Back' }))}>
+        {!crystal && step !== steps[0] && <button type="button" className="onb-header-back fx-press" disabled={step === 'reminder' && reminderSaveLocked} onClick={goBack} aria-label={_(msg({ context: 'onboarding.back', message: 'Back' }))}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
         </button>}
         <span className="onb-brand">
@@ -731,16 +732,16 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         </span>
         <span className="onb-tag" aria-hidden="true"><span><Trans {...msg({ context: 'onboarding.header.tag', message: 'Hello · let’s begin' })} /></span></span>
         <div className="onb-progress" role="progressbar" aria-label={_(msg({ context: 'onboarding.progress.label', message: 'Setup progress' }))} aria-valuemin={1} aria-valuemax={totalSteps} aria-valuenow={stepIndex} aria-valuetext={`${stepIndex} / ${totalSteps}`}>
-          <span className="onb-dots" aria-hidden="true">{steps.map((id, index) => <span key={id} data-state={index + 1 < stepIndex ? 'done' : index + 1 === stepIndex ? 'current' : 'upcoming'} />)}</span>
+          <span className="onb-dots" aria-hidden="true">{steps.map((id, index) => <span key={id} className={index + 1 === stepIndex ? 'sf-grow' : undefined} data-state={index + 1 < stepIndex ? 'done' : index + 1 === stepIndex ? 'current' : 'upcoming'} />)}</span>
           <span className="onb-count" aria-hidden="true"><b>{stepIndex}</b><span>{` / ${totalSteps}`}</span></span>
         </div>
-        <button type="button" disabled={reminderSaveLocked} className="onb-skip" onClick={() => setDismissedForSession(true)}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button>
+        <button type="button" disabled={reminderSaveLocked} className="onb-skip fx-press" onClick={() => setDismissedForSession(true)}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button>
       </header>
       <div className="onb-body" data-lumi={showLumi}>
         {showLumi && <LumiGuide step={step} />}
         {/* Keyed by step so each step enters fresh, replaying the entry motion; every stateful child belongs to one step and step changes come from the footer, outside this node. */}
         <main className="onb-main" data-layout={layout}><div key={step} className="onb-content">{content}</div></main>
-        {footer && <div className={`onboarding-journey__footer onb-footer${STICKY_FOOTER_STEPS.has(step) ? ' onboarding-journey__footer--sticky' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
+        {footer && <div className={`onboarding-journey__footer onb-footer${STICKY_FOOTER_STEPS.has(step) ? ' onboarding-journey__footer--sticky' : ''}${LANG_FOOTER_STEPS.has(step) ? ' fx-enter-4' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
       </div>
     </div>
   </div>;
