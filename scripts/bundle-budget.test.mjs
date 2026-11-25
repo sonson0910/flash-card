@@ -103,8 +103,8 @@ describe('bundle budget verification', () => {
     expect(DEFAULT_BUNDLE_BUDGETS).toEqual({
       initialJavaScriptRaw: 224_000,
       initialJavaScriptGzip: 71_200,
-      initialCssRaw: 206_000,
-      initialCssGzip: 31_000,
+      initialCssRaw: 186_500,
+      initialCssGzip: 30_000,
       totalJavaScriptRaw: 3_560_000,
       totalJavaScriptGzip: 1_122_000,
       javaScriptChunkRaw: 650_000,

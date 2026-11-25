@@ -1,8 +1,9 @@
 /*
- * Crystal Star motion layer. main.tsx imports it into the render-blocking stylesheet for every visitor, so the
- * entrances are in place for the first paint and never start over when a late sheet arrives. Every rule is scoped to
- * html[data-theme-family=crystal], so Classic only carries the bytes; the keyframes and the --nk-a registration
- * change nothing until a Crystal rule uses them.
+ * Crystal Star motion layer. Only a Crystal visit downloads it: main.tsx loads it before the first render when the
+ * visit starts in Crystal, and loadThemeAssets loads it before the family switches, so the entrances are in place
+ * for Crystal's first paint and never start over when a late sheet arrives. Every rule is scoped to
+ * html[data-theme-family=crystal]; the keyframes and the --nk-a registration change nothing until a Crystal rule
+ * uses them.
  *
  * The Claude Design boards animate with the nk-* vocabulary in
  * docs/design/sonflash-redesign/canvas/shared.css. The keyframes below are copied from that file

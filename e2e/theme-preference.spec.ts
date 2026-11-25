@@ -8,6 +8,28 @@ const themes = [
   { family: 'crystal', mode: 'light' },
 ] as const;
 
+type CrystalMotionProbe = { loaded: () => boolean; atFirstRender?: boolean };
+type ProbedWindow = typeof window & { __crystalMotion: CrystalMotionProbe };
+
+// Runs in the page before its scripts: reports whether a loaded stylesheet defines the Crystal entrance keyframes,
+// now and at the moment React first rendered into #root.
+const watchCrystalMotion = () => {
+  const loaded = () => [...document.styleSheets].some(sheet => {
+    try {
+      return [...sheet.cssRules].some(rule => rule instanceof CSSKeyframesRule && rule.name === 'nk-rise-k');
+    } catch {
+      return false;
+    }
+  });
+  const probe: CrystalMotionProbe = { loaded };
+  (window as ProbedWindow).__crystalMotion = probe;
+  new MutationObserver((_, observer) => {
+    if (!document.getElementById('root')?.firstElementChild) return;
+    probe.atFirstRender = loaded();
+    observer.disconnect();
+  }).observe(document, { childList: true, subtree: true });
+};
+
 test('saved theme is selected before the application script and survives reload', async ({ page }) => {
   await page.goto('/?view=landing');
   await page.evaluate(() => {
@@ -69,6 +91,7 @@ test('classic startup does not request the Crystal theme stylesheet', async ({ p
   page.on('request', request => {
     if (request.url().includes('/theme-crystal.css')) crystalRequests.push(request.url());
   });
+  await page.addInitScript(watchCrystalMotion);
   await page.addInitScript(() => {
     localStorage.setItem('sonflash_theme_family', 'classic');
     localStorage.setItem('lingoflash_theme', 'dark');
@@ -77,6 +100,31 @@ test('classic startup does not request the Crystal theme stylesheet', async ({ p
   await expect(page.getByRole('main')).toBeVisible();
   expect(crystalRequests).toEqual([]);
   await expect(page.locator('link#sonflash-crystal-theme')).toHaveCount(0);
+  // The Crystal motion sheet is not part of a Classic visit either.
+  expect(await page.evaluate(() => (window as ProbedWindow).__crystalMotion.loaded())).toBe(false);
+});
+
+test('crystal startup has its motion sheet in place before the first render', async ({ page }) => {
+  let motionSheetRequests = 0;
+  await page.route('**/assets/*.css', async route => {
+    const response = await route.fetch();
+    const body = await response.text();
+    if (body.includes('@keyframes nk-rise-k')) {
+      motionSheetRequests += 1;
+      // A slow motion sheet must hold the first render back, not arrive after it.
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    await route.fulfill({ response, body });
+  });
+  await page.addInitScript(watchCrystalMotion);
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'dark');
+  });
+  await page.goto('/?view=landing');
+  await expect(page.getByRole('main')).toBeVisible();
+  expect(motionSheetRequests).toBe(1);
+  expect(await page.evaluate(() => (window as ProbedWindow).__crystalMotion.atFirstRender)).toBe(true);
 });
 
 test('shared glass surfaces retain a computed shadow in every theme', async ({ page }) => {

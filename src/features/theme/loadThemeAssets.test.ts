@@ -59,10 +59,14 @@ describe('loadThemeAssets', () => {
     expect(source).toContain("import('../../styles/themes/cjk-fonts-zh-hans.css')");
   });
 
-  it('puts the Crystal motion sheet in the render-blocking stylesheet, so entrances never wait for a late sheet', () => {
+  it('keeps the Crystal motion sheet out of the first stylesheet and loads it before Crystal is first shown', () => {
     const main = readFileSync(resolve(import.meta.dirname, '../../main.tsx'), 'utf8');
-    expect(main).toContain("import './styles/themes/crystal-motion.css';");
-    expect(source).not.toContain("import('../../styles/themes/crystal-motion.css')");
+    // Classic visitors do not download it.
+    expect(main).not.toContain("import './styles/themes/crystal-motion.css';");
+    // A visit that starts in Crystal renders only once the sheet has settled, so no entrance starts over.
+    expect(main).toContain("import('./styles/themes/crystal-motion.css').then(render, render)");
+    // A switch to Crystal waits for it with the other Crystal assets.
+    expect(source).toContain("import('../../styles/themes/crystal-motion.css')");
   });
 
   it('removes a failed stylesheet and retries with a new link', async () => {

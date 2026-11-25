@@ -62,12 +62,13 @@ export const loadCrystalStylesheet = async (): Promise<void> => {
   return appendCrystalStylesheet();
 };
 
-// crystal-motion.css is not here: main.tsx imports it into the render-blocking stylesheet, so the Crystal entrances
-// are in place for the first paint instead of starting over when a late sheet arrives.
+// The motion sheet is part of the set, so the family only switches to Crystal once its entrances are in place. On a
+// visit that starts in Crystal, main.tsx has already loaded it before the first render and this import is a no-op.
 export const loadThemeAssets = (family: ThemeFamily): Promise<void> => {
   if (family !== 'crystal') return Promise.resolve();
   crystalAssets ??= Promise.all([
     loadCrystalStylesheet(),
+    import('../../styles/themes/crystal-motion.css'),
     import('../../styles/themes/crystal-ornaments.css'),
     import('../../styles/themes/crystal-fonts.css'),
   ]).then(

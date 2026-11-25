@@ -21,8 +21,13 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // loading and course-error screens and its per-family utilities have to
   // be in the first stylesheet; motion classes nothing used were removed
   // first. Raw stays under its cap; gzip keeps about 5% headroom.
-  initialCssRaw: 206_000,
-  initialCssGzip: 31_000,
+  // Board motion and the per-language card forms, with the Crystal motion
+  // layer moved out of the first stylesheet into a sheet only a Crystal
+  // visit loads: measured 177,537 B raw / 28,605 B gzip. The Classic motion
+  // roles stay because the default family's first screen animates. Keep
+  // about 5% headroom.
+  initialCssRaw: 186_500,
+  initialCssGzip: 30_000,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
   // code. The M0 app bundle is 2,759,607 B raw / 875,057 B gzip; M1 allows
   // the generated offline shell worker within the reviewed 20 KiB gzip delta.
