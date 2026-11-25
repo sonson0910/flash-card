@@ -3867,9 +3867,10 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
     font-size: 13px;
   }
 
+  /* The phone board draws the grades 6px apart; the app keeps 8px so neighbouring touch targets stay separable. */
   :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look] .review-grades-row {
     max-width: none;
-    gap: 6px;
+    gap: 8px;
     padding: 0;
     border: 0;
     border-radius: 0;
