@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import '../../src/index.css';
 import '../../src/styles/themes/crystal-motion.css';
+import '../../src/styles/themes/classic-motion.css';
 import '../../src/styles/app-bootstrap.css';
 import '../../src/features/practice/practice-board.css';
 import { AppOverlays } from '../../src/components/AppOverlays';

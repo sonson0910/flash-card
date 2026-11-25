@@ -4,6 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import '../../src/index.css';
 import '../../src/styles/themes/crystal-motion.css';
+import '../../src/styles/themes/classic-motion.css';
 import '../../src/styles/app-bootstrap.css';
 import { AnimeReveal, type AnimeRevealEventKind, type AnimeRevealSourcePayload } from '../../src/features/rewards/AnimeReveal';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
