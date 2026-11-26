@@ -103,7 +103,7 @@ const IeltsGoalPanel = lazy(() => import('../examProgress/IeltsGoalPanel').then(
 const SessionRecapModal = lazy(() => Promise.all([
   import('../practice/SessionRecapModal'), loadCatalog(getActiveUiLocale(), 'practice'),
 ]).then(([module]) => ({ default: module.SessionRecapModal })));
-const interactionFallback = <div role="status" className="rounded-2xl border border-[var(--sf-border)] p-5"><Trans {...msg({ context: 'today.activity.preparing', message: 'Preparing activity…' })} /></div>;
+const interactionFallback = <div role="status" className="daily-match-status rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] p-5"><Trans {...msg({ context: 'today.activity.preparing', message: 'Preparing activity…' })} /></div>;
 
 /** Sequenced session phases: a review/new lesson reuses the single-lesson controller and screen; bridge/match/recap are their own screens. */
 type MultiStagePhase =
@@ -1183,23 +1183,27 @@ export default function DailyLearningWorkspace({
     const matchFailed = activeMultiStage.matchStatus === 'start-error' || completionFailed;
     const hasRetainedCompletion = completionFailed || activeMultiStage.matchCompletionPending;
     if (activeMultiStage.matchStatus === 'expired') {
-      return <div data-active-daily-match="true" role="status" className="rounded-2xl border border-[var(--sf-border)] p-5">
+      return <div data-active-daily-match="true" role="status" className="daily-match-status rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] p-5">
         <p><Trans {...msg({ context: 'today.match.session-expired', message: 'This round was open for too long, so its result could not be saved.' })} /></p>
-        <button type="button" onClick={finishMatchStage}><Trans {...msg({ context: 'session.bridge.continue', message: 'Continue' })} /></button>
+        <div className="daily-match-status__actions">
+          <button type="button" onClick={finishMatchStage} className="daily-match-status__primary min-h-11 focus-visible:outline-2 cursor-pointer"><Trans {...msg({ context: 'session.bridge.continue', message: 'Continue' })} /></button>
+        </div>
       </div>;
     }
-    return <div data-active-daily-match="true" role="status" className="rounded-2xl border border-[var(--sf-border)] p-5">
+    return <div data-active-daily-match="true" role="status" className="daily-match-status rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] p-5">
       {matchFailed ? <>
         <p>{isOffline
           ? <Trans {...msg({ id: 'today.offline', message: 'You\'re offline. Reconnect to start today\'s session.' })} />
           : completionFailed
             ? <Trans {...msg({ context: 'today.match.verification-failed', message: 'We could not verify your result. Your completed pairs are still here.' })} />
             : <Trans {...msg({ context: 'today.match.start-failed', message: 'Word Match could not start. Your completed reviews are saved.' })} />}</p>
-        <button type="button" onClick={completionFailed ? retryMatchCompletion : retryMatchStart}>{completionFailed
-          ? <Trans {...msg({ context: 'today.match.retry-verification', message: 'Retry verification' })} />
-          : <Trans {...msg({ id: 'daily.placement.retry', message: 'Try again' })} />}</button>
-        <button type="button" onClick={hasRetainedCompletion ? finishMatchStage : exitMultiStageSession}><Trans {...msg({ id: 'daily.lesson.back-to-today', message: 'Back to Today' })} /></button>
-        {hasRetainedCompletion && <button type="button" onClick={exitMultiStageSession}><Trans {...msg({ context: 'today.match.abandon', message: 'Abandon round and start over' })} /></button>}
+        <div className="daily-match-status__actions">
+          <button type="button" onClick={completionFailed ? retryMatchCompletion : retryMatchStart} className="daily-match-status__primary min-h-11 focus-visible:outline-2 cursor-pointer">{completionFailed
+            ? <Trans {...msg({ context: 'today.match.retry-verification', message: 'Retry verification' })} />
+            : <Trans {...msg({ id: 'daily.placement.retry', message: 'Try again' })} />}</button>
+          <button type="button" onClick={hasRetainedCompletion ? finishMatchStage : exitMultiStageSession} className="daily-match-status__secondary min-h-11 focus-visible:outline-2 cursor-pointer"><Trans {...msg({ id: 'daily.lesson.back-to-today', message: 'Back to Today' })} /></button>
+          {hasRetainedCompletion && <button type="button" onClick={exitMultiStageSession} className="daily-match-status__secondary min-h-11 focus-visible:outline-2 cursor-pointer"><Trans {...msg({ context: 'today.match.abandon', message: 'Abandon round and start over' })} /></button>}
+        </div>
       </> : <Trans {...msg({ context: 'today.activity.preparing', message: 'Preparing activity…' })} />}
     </div>;
   }
@@ -1210,7 +1214,7 @@ export default function DailyLearningWorkspace({
       <section className="mx-auto w-full max-w-4xl space-y-4" aria-labelledby="listen-pilot-heading">
         <div className="flex items-center justify-between gap-3">
           <h1 id="listen-pilot-heading" ref={headingRef} tabIndex={-1} className="text-2xl font-black tracking-tight"><Trans {...msg({ context: 'daily-learning-workspace.immerse-listen', message: 'Immerse · Listen' })} /></h1>
-          <button type="button" onClick={() => navigateLesson(null)} className="min-h-11 rounded-full border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2"><Trans {...msg({ context: 'daily-learning-workspace.back-to-today', message: 'Back to Today' })} /></button>
+          <button type="button" onClick={() => navigateLesson(null)} className="min-h-11 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] [html:not([data-theme-family=crystal])_&]:bg-[var(--sf-surface-control)] [html:not([data-theme-family=crystal])_&]:shadow-[var(--sf-secondary-shadow,none)] border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2 cursor-pointer"><Trans {...msg({ context: 'daily-learning-workspace.back-to-today', message: 'Back to Today' })} /></button>
         </div>
         <Suspense fallback={interactionFallback}>
           <PublishedListenMvp

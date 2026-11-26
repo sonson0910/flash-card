@@ -12,6 +12,8 @@ interface ActivityHeatmapProps {
   todayKey?: string;
   selectedDate?: string;
   onDaySelect?: (date: string) => void;
+  /** Draws the Less-to-More legend under the grid. The Crystal Progress board shows it in the panel header instead. */
+  showLegend?: boolean;
 }
 interface DayCell { dateStr: string; xp: number; available: boolean; outsideRange: boolean; level: 0 | 1 | 2 | 3 | 4; }
 
@@ -55,7 +57,64 @@ export const dayInTimeZone = (now: Date, timeZone: string): string => {
   return `${value.year}-${value.month}-${value.day}`;
 };
 
-export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, selectedDate, onDaySelect }: ActivityHeatmapProps) {
+/** The Less-to-More key of the heat scale. */
+export function HeatmapLegend() {
+  const { _ } = useLingui();
+  return <div className="stats-heat-legend" aria-label={_(msg({ id: 'stats.heatmap-legend', message: 'Less to more study activity' }))}>
+    <span>{_(msg({ id: 'stats.less', message: 'Less' }))}</span>
+    {([0, 1, 2, 3, 4] as const).map(level => <span key={level} className="stats-heat-swatch" style={{ backgroundColor: heatColor(level) }} />)}
+    <span>{_(msg({ id: 'stats.more', message: 'More' }))}</span>
+  </div>;
+}
+
+const localDateKey = (date: Date): string => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+/** The heatmap's shape for an account with no review history yet: the latest weeks at rest, today marked, the days
+    after today left open. It carries no values, so it is hidden from assistive technology. */
+export function GhostHeatmap({ weeks = 26, timeZone }: { readonly weeks?: number; readonly timeZone?: string }) {
+  const { i18n } = useLingui();
+  const locale = i18n.locale || 'en';
+  const labels = useMemo(() => weekdayLabels(locale), [locale]);
+  const { columns, months } = useMemo(() => {
+    const now = new Date();
+    // "Today" is the study day when the caller knows its time zone, so the mark agrees with the real heatmap.
+    const zoned = timeZone ? localDate(dayInTimeZone(now, timeZone)) : now;
+    const today = new Date(zoned.getFullYear(), zoned.getMonth(), zoned.getDate());
+    const start = new Date(today);
+    start.setDate(today.getDate() - ((today.getDay() - HEATMAP_WEEK_START + 7) % 7) - (weeks - 1) * 7);
+    const formatter = new Intl.DateTimeFormat(locale === 'pseudo' ? 'en' : locale, { month: 'short' });
+    const todayKey = localDateKey(today);
+    const generated: Array<Array<{ key: string; state: 'rest' | 'today' | 'after' }>> = [];
+    const labelsByWeek: Array<string | null> = [];
+    let previousMonth = -1;
+    for (let week = 0; week < weeks; week++) {
+      const days = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + week * 7 + index);
+        const key = localDateKey(date);
+        return { key, state: key === todayKey ? 'today' as const : key > todayKey ? 'after' as const : 'rest' as const };
+      });
+      const weekEnd = new Date(`${days[6].key}T12:00:00`);
+      labelsByWeek.push(weekEnd.getMonth() !== previousMonth ? formatter.format(weekEnd) : null);
+      previousMonth = weekEnd.getMonth();
+      generated.push(days);
+    }
+    const nextMonthLabel = labelsByWeek.findIndex((label, index) => index > 0 && label !== null);
+    if (labelsByWeek[0] && nextMonthLabel > 0 && nextMonthLabel <= 2) labelsByWeek[0] = null;
+    return { columns: generated, months: labelsByWeek };
+  }, [locale, timeZone, weeks]);
+  return <div className="stats-heatmap stats-heatmap--ghost w-full" aria-hidden="true">
+    <div className="stats-heat-grid grid grid-cols-[auto_1fr]">
+      <div className="stats-heat-weekdays">{labels.map((label, index) => <span key={label} className="stats-heat-weekday">{index % 2 === 0 ? label : ''}</span>)}</div>
+      <div className="stats-heat-body">
+        <div className="stats-heat-weeks">{columns.map(week => <div key={week[0].key} className="stats-heat-week">{week.map(day => <span key={day.key} className="stats-heat-cell" data-ghost={day.state} />)}</div>)}</div>
+        <div className="stats-heat-months">{months.map((label, index) => <span key={`${label}-${index}`} className="stats-heat-month">{label}</span>)}</div>
+      </div>
+    </div>
+  </div>;
+}
+
+export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, selectedDate, onDaySelect, showLegend = true }: ActivityHeatmapProps) {
   const { _, i18n } = useLingui();
   const locale = i18n.locale || 'en';
   const labels = useMemo(() => weekdayLabels(locale), [locale]);
@@ -127,11 +186,6 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, 
     setHasEarlierWeeks(scroller.scrollLeft > 0);
   }, [weeks.length, interactive]);
 
-  const legend = <div className="stats-heat-legend" aria-label={_(msg({ id: 'stats.heatmap-legend', message: 'Less to more study activity' }))}>
-    <span>{_(msg({ id: 'stats.less', message: 'Less' }))}</span>
-    {([0, 1, 2, 3, 4] as const).map(level => <span key={level} className="stats-heat-swatch" style={{ backgroundColor: heatColor(level) }} />)}
-    <span>{_(msg({ id: 'stats.more', message: 'More' }))}</span>
-  </div>;
   const cellStyle = (day: DayCell) => ({ backgroundColor: day.available ? heatColor(day.level) : day.outsideRange ? 'transparent' : 'var(--st-heat-unavailable, var(--sf-surface-muted))' });
 
   return <div className="stats-heatmap w-full" data-interactive={interactive || undefined}>
@@ -160,7 +214,7 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, 
         <span><strong className="font-bold text-[var(--sf-text)]">{formatNumber(activeDaysCount)}</strong> {_(msg({ id: 'stats.active-days', message: 'active days' }))}</span>
         <span><strong className="font-bold text-[var(--sf-text)]">{formatNumber(total)}</strong> {isReviewActivity ? _(msg({ id: 'stats.total-reviews', message: 'reviews' })) : _(msg({ id: 'stats.total-xp', message: 'total XP' }))}</span>
       </div>
-      {legend}
+      {showLegend && <HeatmapLegend />}
     </div>
   </div>;
 }

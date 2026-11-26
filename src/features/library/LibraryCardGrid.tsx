@@ -25,6 +25,7 @@ import { formatNumber, formatRelativeTime } from '../../lib/format';
 import { getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibrarySortOrder } from './libraryViewModel';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { getLibraryCoverTone, splitStressedWord } from './libraryCardFace';
+import './library-dialog-overlays.css';
 import { getRelativeReviewDays } from './libraryPresentation';
 import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope, type PracticeDeckScope } from '../../lib/practiceScope';
 
@@ -369,7 +370,7 @@ export function LibraryCardGrid({
       {legacy && <div className="library-canvas-notice" role="status"><div><strong>{legacy.title}</strong><p>{legacy.message}</p></div>{legacy.actionLabel && <button type="button" onClick={() => void migrateLegacyCards()} disabled={isMigratingLegacy}>{legacy.actionLabel}</button>}</div>}
       <div className="library-canvas-collection-head">
         <div><h2 ref={libraryHeadingRef} tabIndex={-1} className="sr-only">{activeCategory === 'All' ? <Trans {...msg({ context: 'library.grid.title', message: 'Your library' })} /> : activeCategory}</h2><p className="library-canvas-collection-caption"><Trans {...msg({ context: 'library.grid.collection-caption', message: 'Your words, ready when you are.' })} /></p></div>
-        {filteredCards.length > 0 && <div className="library-canvas-actions"><button type="button" onClick={() => void shareCategory()} disabled={isSharing || !authenticated}><Share2 size={15} aria-hidden="true"/><Trans {...msg({ context: 'library.grid.share', message: 'Share' })} /></button><button type="button" className="library-canvas-study" onClick={() => void study()} disabled={starting}>{starting ? <Loader2 className="animate-spin" size={15} aria-hidden="true"/> : <Play size={15} aria-hidden="true"/>}<Trans {...msg({ context: 'library.grid.study-now', message: 'Study now' })} /></button></div>}
+        {filteredCards.length > 0 && <div className="library-canvas-actions"><button type="button" onClick={() => void shareCategory()} disabled={isSharing || !authenticated} className={isSharing || !authenticated ? undefined : 'fx-press'}><Share2 size={15} aria-hidden="true"/><Trans {...msg({ context: 'library.grid.share', message: 'Share' })} /></button><button type="button" className={starting ? 'library-canvas-study' : 'library-canvas-study fx-press'} onClick={() => void study()} disabled={starting}>{starting ? <Loader2 className="animate-spin" size={15} aria-hidden="true"/> : <Play size={15} aria-hidden="true"/>}<Trans {...msg({ context: 'library.grid.study-now', message: 'Study now' })} /></button></div>}
       </div>
       <div className="library-canvas-collection-tools">
         <label className="library-canvas-sort"><span><Trans {...msg({ context: 'library.sort.label', message: 'Sort' })} /></span><select value={sortOrder} onChange={event => setSortOrder(event.target.value as LibrarySortOrder)}><option value="recent">{catalog._(msg({ id: 'library.sort.recent', message: 'Recently active' }))}</option><option value="alphabetical">{catalog._(msg({ id: 'library.sort.alphabetical', message: 'A to Z' }))}</option><option value="due">{catalog._(msg({ id: 'library.sort.due', message: 'Due first' }))}</option></select><ChevronDown size={14} aria-hidden="true" /></label>
@@ -396,7 +397,7 @@ export function LibraryCardGrid({
               ? <button type="button" onClick={() => setSearchQuery('')}><Trans {...msg({ context: 'library.grid.clear-search', message: 'Clear search' })} /></button>
               : <button type="button" onClick={onCreateCard}><Trans {...msg({ context: 'library.grid.create-first', message: 'Create your first card' })} /></button>)}
         </div>
-      ) : <div className="library-canvas-card-grid" data-library-view={viewMode}>
+      ) : <div className="library-canvas-card-grid fx-stagger" data-library-view={viewMode}>
         {cards.map(card => {
           const cardTier = getLibraryCardTier(card);
           const due = isLibraryCardDue(card);
@@ -410,7 +411,7 @@ export function LibraryCardGrid({
               openCard(card, event.currentTarget);
             }
           };
-          return <article key={card.id} className={`library-word-card library-word-card--${cardTier}`} data-library-card-row="true" data-library-card-id={card.id} tabIndex={0} onClick={openFromRow} onKeyDown={onRowKeyDown}>
+          return <article key={card.id} className={`library-word-card library-word-card--${cardTier} fx-lift`} data-library-card-row="true" data-library-card-id={card.id} tabIndex={0} onClick={openFromRow} onKeyDown={onRowKeyDown}>
             <div className={`library-word-cover library-word-cover--${getLibraryCoverTone(card.category)}`}>
               {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" /> : <><span aria-hidden="true">{card.word.charAt(0).toUpperCase() || '·'}</span><small>{card.category}</small></>}
               <div className="library-word-marks">
@@ -422,7 +423,7 @@ export function LibraryCardGrid({
               )}
             </div>
             <div className="library-word-body">
-              <p className="library-word-meta"><i aria-hidden="true"/> {tierLabel(cardTier)} <span aria-hidden="true">·</span> {card.partOfSpeech ?? <Trans {...msg({ context: 'library.card.word', message: 'word' })} />}</p>
+              <p className="library-word-meta"><i aria-hidden="true"/> {tierLabel(cardTier)} <span className="library-word-meta-pos"><span aria-hidden="true">·</span> {card.partOfSpeech?.trim() || <Trans {...msg({ context: 'library.card.word', message: 'word' })} />}</span>{card.category && <span className="library-word-meta-category"> <span aria-hidden="true">·</span> {card.category}</span>}</p>
               <h3 lang={card.language}>{stress ? <>{stress.before}<span className="library-word-stress">{stress.stressed}</span>{stress.after}</> : card.word}</h3>
               {card.phonetic && <code>{card.phonetic}</code>}
               <div className="library-word-translation-row"><p className="library-word-translation">{card.translation}</p><span className={due ? 'is-due' : undefined}>{nextLabel(card)}</span></div>
@@ -449,7 +450,7 @@ export function LibraryCardGrid({
           else libraryHeadingRef.current?.focus({ preventScroll: true });
         });
       }} onSave={updateCard} onDelete={afterDelete}/></Suspense>}
-      <Dialog.Root open={Boolean(detailCard)} onOpenChange={open => { if (!open) { setDetailCardId(null); globalThis.requestAnimationFrame?.(() => detailTriggerRef.current?.focus()); } }}><Dialog.Portal><Dialog.Overlay className="library-card-detail-overlay"/><Dialog.Content className="library-card-detail-dialog"><Dialog.Title className="sr-only"><Trans {...msg({ context: 'library.card.detail-title', message: 'Card details' })} /></Dialog.Title>{detailCard && <Suspense fallback={<div className="library-canvas-loading" role="status"><Trans {...msg({ context: 'library.loading.cards', message: 'Loading library cards' })} /></div>}><Flashcard data={detailCard} onDelete={async id => { if (await afterDelete(id)) setDetailCardId(null); }} onEditDelete={afterDelete} onToggleBookmark={id => void toggleBookmark(id)} customDecks={customDecks} onAssignDeck={(id, deck) => void assignDeck(id, deck)} onUpdateCard={updateCard}/></Suspense>}<Dialog.Close className="library-card-detail-close" aria-label={catalog._(msg({ id: 'common.close', message: 'Close' }))}>×</Dialog.Close></Dialog.Content></Dialog.Portal></Dialog.Root>
+      <Dialog.Root open={Boolean(detailCard)} onOpenChange={open => { if (!open) { setDetailCardId(null); globalThis.requestAnimationFrame?.(() => detailTriggerRef.current?.focus()); } }}><Dialog.Portal><Dialog.Overlay className="library-card-detail-overlay"/><Dialog.Content className="library-card-detail-dialog"><Dialog.Title className="sr-only"><Trans {...msg({ context: 'library.card.detail-title', message: 'Card details' })} /></Dialog.Title>{detailCard && <Suspense fallback={<div className="library-canvas-loading" role="status"><Trans {...msg({ context: 'library.loading.cards', message: 'Loading library cards' })} /></div>}><Flashcard data={detailCard} onDelete={async id => { if (await afterDelete(id)) setDetailCardId(null); }} onEditDelete={afterDelete} onToggleBookmark={id => void toggleBookmark(id)} customDecks={customDecks} onAssignDeck={(id, deck) => void assignDeck(id, deck)} onUpdateCard={updateCard}/></Suspense>}<Dialog.Close className="library-card-detail-close fx-press" aria-label={catalog._(msg({ id: 'common.close', message: 'Close' }))}>×</Dialog.Close></Dialog.Content></Dialog.Portal></Dialog.Root>
       <AlertDialog.Root open={Boolean(activeDeletingCard)} onOpenChange={open => {
         if (open) return;
         setDeletingCard(null);
@@ -458,7 +459,7 @@ export function LibraryCardGrid({
         // heading) win instead, matching Flashcard.tsx's equivalent dialog.
         if (!deleteConfirmedRef.current) globalThis.requestAnimationFrame?.(() => deleteTriggerRef.current?.focus());
         deleteConfirmedRef.current = false;
-      }}><AlertDialog.Portal><AlertDialog.Overlay className="library-delete-overlay"/><AlertDialog.Content className="library-delete-dialog"><AlertDialog.Title><Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /></AlertDialog.Title><AlertDialog.Description><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: activeDeletingCard?.word ?? '' }} /></AlertDialog.Description><div><AlertDialog.Cancel><Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /></AlertDialog.Cancel><AlertDialog.Action onClick={() => { if (!activeDeletingCard) return; deleteConfirmedRef.current = true; void afterDelete(activeDeletingCard.id); setDeletingCard(null); }}><Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>
+      }}><AlertDialog.Portal><AlertDialog.Overlay className="library-delete-overlay"/><AlertDialog.Content className="library-delete-dialog"><span className="library-delete-icon" aria-hidden="true"><Trash2 size={20} /></span><p className="library-delete-kicker" aria-hidden="true"><Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /></p><AlertDialog.Title><Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /></AlertDialog.Title><AlertDialog.Description><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: activeDeletingCard?.word ?? '' }} /></AlertDialog.Description><div><AlertDialog.Cancel className="fx-press"><Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /></AlertDialog.Cancel><AlertDialog.Action className="fx-press-danger" onClick={() => { if (!activeDeletingCard) return; deleteConfirmedRef.current = true; void afterDelete(activeDeletingCard.id); setDeletingCard(null); }}><Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>
     </section>
   );
 }

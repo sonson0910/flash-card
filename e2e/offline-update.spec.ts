@@ -89,9 +89,12 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     await signIn(page, `${fixture.origin}/?view=library&locale=en`);
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(page.getByText('reliable', { exact: true }).first()).toBeVisible();
+    // Preparing offline lives in My Files; the other views show the card only for a waiting update.
+    await page.goto(`${fixture.origin}/?view=files&locale=en`);
     await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
     await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
-    await page.reload();
+    // Back to the library on a fresh navigation, which the prepared service worker now controls.
+    await page.goto(`${fixture.origin}/?view=library&locale=en`);
     await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
     await expect(page.getByText('reliable', { exact: true }).first()).toBeVisible();
 

@@ -429,7 +429,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
           data-edit-deck-select
           value={draft.deck}
           onChange={event => updateDraft('deck', event.target.value)}
-          className="edit-sheet-input edit-sheet-select-input"
+          className="edit-sheet-input edit-sheet-select-input sf-ease"
         >
           <option value="">{_(msg({ id: 'library.edit-card.deck-unassigned', message: 'Unassigned' }))}</option>
           {deckOptions.map(name => <option key={name} value={name}>{name}</option>)}
@@ -452,7 +452,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       data-edit-starred
       aria-pressed={draft.starred}
       onClick={() => updateDraft('starred', !draft.starred)}
-      className="edit-sheet-star"
+      className="edit-sheet-star sf-ease"
     >
       <Star size={14} fill={draft.starred ? 'currentColor' : 'none'} aria-hidden="true" />
       <Trans {...msg({ id: 'library.edit-card.starred', message: 'Starred' })} />
@@ -470,7 +470,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         maxLength={fieldMaxLength[key]}
         rows={rows}
         onChange={event => updateDraft(key, event.target.value)}
-        className="edit-sheet-input edit-sheet-textarea"
+        className="edit-sheet-input edit-sheet-textarea sf-ease"
       />
     </label>
   );
@@ -497,7 +497,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         maxLength={fieldMaxLength.translation}
         rows={rows}
         onChange={event => updateDraft('translation', event.target.value)}
-        className="edit-sheet-input edit-sheet-textarea"
+        className="edit-sheet-input edit-sheet-textarea sf-ease"
       />
       {meaningChoices.length > 0 && (
         <div className="edit-sheet-meaning-choices">
@@ -509,7 +509,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
               lang={nativeLanguage}
               aria-label={_({ ...msg({ id: 'library.edit-card.use-meaning', message: 'Use meaning: {meaning}' }), values: { meaning } })}
               onClick={() => updateDraft('translation', meaning)}
-              className="edit-sheet-meaning-choice"
+              className="edit-sheet-meaning-choice sf-ease"
             >
               {meaningChipLabel(meaning)}
             </button>
@@ -542,7 +542,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   const tagsField = (
     <div className="edit-sheet-field edit-sheet-field--tags">
       <span id="edit-card-tags-label" className="edit-sheet-label"><Trans {...msg({ id: 'library.edit-card.tags', message: 'Tags' })} /></span>
-      <div className="edit-sheet-input edit-sheet-tags" onClick={event => { if (event.target === event.currentTarget) tagInputRef.current?.focus(); }}>
+      <div className="edit-sheet-input edit-sheet-tags sf-ease" onClick={event => { if (event.target === event.currentTarget) tagInputRef.current?.focus(); }}>
         {draft.tags.length > 0 && (
           <ul aria-labelledby="edit-card-tags-label" className="edit-sheet-tag-list">
             {draft.tags.map(tag => (
@@ -553,7 +553,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                   data-edit-tag-remove={tag}
                   aria-label={_({ ...msg({ id: 'library.edit-card.remove-tag', message: 'Remove tag {tag}' }), values: { tag } })}
                   onClick={() => removeTag(tag)}
-                  className="edit-sheet-tag-remove"
+                  className="edit-sheet-tag-remove sf-ease"
                 >
                   <X size={12} aria-hidden="true" />
                 </button>
@@ -611,7 +611,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 addTagText(tag);
                 tagInputRef.current?.focus();
               }}
-              className="edit-sheet-tag-suggestion"
+              className="edit-sheet-tag-suggestion sf-ease"
             >
               <Plus size={12} aria-hidden="true" />
               {tag}
@@ -634,7 +634,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       <div className="edit-sheet-difficulty-row">
         <div className="edit-sheet-segmented">
           {LEARNER_DIFFICULTIES.map(value => (
-            <label key={value} data-difficulty={value} data-selected={draft.learnerDifficulty === value || undefined} className="edit-sheet-segment">
+            <label key={value} data-difficulty={value} data-selected={draft.learnerDifficulty === value || undefined} className="edit-sheet-segment sf-ease">
               <input
                 type="radio"
                 name="edit-card-learner-difficulty"
@@ -654,7 +654,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
             data-edit-difficulty-clear
             aria-label={_(msg({ id: 'library.edit-card.difficulty-clear-label', message: 'Clear difficulty' }))}
             onClick={() => updateDraft('learnerDifficulty', '')}
-            className="edit-sheet-link-button"
+            className="edit-sheet-link-button fx-press"
           >
             <Trans {...msg({ id: 'library.edit-card.difficulty-clear', message: 'Clear' })} />
           </button>
@@ -676,14 +676,14 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       dir="ltr"
       maxLength={fieldMaxLength.phonetic}
       onChange={event => updateDraft('phonetic', event.target.value)}
-      className={inline ? 'edit-sheet-word-ipa' : 'edit-sheet-input edit-sheet-input--mono'}
+      className={inline ? 'edit-sheet-word-ipa sf-ease' : 'edit-sheet-input edit-sheet-input--mono sf-ease'}
     />
   );
 
   const wordField = (
     <div className="edit-sheet-field edit-sheet-field--word">
       <span className="edit-sheet-label"><Trans {...msg({ id: 'library.edit-card.word', message: 'Word' })} /></span>
-      <div className="edit-sheet-word">
+      <div className="edit-sheet-word sf-ease">
         {canRenameWord ? (
           <input
             data-edit-word-input
@@ -715,7 +715,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
             aria-label={_(msg({ id: 'library.edit-card.save-word', message: 'Save word' }))}
             disabled={writing || !wordDraft.trim() || wordDraft.trim() === openedCard.word}
             onClick={() => saveWord()}
-            className="edit-sheet-word-save"
+            className="edit-sheet-word-save fx-press"
           >
             {renamingWord ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
           </button>
@@ -735,7 +735,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
           value={draft.partOfSpeech}
           maxLength={MAX_PART_OF_SPEECH_LENGTH}
           onChange={event => updateDraft('partOfSpeech', event.target.value)}
-          className="edit-sheet-input"
+          className="edit-sheet-input sf-ease"
         />
       ) : (
         <>
@@ -754,7 +754,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         value={draft.category}
         maxLength={MAX_CATEGORY_LENGTH}
         onChange={event => updateDraft('category', event.target.value)}
-        className="edit-sheet-input"
+        className="edit-sheet-input sf-ease"
       />
     </label>
   );
@@ -774,7 +774,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
             data-edit-image-find
             disabled={imageSearching || imageUploading || !cardEditCloudAvailable}
             onClick={findAnotherPhoto}
-            className="edit-sheet-chip-button"
+            className="edit-sheet-chip-button fx-press"
           >
             {imageSearching ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Search size={14} aria-hidden="true" />}
             <Trans {...msg({ context: 'library.edit-card.find-another-photo', message: 'Find another photo' })} />
@@ -794,7 +794,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 }}
               />
               {imageUploading ? (
-                <button type="button" data-edit-image-upload-cancel onClick={cancelImageUpload} className="edit-sheet-link-button">
+                <button type="button" data-edit-image-upload-cancel onClick={cancelImageUpload} className="edit-sheet-link-button fx-press">
                   <Trans {...msg({ id: 'library.edit-card.upload-image-cancel', message: 'Cancel upload' })} />
                 </button>
               ) : (
@@ -804,7 +804,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                   disabled={imageSearching || writing}
                   onClick={() => imageInputRef.current?.click()}
                   aria-label={_(msg({ id: 'library.edit-card.upload-image', message: 'Upload a photo from this device' }))}
-                  className="edit-sheet-link-button"
+                  className="edit-sheet-link-button fx-press"
                 >
                   <Trans {...msg({ id: 'library.edit-card.upload-image-short', message: 'Upload' })} />
                 </button>
@@ -817,7 +817,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     data-edit-image-remove
                     onClick={removeImage}
                     aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
-                    className="edit-sheet-link-button"
+                    className="edit-sheet-link-button fx-press"
                   >
                     <Trans {...msg({ context: 'library.edit-card.remove-image-short', message: 'Remove' })} />
                   </button>
@@ -830,7 +830,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
               data-edit-image-remove
               onClick={removeImage}
               aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
-              className="edit-sheet-link-button"
+              className="edit-sheet-link-button fx-press"
             >
               <Trans {...msg({ context: 'library.edit-card.remove-image-short', message: 'Remove' })} />
             </button>
@@ -853,7 +853,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   );
 
   const deleteButton = onDelete && (
-    <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className="edit-sheet-delete">
+    <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className={`edit-sheet-delete ${isReview ? 'fx-press' : 'fx-press-danger'}`}>
       <Trash2 size={16} aria-hidden="true" />
       <Trans {...msg({ id: 'library.card.delete', message: 'Delete card' })} />
     </button>
@@ -892,7 +892,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
               </div>
             </div>
           )}
-          <Dialog.Overlay data-edit-overlay className={`edit-sheet-overlay${isReview ? ' edit-sheet-overlay--review' : ''}`} />
+          <Dialog.Overlay data-edit-overlay className={`edit-sheet-overlay sf-scrim${isReview ? ' edit-sheet-overlay--review' : ''}`} />
           <Dialog.Content
             data-card-edit-sheet
             onOpenAutoFocus={event => {
@@ -918,7 +918,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 type="button"
                 aria-label={_(msg({ id: 'library.edit-card.close', message: 'Close editor' }))}
                 onClick={() => closeSheet()}
-                className="edit-sheet-close"
+                className="edit-sheet-close fx-press"
               >
                 <X size={16} aria-hidden="true" />
               </button>
@@ -973,7 +973,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     </details>
                   </>
                 ) : (
-                  <div className="edit-sheet-grid">
+                  <div className="edit-sheet-grid fx-stagger">
                     {wordField}
                     {partOfSpeechField}
                     {meaningField()}
@@ -1007,13 +1007,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
               </fieldset>
               </div>
 
-              <footer className="edit-sheet-footer">
+              <footer className={`edit-sheet-footer${isReview ? ' fx-enter-2' : ''}`}>
                 {!isReview && deleteButton}
                 {isReview && <span className="edit-sheet-esc"><kbd><Trans {...msg({ context: 'library.edit-card.esc-key', message: 'Esc' })} /></kbd> <Trans {...msg({ context: 'library.edit-card.back-to-card', message: 'back to card' })} /></span>}
-                <button type="button" onClick={() => closeSheet()} disabled={writing} className="edit-sheet-button">
+                <button type="button" onClick={() => closeSheet()} disabled={writing} className="edit-sheet-button fx-press">
                   <span>{dirty ? <Trans {...msg({ context: 'library.edit-card.discard', message: 'Discard' })} /> : <Trans {...msg({ context: 'library.edit-card.cancel', message: 'Cancel' })} />}</span>
                 </button>
-                <button type="submit" disabled={writing} className="edit-sheet-button edit-sheet-button--primary">
+                <button type="submit" disabled={writing} className="edit-sheet-button edit-sheet-button--primary fx-press">
                   {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
                   <span>{saving ? <Trans {...msg({ context: 'library.edit-card.saving', message: 'Saving changes…' })} /> : error === 'save-failed' ? <Trans {...msg({ context: 'library.edit-card.retry-save', message: 'Retry save' })} /> : context ? <Trans {...msg({ id: 'library.edit-card.save-resume', message: 'Save & resume' })} /> : <Trans {...msg({ context: 'library.edit-card.save', message: 'Save changes' })} />}</span>
                   {isReview && !saving && <kbd aria-hidden="true">⌘↵</kbd>}

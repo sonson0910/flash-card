@@ -21,9 +21,9 @@
     <section class="options-hero" aria-labelledby="options-heading">
       <div class="hero-copy">
       <p class="eyebrow" data-i18n="optionsCrystalEyebrow">SETTINGS // MY SETUP</p>
-      <h1 id="options-heading"><span data-i18n="optionsHeadingLead">Cài</span> <em data-i18n="optionsHeadingAccent">đặt</em></h1>
-      <p class="intro" data-i18n="optionsIntro">Tuỳ chỉnh cách SonFlash dịch và lưu từ trên mọi trang bạn đọc.</p>
-      <p class="context-note" data-i18n="optionsContextNote">Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới SonFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
+      <h1 id="options-heading" class="fx-title"><span data-i18n="optionsHeadingLead">Cài</span> <em data-i18n="optionsHeadingAccent">đặt</em></h1>
+      <p class="intro fx-enter" data-i18n="optionsIntro">Tuỳ chỉnh cách SonFlash dịch và lưu từ trên mọi trang bạn đọc.</p>
+      <p class="context-note fx-enter" data-i18n="optionsContextNote">Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới SonFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
       </div>
       <div class="lumi-link">
         <p class="lumi-bubble"><span data-i18n="optionsLumiLabel">LUMI · LINK</span><span data-i18n="optionsLumiLine">Trang nào được cấp quyền, mình sẽ đứng chờ ở đó.</span></p>
@@ -33,7 +33,7 @@
 
     <form id="settings-form">
       <div class="settings-grid">
-        <div class="settings-column">
+        <div class="settings-column fx-enter-2">
           <fieldset>
             <legend data-i18n="optionsDisplaySoundLegend">Hiển thị &amp; âm thanh</legend>
             <label class="check-row">
@@ -52,7 +52,7 @@
             <div class="site-add-row">
               <label class="sr-only" for="selection-icon-site" data-i18n="optionsSiteInputLabel">Website cho phép floating icon</label>
               <input id="selection-icon-site" type="url" data-i18n-placeholder="optionsSiteInputPlaceholder" placeholder="https://example.com/article">
-              <button id="add-selection-icon-site" class="secondary-button" type="button" data-i18n="optionsAddSite">Cấp quyền</button>
+              <button id="add-selection-icon-site" class="secondary-button fx-press" type="button" data-i18n="optionsAddSite">Cấp quyền</button>
             </div>
             <p id="selection-icon-status" class="status" role="status" aria-live="polite"></p>
             <p id="selection-icon-empty" class="empty-state" data-i18n="optionsSiteEmpty">Chưa cấp quyền cho website nào.</p>
@@ -60,7 +60,7 @@
           </fieldset>
         </div>
 
-        <div class="settings-column">
+        <div class="settings-column fx-enter-3">
           <fieldset>
             <legend data-i18n="optionsHistoryLegend">Lịch sử &amp; dịch</legend>
             <label class="check-row">
@@ -99,9 +99,9 @@
 
       <footer class="settings-footer">
         <p id="settings-status" class="status" role="status" aria-live="polite"></p>
-        <a href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="optionsPrivacyLink">Đọc chính sách quyền riêng tư</a>
+        <a class="fx-press" href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener" data-i18n="optionsPrivacyLink">Đọc chính sách quyền riêng tư</a>
         <button id="open-shortcuts" class="footer-link" type="button" data-i18n="optionsShortcutsLink">Phím tắt Chrome</button>
-        <button id="save-settings" class="save-button" type="submit" data-i18n="optionsSaveButton">Lưu cài đặt</button>
+        <button id="save-settings" class="save-button fx-press" type="submit" data-i18n="optionsSaveButton">Lưu cài đặt</button>
       </footer>
     </form>
   </main>

@@ -66,7 +66,7 @@ function NotificationToast({
       aria-live={role === 'alert' ? 'assertive' : 'polite'}
       aria-atomic="true"
       aria-busy={busy}
-      className="notification-toast pointer-events-auto relative"
+      className="notification-toast sf-toast pointer-events-auto relative"
     >
       <div className="notification-toast-layout">
         <span className="notification-toast-icon" aria-hidden="true">
@@ -82,7 +82,7 @@ function NotificationToast({
                 onClick={() => { void onAction(); }}
                 disabled={busy}
                 aria-label={busy && actionBusyLabel ? actionBusyLabel : actionAriaLabel}
-                className="notification-toast-action"
+                className="notification-toast-action fx-press"
               >
                 <span className="notification-toast-action-label">
                   {busy ? <Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
@@ -96,7 +96,7 @@ function NotificationToast({
           <button
             type="button"
             onClick={onDismiss}
-            className="notification-toast-dismiss"
+            className="notification-toast-dismiss fx-press"
             aria-label={dismissLabel}
           >
             <X size={16} aria-hidden="true" />

@@ -690,22 +690,19 @@ html[data-save-data="true"] .zen-glass-slab {
   animation: async-content-enter 200ms var(--ease-out-expo) both;
 }
 
-/* Crystal panels are cut at the top-left and bottom-right corners. clip-path removes the border there,
-   so the two cut edges are redrawn as gradient lines in the panel's edge colour. The compound selector
-   outranks the rounded-* and background utilities on the same element; a panel with a gradient fill
-   passes it through --sf-chamfer-fill. Classic themes set --nk-chamfer to none and keep their radius. */
+/* Crystal panels are cut at the top-left and bottom-right corners. As on the design boards, the cut carries no
+   line of its own: a panel's 1px edge simply stops at the cut. The compound selector outranks the rounded-* and
+   background utilities on the same element; a panel with a gradient fill passes it through --sf-chamfer-fill.
+   Classic themes set --nk-chamfer to none and keep their radius. */
 @utility crystal-chamfer {
   clip-path: var(--nk-chamfer);
   &:is(html[data-theme-family=crystal] *) {
     border-radius: 0;
-    background-image:
-      linear-gradient(135deg, transparent 12.2px, var(--sf-chamfer-edge, var(--sf-border)) 12.2px 13.9px, transparent 13.9px),
-      linear-gradient(315deg, transparent 12.2px, var(--sf-chamfer-edge, var(--sf-border)) 12.2px 13.9px, transparent 13.9px),
-      var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
-    background-position: left top, right bottom, center;
-    background-size: 36px 36px, 36px 36px, 100% 100%;
+    background-image: var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
+    background-position: center;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
-    background-origin: border-box, border-box, padding-box;
+    background-origin: padding-box;
   }
 }
 
@@ -713,14 +710,11 @@ html[data-save-data="true"] .zen-glass-slab {
   clip-path: var(--nk-chamfer-sm);
   &:is(html[data-theme-family=crystal] *) {
     border-radius: 0;
-    background-image:
-      linear-gradient(135deg, transparent 6.6px, var(--sf-chamfer-edge, var(--sf-border)) 6.6px 8.3px, transparent 8.3px),
-      linear-gradient(315deg, transparent 6.6px, var(--sf-chamfer-edge, var(--sf-border)) 6.6px 8.3px, transparent 8.3px),
-      var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
-    background-position: left top, right bottom, center;
-    background-size: 20px 20px, 20px 20px, 100% 100%;
+    background-image: var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
+    background-position: center;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
-    background-origin: border-box, border-box, padding-box;
+    background-origin: padding-box;
   }
 }
 
@@ -863,6 +857,10 @@ html[data-lumi="off"] [data-lumi-pose] {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+html:not([data-theme-family="crystal"]) .bento-stat-card {
+  border-radius: var(--sf-panel-radius, 24px);
+}
+
 .bento-stat-card:hover {
   border-color: color-mix(in srgb, var(--sf-brand) 40%, var(--sf-border));
   transform: translateY(-2px);
@@ -880,6 +878,10 @@ html[data-lumi="off"] [data-lumi-pose] {
     inset 0 1px 0 var(--sf-edge-highlight),
     0 1px 2px 0 rgb(0 0 0 / 0.03);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:not([data-theme-family="crystal"]) .practice-bento-card {
+  border-radius: var(--sf-card-radius, 20px);
 }
 
 .practice-bento-card:hover {
@@ -912,3 +914,55 @@ html[data-lumi="off"] [data-lumi-pose] {
 .wave-bar-4 {
   animation: audio-wave-bounce 0.5s infinite 0.4s alternate ease-in-out;
 }
+
+/* Classic motion layer from canvas/shared.css, scoped off Crystal so Crystal motion stays independent.
+   Entrances use backwards fill so entered panels/dialogs do not retain an identity transform containing block. */
+@keyframes au-star { 0%, 100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.25) rotate(10deg); } }
+@keyframes au-reveal { from { opacity: 0; transform: translate3d(0, 10px, 0); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes au-deal-a { from { opacity: 0; transform: translate3d(70px, 18px, 0) rotate(4deg) scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes au-laser { 0%, 100% { opacity: .75; transform: scaleX(.92); } 50% { opacity: 1; transform: scaleX(1); } }
+@keyframes ip-star { 0%, 100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.25) rotate(-10deg); } }
+@keyframes ip-reveal { from { opacity: 0; transform: translate3d(0, 8px, 0); letter-spacing: .02em; } to { opacity: 1; transform: none; } }
+@keyframes ip-deal-a { from { opacity: 0; transform: translate3d(-60px, -20px, 0) rotate(-5deg); } to { opacity: 1; transform: none; } }
+@keyframes ip-rule { 0%, 100% { transform: scaleX(.6); } 50% { transform: scaleX(1); } }
+@keyframes sf-rise-k { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+@keyframes sf-deal-k { from { opacity: 0; transform: translate3d(0, 60px, 0) scale(.9) rotate(-8deg); } to { opacity: 1; transform: none; } }
+@keyframes sf-sheen-k { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
+@keyframes sf-grow-k { from { scale: .2 1; } }
+@keyframes sf-pop-k { from { opacity: 0; transform: translate3d(0, -6px, 0) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes sf-pulse-k { 0%, 100% { box-shadow: 0 0 0 0 var(--sf-pulse, rgb(40 211 244 / 0.45)); } 50% { box-shadow: 0 0 0 14px transparent; } }
+@keyframes sf-wave-k { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+@keyframes sf-shimmer-k { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes sf-spin-k { to { transform: rotate(360deg); } }
+@keyframes sf-shake-k { 0%, 100% { transform: none; } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+html:not([data-theme-family="crystal"]) .sf-press { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+html:not([data-theme-family="crystal"]) .sf-rise { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) backwards; }
+html:not([data-theme-family="crystal"]) .sf-rise-2 { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) 120ms backwards; }
+html:not([data-theme-family="crystal"]) .sf-rise-3 { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) 700ms backwards; }
+html:not([data-theme-family="crystal"]) .sf-deal-1 { animation: sf-deal-k 700ms cubic-bezier(.16, 1, .3, 1) 250ms both; }
+html:not([data-theme-family="crystal"]) .sf-deal-2 { animation: sf-deal-k 700ms cubic-bezier(.16, 1, .3, 1) 380ms both; }
+html:not([data-theme-family="crystal"]) .sf-sheen { animation: sf-sheen-k 3.6s ease-in-out infinite; }
+html:not([data-theme-family="crystal"]) .sf-grow { transform-origin: left; animation: sf-grow-k 900ms cubic-bezier(.16, 1, .3, 1) 400ms backwards; }
+html:not([data-theme-family="crystal"]) .sf-pop { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both; transform-origin: 120px 0; }
+html:not([data-theme-family="crystal"]) .sf-pulse { animation: sf-pulse-k 1.6s ease-out infinite; }
+html:not([data-theme-family="crystal"]) .sf-wave { transform-origin: center; animation: sf-wave-k 900ms ease-in-out infinite; }
+html:not([data-theme-family="crystal"]) .sf-shake { animation: sf-shake-k 320ms ease-in-out 2; }
+
+@media (hover: hover) and (pointer: fine) {
+  html:not([data-theme-family="crystal"]) .sf-press:hover { transform: translateY(-2px); filter: brightness(1.06); }
+}
+
+html:not([data-theme-family="crystal"]) .sf-press:active { transform: translateY(0) scale(.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-theme-family="crystal"]) :is(.sf-rise, .sf-rise-2, .sf-rise-3, .sf-deal-1, .sf-deal-2, .sf-sheen, .sf-grow, .sf-pop, .sf-pulse, .sf-wave, .sf-shake) {
+    animation: none;
+  }
+  html:not([data-theme-family="crystal"]) .sf-press { transition: none; }
+}
+
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.sf-rise, .sf-rise-2, .sf-rise-3, .sf-deal-1, .sf-deal-2, .sf-sheen, .sf-grow, .sf-pop, .sf-pulse, .sf-wave, .sf-shake) {
+  animation: none;
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .sf-press { transition: none; }

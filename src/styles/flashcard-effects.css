@@ -87,12 +87,25 @@
   .flashcard-details-dialog {
     background-color: color-mix(in srgb, var(--sf-surface) 95%, transparent);
   }
-  .flashcard-word-gradient {
+  :where(html[data-theme-family=crystal]) .flashcard-word-gradient {
     color: transparent;
     background-clip: text;
     -webkit-background-clip: text;
     font-family: var(--sf-font-display);
     font-weight: 650;
+    background-image: linear-gradient(
+      to bottom right,
+      var(--sf-text),
+      var(--sf-text) 50%,
+      color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted))
+    );
+  }
+:where(html:not([data-theme-family=crystal])) .flashcard-word-gradient {
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    font-family: var(--sf-font-display);
+    font-weight: var(--sf-display-weight, 650);
     background-image: linear-gradient(
       to bottom right,
       var(--sf-text),
@@ -125,8 +138,8 @@
   .flashcard-shell[data-card-tier] .flashcard-back:not(.zen-glass-slab) {
     --flashcard-surface: var(--sf-dialog-bg);
   }
-  :root:not([data-theme-family]):not(.dark) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
-  :root[data-theme-family="classic"]:not(.dark) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+  :root[data-theme-family="classic"]:not(.dark) .flashcard-shell[data-card-tier] .flashcard-face:not(.zen-glass-slab),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-face[data-card-look="paper"]:not(.zen-glass-slab) {
     /* A color cannot occupy the first layer of a multi-background surface. */
     --flashcard-surface: linear-gradient(var(--sf-surface), var(--sf-surface));
   }
@@ -142,13 +155,47 @@
     --flashcard-tier-rim: var(--sf-gold-rim);
     --flashcard-tier-shadow: 0 22px 48px -30px var(--sf-reward);
   }
-  :root:not([data-theme-family]) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
-  :root[data-theme-family="classic"] .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
-    border-color: var(--sf-border);
+  :root:not([data-theme-family="crystal"]).dark .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+    border: 1.5px solid transparent;
+    --flashcard-surface: linear-gradient(180deg, #0f2430, #0a1a22);
+    box-shadow: var(--flashcard-tier-shadow);
   }
-  :root.dark:not([data-theme-family]) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
-  :root[data-theme-family="classic"].dark .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
-    border-color: transparent;
+  :root:not([data-theme-family="crystal"]).dark .flashcard-shell[data-card-tier="new"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-tier="new"] {
+    --flashcard-tier-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(0 0 0 / 0.3);
+  }
+  :root:not([data-theme-family="crystal"]).dark .flashcard-shell[data-card-tier="learning"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-tier="learning"] {
+    --flashcard-tier-shadow:
+      0 40px 90px -30px rgb(0 0 0 / 0.9),
+      0 0 50px -14px rgb(40 211 244 / 0.5),
+      0 0 0 1px rgb(0 0 0 / 0.3);
+  }
+  :root:not([data-theme-family="crystal"]).dark .flashcard-shell[data-card-tier="mastered"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-tier="mastered"] {
+    --flashcard-tier-shadow:
+      0 40px 90px -30px rgb(0 0 0 / 0.9),
+      0 0 56px -12px rgb(245 174 57 / 0.55),
+      0 0 0 1px rgb(0 0 0 / 0.3);
+  }
+  :root:not([data-theme-family="crystal"]):not(.dark) .flashcard-shell[data-card-tier] .flashcard-face:not(.zen-glass-slab),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-tier] .flashcard-face:not(.zen-glass-slab) {
+    border: 0;
+    box-shadow:
+      inset 0 1px 0 #ffffff,
+      inset 0 0 0 1px rgb(29 26 22 / 0.06),
+      0 1px 2px rgb(60 40 20 / 0.08),
+      0 10px 20px -10px rgb(60 40 20 / 0.18),
+      0 50px 70px -40px rgb(60 40 20 / 0.45);
+  }
+  :root:not([data-theme-family="crystal"]):not(.dark) .flashcard-shell[data-card-tier] .flashcard-back:not(.zen-glass-slab),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-tier] .flashcard-back:not(.zen-glass-slab) {
+    border: 0;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 10px 20px -10px rgb(60 40 20 / 0.3),
+      0 50px 70px -40px rgb(40 30 20 / 0.6);
   }
   :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back, .flashcard-tier-rim) {
     border-radius: 0;
@@ -162,6 +209,10 @@
   }
   :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier="mastered"] {
     --flashcard-tier-shadow: 0 22px 52px -28px var(--sf-reward);
+  }
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"]::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"]::before {
+    border-radius: calc(var(--flashcard-radius, 34px) + 4px);
   }
   .flashcard-shell::before {
     position: absolute;

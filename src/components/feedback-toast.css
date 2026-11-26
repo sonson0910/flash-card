@@ -1,52 +1,43 @@
 html[data-theme-family="classic"] {
   --feedback-panel: #fffcf5;
-  --feedback-body: #3d372f;
-  --feedback-dismiss: #8a8072;
+  --feedback-body: var(--sf-text-body);
+  --feedback-dismiss: var(--sf-text-subtle);
   --feedback-shadow: inset 0 1px 0 #fff, 0 1px 2px rgb(60 40 20 / .08), 0 20px 36px -22px rgb(60 40 20 / .5);
   --undo-bg: #1d1a16;
   --undo-text: #fbf6ec;
   --undo-accent: #e8a075;
+  --undo-bar: var(--undo-accent);
   --undo-shortcut: rgb(251 246 236 / .14);
   --undo-shadow: var(--feedback-shadow);
   --undo-radius: 14px;
   --undo-clip: none;
   --undo-filter: none;
-  --feedback-danger: #b3261e;
-  --feedback-danger-bg: rgb(197 54 55 / .07);
-  --feedback-danger-line: rgb(197 54 55 / .25);
-  --feedback-warning: #8a5a0c;
-  --feedback-warning-bg: rgb(184 134 43 / .1);
-  --feedback-warning-line: rgb(184 134 43 / .3);
-  --feedback-success: #2c6a3d;
-  --feedback-success-bg: rgb(51 115 68 / .09);
-  --feedback-success-line: rgb(51 115 68 / .25);
-  --feedback-sync: #1d1a16;
-  --feedback-sync-bg: rgb(29 26 22 / .05);
-  --feedback-sync-line: rgb(29 26 22 / .14);
+  /* The board's toast tones are the shared status tokens (danger, warn, ok, info). */
+  --feedback-danger: var(--sf-danger);
+  --feedback-danger-bg: var(--sf-danger-soft);
+  --feedback-danger-line: var(--sf-danger-line);
+  --feedback-warning: var(--sf-warn);
+  --feedback-warning-bg: var(--sf-warn-bg);
+  --feedback-warning-line: var(--sf-warn-line);
+  --feedback-success: var(--sf-success-text);
+  --feedback-success-bg: var(--sf-success-soft);
+  --feedback-success-line: var(--sf-success-line);
+  --feedback-sync: var(--sf-info);
+  --feedback-sync-bg: var(--sf-info-bg);
+  --feedback-sync-line: var(--sf-info-line);
 }
 
 html[data-theme-family="classic"].dark {
-  --feedback-panel: linear-gradient(180deg, #102733, #0c1f28);
-  --feedback-body: #b5c2ca;
-  --feedback-dismiss: #6f808a;
+  --feedback-panel: linear-gradient(180deg, #11293600, #11293600), linear-gradient(180deg, #102733, #0c1f28);
   --feedback-shadow: 0 24px 50px -24px rgb(0 0 0 / .95), inset 0 1px 0 rgb(255 255 255 / .05);
   --undo-bg: #e5ecf1;
   --undo-text: #06161f;
+  /* The board's snackAccent #0a7f98 is 3.9:1 on #e5ecf1, below AA for the 14px Undo label; the label keeps
+     #08667b and the progress bar (non-text, 3:1) takes the board value. */
   --undo-accent: #08667b;
+  --undo-bar: #0a7f98;
   --undo-shortcut: rgb(6 22 31 / .1);
   --undo-shadow: var(--feedback-shadow);
-  --feedback-danger: #ff8a86;
-  --feedback-danger-bg: rgb(237 83 80 / .12);
-  --feedback-danger-line: rgb(237 83 80 / .35);
-  --feedback-warning: #f7c46e;
-  --feedback-warning-bg: rgb(245 174 57 / .1);
-  --feedback-warning-line: rgb(245 174 57 / .32);
-  --feedback-success: #9be09e;
-  --feedback-success-bg: rgb(117 208 121 / .12);
-  --feedback-success-line: rgb(117 208 121 / .32);
-  --feedback-sync: #7ee6fa;
-  --feedback-sync-bg: rgb(40 211 244 / .1);
-  --feedback-sync-line: rgb(40 211 244 / .3);
 }
 
 html[data-theme-family="crystal"] {
@@ -247,6 +238,7 @@ html[data-theme-family="classic"] [data-notification-toast] {
   padding: 14px;
   border: 1px solid var(--notification-line);
   border-radius: 16px;
+  color: var(--sf-text);
   box-shadow: var(--feedback-shadow);
 }
 
@@ -257,27 +249,66 @@ html[data-theme-family="classic"] [data-notification-toast]::before { display: n
 html[data-theme-family="classic"] .notification-toast-title {
   color: var(--notification-fg);
   font-size: 11px;
+  line-height: normal;
   font-weight: 650;
   letter-spacing: .09em;
   text-transform: uppercase;
 }
 
-html[data-theme-family="classic"] .notification-toast-dismiss:hover { background: color-mix(in srgb, var(--sf-text) 5%, transparent); }
+/* The board's 28px dismiss circle is painted inside the 44px target by an 8px transparent border; the -8px
+   margins put the circle where the board has it and give the message the board's 284px column. */
+:where(html:not([data-theme-family=crystal])) .notification-toast-dismiss {
+  margin: -8px;
+  border: 8px solid transparent;
+  background-clip: padding-box;
+}
 
+:where(html:not([data-theme-family=crystal])) .notification-toast-dismiss svg { width: 13px; height: 13px; stroke-width: 2.2; }
+
+html[data-theme-family="classic"] .notification-toast-dismiss:hover { background: color-mix(in srgb, var(--sf-text) 5%, transparent) padding-box; }
+
+/* The board's toasts stay still on hover: no lift and no shadow change from the shared toast layer. */
+html[data-theme-family="classic"] [data-notification-toast]:hover { box-shadow: var(--feedback-shadow); transform: none; }
+
+:where(html:not([data-theme-family=crystal])) [data-undo-toast]:hover { box-shadow: var(--undo-shadow); transform: none; }
+
+/* The board's ring spinner: 14px inside its 2px ring (the board box is content-box), turning at sf-spin speed. */
+:where(html:not([data-theme-family=crystal])) .notification-toast-spinner { width: 18px; height: 18px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-motion="reduced"])) .notification-toast-spinner { animation: sf-spin-k 900ms linear infinite; }
+}
+
+/* The board's action chip: 30px high, 9px under the message, inside the 44px target. */
+:where(html:not([data-theme-family=crystal])) .notification-toast-actions { margin: 2px 0 -7px; }
+
+html[data-theme-family="classic"] .notification-toast-action-label { min-height: 30px; border-radius: 9px; }
+
+html:not([data-theme-family="crystal"]) :is(.notification-toast-action, .notification-toast-dismiss, .undo-toast-action, .undo-toast-dismiss).fx-press:disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
+}
+
+/* As on the board, the toast itself is the unclipped wrapper that casts the drop shadow (a clip-path on the
+   same element would cut the shadow away); its ::after is the chamfered fill with the tone line, and the ::before
+   strip is clipped to the fill's cut corner so its glow stays inside the toast. */
 html[data-theme-family="crystal"] [data-notification-toast] {
   padding: 13px 14px 13px 18px;
-  clip-path: var(--nk-chamfer-sm);
-  box-shadow: inset 0 0 0 1px var(--notification-line);
+  background: none;
+  clip-path: none;
+  box-shadow: none;
   filter: var(--feedback-filter);
 }
 
 html[data-theme-family="crystal"] [data-notification-toast]::before {
   position: absolute;
+  z-index: -1;
   inset: 0 auto 0 0;
   width: 3px;
   border-radius: 0;
   background: var(--notification-fg);
   box-shadow: 0 0 10px var(--notification-fg);
+  clip-path: polygon(0 10px, 10px 0, 13px 0, 13px 100%, 0 100%);
   content: "";
 }
 
@@ -285,6 +316,21 @@ html[data-theme-family="crystal"] [data-notification-toast] .notification-toast-
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
+
+html[data-theme-family="crystal"] .notification-toast-icon svg { stroke-width: 2.4; }
+
+html[data-theme-family="crystal"] .notification-toast-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2.5px solid var(--sf-border);
+  border-top-color: var(--notification-fg);
+}
+
+/* The 44px dismiss target is centred on the board's 26px button, with its 12px cross. */
+html[data-theme-family="crystal"] .notification-toast-dismiss { margin: -9px -9px 0 0; border-radius: 0; }
+html[data-theme-family="crystal"] .notification-toast-dismiss svg { width: 12px; height: 12px; stroke-width: 2.6; }
+
+html[data-theme-family="crystal"] .notification-toast-actions { margin-top: 1px; }
 
 html[data-theme-family] [data-notification-toast] .notification-toast-icon {
   box-shadow: none;
@@ -317,7 +363,7 @@ html[data-theme-family="crystal"] .notification-toast-action {
 html[data-theme-family="crystal"] .notification-toast-action-label {
   isolation: isolate;
   min-height: 30px;
-  padding: 0 14px;
+  padding: 0 12px;
   border: 0;
   border-radius: 0;
   background: none;
@@ -329,7 +375,6 @@ html[data-theme-family="crystal"] .notification-toast-action-label::before {
   inset: 0;
   background: var(--notification-icon-bg);
   box-shadow: inset 0 0 0 1px var(--notification-line);
-  clip-path: var(--nk-chamfer-sm);
   content: "";
   transform: skewX(-12deg);
 }
@@ -337,6 +382,22 @@ html[data-theme-family="crystal"] .notification-toast-action-label::before {
 html[data-theme-family="crystal"] .notification-toast-dismiss:hover { background: rgb(255 255 255 / .08); }
 
 html[data-theme-family] [data-notification-toast]::after { display: none; }
+
+html[data-theme-family="crystal"] [data-notification-toast]:not([data-undo-toast])::after {
+  display: block;
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  opacity: 1;
+  filter: none;
+  background: var(--feedback-panel);
+  box-shadow: inset 0 0 0 1px var(--notification-line);
+  clip-path: var(--nk-chamfer-sm);
+  content: "";
+}
 
 .undo-toast {
   display: flex;
@@ -363,7 +424,7 @@ html[data-theme-family] [data-notification-toast]::after { display: none; }
   opacity: .7;
 }
 
-html[data-theme-family="crystal"] .undo-toast-icon { opacity: .9; }
+html[data-theme-family="crystal"] .undo-toast-icon { opacity: 1; stroke-width: 2.2; }
 
 .undo-toast-message {
   min-width: 0;
@@ -454,10 +515,10 @@ html[data-theme-family="crystal"] .undo-toast-icon { opacity: .9; }
 }
 
 html[data-theme-family="classic"] .undo-toast-action:hover,
-html[data-theme-family="classic"] .undo-toast-dismiss:hover { background: var(--undo-shortcut); }
+html[data-theme-family="classic"] .undo-toast-dismiss:hover { background: var(--undo-shortcut) padding-box; }
 
 html[data-theme-family="crystal"] .undo-toast {
-  min-height: 56px;
+  min-height: 52px;
   padding-inline: 16px 8px;
   gap: 10px;
 }
@@ -465,27 +526,63 @@ html[data-theme-family="crystal"] .undo-toast {
 html[data-theme-family="crystal"] .undo-toast-message { font-weight: 700; }
 
 html[data-theme-family="classic"] .undo-toast-subject {
-  font-family: Fraunces, Georgia, serif;
+  font-family: var(--sf-font-display);
   font-weight: 400;
 }
+
+:where(html:not([data-theme-family=crystal])) .undo-toast-icon { width: 16px; height: 16px; stroke-width: 1.9; }
+
+/* The board's 38px Undo button is painted inside the 44px target by 3px transparent bands; the vertical radius
+   grows by the band so the painted corners stay 10px. */
+:where(html:not([data-theme-family=crystal])) .undo-toast-action {
+  border: solid transparent;
+  border-width: 3px 0;
+  border-radius: 10px / 13px;
+  background-clip: padding-box;
+}
+
+:where(html:not([data-theme-family=crystal])) .undo-toast-shortcut { line-height: normal; }
+
+:where(html:not([data-theme-family=crystal])) .undo-toast-progress { background: var(--undo-bar); }
 
 html[data-theme-family="crystal"] .undo-toast-subject {
   font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
   font-weight: 800;
 }
 
+/* The button keeps a 44px touch target; its ::before draws the board's 36px chamfered chip behind the label. */
 html[data-theme-family="crystal"] .undo-toast-action {
+  position: relative;
+  isolation: isolate;
   min-height: 44px;
   padding: 0 12px;
-  clip-path: var(--nk-chamfer-sm);
   border-radius: 0;
-  background: var(--undo-action-bg);
+  background: none;
   color: #fff;
   font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
   font-style: italic;
   font-weight: 900;
   letter-spacing: .04em;
   text-transform: uppercase;
+}
+
+html[data-theme-family="crystal"] .undo-toast-action::before {
+  position: absolute;
+  z-index: -1;
+  inset: 4px 0;
+  background: var(--undo-action-bg);
+  clip-path: var(--nk-chamfer-sm);
+  content: "";
+}
+
+html[data-theme-family="crystal"] .undo-toast-shortcut {
+  padding: 1px 5px;
+  border-radius: 0;
+  background: rgb(255 255 255 / .2);
+  font-family: var(--sf-font-mono);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 html[data-theme-family="crystal"] .undo-toast-dismiss { color: var(--feedback-dismiss); }
@@ -505,4 +602,8 @@ html[data-theme-family="crystal"] .undo-toast-progress { box-shadow: 0 0 8px var
 
 @media (prefers-reduced-motion: reduce) {
   .notification-toast-spinner { animation: none !important; }
+}
+
+html[data-motion="reduced"] :is(.notification-toast-spinner, .undo-toast-progress) {
+  animation: none !important;
 }

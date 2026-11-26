@@ -32,7 +32,7 @@
       </sc-for>
     </nav>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" class="{{fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
         <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
       </button>
@@ -43,49 +43,49 @@
       <span style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
         <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">Lv</span>7
       </span>
-      <button aria-label="Account" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; cursor: pointer;">KB</button>
+      <button aria-label="Account" class="{{fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; cursor: pointer;">KB</button>
     </div>
   </header>
 
   <main style="position: relative; z-index: 2; padding: 36px 56px 0;">
     <div style="display: flex; align-items: flex-end; gap: 20px;">
       <div>
-        <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Vocabulary</h1>
-        <p style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text}};">1,228</span> words across 4 decks · <span style="color: {{t.accentText}}; font-weight: 600;">12 due today</span></p>
+        <h1 class="{{fx.title}}" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Vocabulary</h1>
+        <p class="{{fx.enter}}" style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text}};">1,228</span> words across 4 decks · <span style="color: {{t.accentText}}; font-weight: 600;">12 due today</span></p>
       </div>
-      <label style="margin-left: auto; width: 340px; height: 48px; box-sizing: border-box; padding: 0 12px 0 16px; border-radius: {{t.inputRadius}}; border: 1px solid {{t.line}}; background: {{t.inputBg}}; box-shadow: {{t.inputShadow}}; display: flex; align-items: center; gap: 10px; color: {{t.text2}};">
+      <label class="sf-ease" style="margin-left: auto; width: 340px; height: 48px; box-sizing: border-box; padding: 0 12px 0 16px; border-radius: {{t.inputRadius}}; border: 1px solid {{t.line}}; background: {{t.inputBg}}; box-shadow: {{t.inputShadow}}; display: flex; align-items: center; gap: 10px; color: {{t.text2}};">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
         <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search words</span>
         <input placeholder="Search words or meanings" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.text}}; font-family: inherit; font-size: 14px;">
         <span style="height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid {{t.line}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center;">/</span>
       </label>
-      <button class="sf-press" style="height: 48px; padding: 0 20px 0 16px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <button class="{{fx.press}}" style="height: 48px; padding: 0 20px 0 16px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
         Create card
       </button>
     </div>
 
-    <div style="margin-top: 26px; display: flex; align-items: center; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid {{t.line}};">
+    <div class="{{fx.enter}}" style="margin-top: 26px; display: flex; align-items: center; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid {{t.line}};">
       <div role="tablist" aria-label="Decks" style="display: flex; gap: 4px;">
         <sc-for list="{{decks}}" as="d" hint-placeholder-count="5">
-          <button role="tab" aria-selected="{{d.selected}}" onClick="{{d.pick}}" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{d.border}}; background: {{d.bg}}; color: {{d.color}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">{{d.name}}<span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; font-weight: 500; opacity: 0.65;">{{d.count}}</span></button>
+          <button role="tab" aria-selected="{{d.selected}}" onClick="{{d.pick}}" class="sf-ease" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{d.border}}; background: {{d.bg}}; color: {{d.color}}; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">{{d.name}}<span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; font-weight: 500; opacity: 0.65;">{{d.count}}</span></button>
         </sc-for>
       </div>
       <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
         <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
-          <button aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.color}}; font-size: 13px; font-weight: 550; display: flex; align-items: center; gap: 7px; cursor: pointer;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{f.dot}}; box-shadow: {{f.glow}};"></span>{{f.label}}</button>
+          <button aria-pressed="{{f.on}}" onClick="{{f.pick}}" class="sf-ease" style="height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.color}}; font-size: 13px; font-weight: 550; display: flex; align-items: center; gap: 7px; cursor: pointer;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{f.dot}}; box-shadow: {{f.glow}};"></span>{{f.label}}</button>
         </sc-for>
         <span aria-hidden="true" style="width: 1px; height: 22px; margin: 0 6px; background: {{t.line}};"></span>
         <div role="group" aria-label="View" style="display: flex; padding: 3px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
-          <button aria-label="Grid view" aria-pressed="true" style="width: 38px; height: 32px; border-radius: 9px; border: 0; background: {{t.segOnBg}}; color: {{t.segOnText}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"></rect></svg></button>
-          <button aria-label="List view" aria-pressed="false" style="width: 38px; height: 32px; border-radius: 9px; border: 0; background: transparent; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"></path></svg></button>
+          <button aria-label="Grid view" aria-pressed="true" class="sf-ease" style="width: 38px; height: 32px; border-radius: 9px; border: 0; background: {{t.segOnBg}}; color: {{t.segOnText}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"></rect></svg></button>
+          <button aria-label="List view" aria-pressed="false" class="sf-ease" style="width: 38px; height: 32px; border-radius: 9px; border: 0; background: transparent; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"></path></svg></button>
         </div>
       </div>
     </div>
 
-    <div style="margin-top: 24px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px;">
+    <div class="{{fx.stagger}}" style="margin-top: 24px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px;">
       <sc-for list="{{cards}}" as="c" hint-placeholder-count="10">
-        <a href="#" class="sf-lift" style="position: relative; height: 272px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: {{t.text}}; border-radius: {{t.miniRadius}}px; border: {{c.border}}; background: {{c.bg}}; box-shadow: {{c.shadow}};">
+        <a href="#" class="{{fx.lift}}" style="position: relative; height: 272px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: {{t.text}}; border-radius: {{t.miniRadius}}px; border: {{c.border}}; background: {{c.bg}}; box-shadow: {{c.shadow}};">
           <div style="position: relative; flex-shrink: 0; height: 116px; margin: {{t.imgMargin}}; border-radius: {{t.imgRadius}}; overflow: hidden; background: {{c.cover}};">
             <sc-if value="{{c.hasImage}}" hint-placeholder-val="{{true}}">
               <img src="{{c.image}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block; -webkit-mask-image: {{t.imgMask}}; mask-image: {{t.imgMask}};">
@@ -189,6 +189,10 @@ class Component extends DCLogic {
       { word: 'Warden', pre: '', stress: 'War', rest: 'den', ipa: '/ˈwɔːrdn/', pos: 'Noun', meaning: 'Người quản lý', tier: 'new', next: 'new', category: 'People', cover: 'amber' },
       { word: 'Ambition', pre: 'Am', stress: 'bi', rest: 'tion', ipa: '/æmˈbɪʃn/', pos: 'Noun', meaning: 'Hoài bão', tier: 'mastered', next: '48d', category: 'Ambition', cover: 'teal' },
     ];
+    // This seed has no shared token object, so the motion roles are picked per look here (same names as t.fx).
+    const fx = dark
+      ? { enter: 'au-in', title: 'au-in', stagger: 'au-stagger', lift: 'au-lift', press: 'au-press' }
+      : { enter: 'ip-in', title: 'ip-ink', stagger: 'ip-stagger', lift: 'ip-lift', press: 'ip-press' };
     const s = this.state;
     const filterDefs = [
       { label: 'All', key: null, dot: dark ? '#e5ecf1' : '#1d1a16' },
@@ -202,7 +206,7 @@ class Component extends DCLogic {
     const deckDefs = [['All decks', '1,228'], ['Unassigned', '842'], ['Deep learning', '96'], ['TACN', '170'], ['IELTS', '120']];
     const navItems = ['Today', 'Paths', 'Vocabulary', 'Progress'];
     return {
-      t,
+      t, fx,
       toggleTheme: this.props.onToggleTheme ?? (() => {}),
       nav: navItems.map((label, i) => ({ label, current: i === 2 ? 'page' : 'false', bg: i === 2 ? t.navActiveBg : 'transparent', color: i === 2 ? t.navActiveText : t.navText })),
       decks: deckDefs.map(([name, count], i) => {

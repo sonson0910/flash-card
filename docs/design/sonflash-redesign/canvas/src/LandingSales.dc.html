@@ -3,33 +3,37 @@
 <!--#AMBIENT-->
   <section style="position: relative; z-index: 2; padding: 40px 72px 0; display: flex; align-items: center; gap: 60px;">
     <div style="flex-grow: 1;">
-      <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.accentText}};">Try it — no sign-up</p>
-      <h2 style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">Flip this card. <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">That’s the whole trick.</span></h2>
-      <p style="margin: 12px 0 0; max-width: 520px; font-size: 15px; line-height: 1.6; color: {{t.body}};">Click the card or press <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; padding: 1px 6px; border-radius: 6px; border: 1px solid {{t.line}};">Space</span>. SonFlash decides when you’ll see it again, so every review lands just before you’d forget.</p>
-      <div style="margin-top: 26px; display: flex; gap: 40px;">
+      <p class="{{t.fx.enter}}" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.accentText}};">Try it — no sign-up</p>
+      <h2 class="{{t.fx.title}}" style="margin: 10px 0 -0.2em; padding-bottom: 0.2em; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">Flip this card. <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">That’s the whole trick.</span></h2>
+      <p class="{{t.fx.enter2}}" style="margin: 12px 0 0; max-width: 520px; font-size: 15px; line-height: 1.6; color: {{t.body}};">Click the card or press <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; padding: 1px 6px; border-radius: 6px; border: 1px solid {{t.line}};">Space</span>. SonFlash decides when you’ll see it again, so every review lands just before you’d forget.</p>
+      <div class="{{t.fx.enter2}}" style="margin-top: 26px; display: flex; gap: 40px;">
         <sc-for list="{{proof}}" as="p" hint-placeholder-count="3">
           <div><div style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 36px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">{{p.value}}</div><div style="margin-top: 6px; font-size: 13px; color: {{t.text2}};">{{p.label}}</div></div>
         </sc-for>
       </div>
     </div>
     <div style="position: relative; width: 440px; height: 270px; flex-shrink: 0;">
-      <div aria-hidden="true" style="position: absolute; left: 150px; top: 16px; width: 270px; height: 240px; box-sizing: border-box; border-radius: {{t.cardRadius}}px; background: {{back.bg}}; box-shadow: {{back.shadow}}; transform: rotate(7deg); padding: 26px 26px; color: {{back.text}};">
+      <div aria-hidden="true" class="sf-deal-1" style="position: absolute; left: 150px; top: 16px; width: 270px; height: 240px; box-sizing: border-box; border-radius: {{t.cardRadius}}px; background: {{back.bg}}; box-shadow: {{back.shadow}}; rotate: 7deg; padding: 26px 26px; color: {{back.text}};">
         <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7;">Back</div>
         <div style="margin-top: 36px; font-family: Fraunces, Georgia, serif; font-size: 30px; line-height: 1.1;">ngay lập tức</div>
         <div style="margin-top: 10px; font-size: 13px; line-height: 1.5; opacity: 0.8;">“…demanded an immediate response.”</div>
       </div>
-      <button class="sf-lift" aria-label="Flip the demo card" style="position: absolute; left: 0; top: 0; width: 290px; height: 260px; box-sizing: border-box; padding: 0; text-align: left; border-radius: {{t.cardRadius}}px; overflow: hidden; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; display: flex; flex-direction: column; transform: rotate(-3deg); cursor: pointer; color: {{t.text}};">
+      <div class="sf-deal-2" style="position: absolute; left: 0; top: 0; width: 290px; height: 260px;">
+      <button class="{{t.fx.lift}}" aria-label="Flip the demo card" style="position: absolute; left: 0; top: 0; width: 290px; height: 260px; box-sizing: border-box; padding: 0; text-align: left; border-radius: {{t.cardRadius}}px; overflow: hidden; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; display: flex; flex-direction: column; rotate: -3deg; cursor: pointer; color: {{t.text}};">
         <div style="height: 120px; flex-shrink: 0; width: calc(100% - 0px); box-sizing: border-box; padding: {{t.imgMargin}};"><img src="../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg" alt="Illustration for immediate" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: {{t.imgRadius}}; -webkit-mask-image: {{t.imgMask}}; mask-image: {{t.imgMask}};"></div>
         <div style="padding: 10px 22px 0;">
           <div style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 40px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">Im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">me</span>diate</div>
           <div style="margin-top: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">/ɪˈmiːdiət/ · tap to flip</div>
         </div>
       </button>
-      <span class="sf-bob-a" style="position: absolute; left: 196px; top: 232px; height: 30px; padding: 0 12px; border-radius: 999px; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5"></path></svg>Click to flip</span>
+      </div>
+      <div class="sf-rise-3" style="position: absolute; left: 196px; top: 232px;">
+      <span class="sf-bob-a" style="height: 30px; padding: 0 12px; border-radius: 999px; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5"></path></svg>Click to flip</span>
+      </div>
     </div>
   </section>
 
-  <section style="position: relative; z-index: 2; margin-top: 34px; padding: 0 72px; display: grid; grid-template-columns: 1fr 470px; gap: 32px;">
+  <section class="{{t.fx.enter3}}" style="position: relative; z-index: 2; margin-top: 34px; padding: 0 72px; display: grid; grid-template-columns: 1fr 470px; gap: 32px;">
     <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
       <sc-for list="{{quotes}}" as="q" hint-placeholder-count="3">
         <figure style="margin: 0; box-sizing: border-box; padding: 20px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; display: flex; flex-direction: column;">
@@ -61,7 +65,7 @@
     </div>
   </section>
 
-  <section style="position: relative; z-index: 2; margin-top: 30px; padding: 0 72px; display: grid; grid-template-columns: 180px repeat(3, minmax(0, 1fr)); gap: 28px;">
+  <section class="{{t.fx.enter4}}" style="position: relative; z-index: 2; margin-top: 30px; padding: 0 72px; display: grid; grid-template-columns: 180px repeat(3, minmax(0, 1fr)); gap: 28px;">
     <h3 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; line-height: 1.1; color: {{t.textStrong}};">Questions</h3>
     <sc-for list="{{faq}}" as="f" hint-placeholder-count="3">
       <div style="padding-top: 4px; border-top: 1px solid {{t.lineStrong}};">
@@ -111,7 +115,7 @@ class Component extends DCLogic {
       quotes: Q.map(([text, name, role, init], i) => ({ text, name, role, init, bg: av[i][0], fg: av[i][1] })),
       rows: [
         { label: 'Reviews & smart scheduling', free: '∞', pro: '∞' },
-        { label: 'AI word cards', free: '5 / day', pro: 'Unlimited' },
+        { label: 'AI word cards', free: '20 / day', pro: 'Unlimited' },
         { label: 'AI tutor & stories', free: '—', pro: '✓' },
         { label: 'Shadowing score', free: '—', pro: '✓' },
         { label: 'Streak freezes', free: 'Earned', pro: '+2 / mo' },

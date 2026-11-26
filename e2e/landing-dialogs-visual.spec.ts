@@ -118,6 +118,9 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(page.getByRole('heading', { name: 'Report a wrong card' })).toBeVisible();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-request`);
     const reportDialog = page.getByRole('dialog', { name: 'Report a wrong card' });
+    // The dialog opens under the pointer that clicked the report action, which can land on its primary
+    // button. Whether the browser applies that hover before the capture is a race, so park the pointer.
+    await page.mouse.move(0, 0);
     const reportRequestScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-request-${theme.family}-${theme.mode}-${viewport.name}`);
     await page.getByLabel('Note').fill('The Vietnamese meaning needs review.');
     await page.getByRole('button', { name: 'Send report' }).click();
@@ -126,6 +129,7 @@ for (const theme of themes) for (const viewport of viewports) {
       { timeout: 15_000 },
     );
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-submitted`);
+    await page.mouse.move(0, 0);
     const reportSubmittedScreenshot = await captureDialogEvidence(reportDialog, testInfo, `landing-report-submitted-${theme.family}-${theme.mode}-${viewport.name}`);
 
     expectDialogSnapshot(planScreenshot, `landing-plan-${theme.family}-${theme.mode}-${viewport.name}.png`);

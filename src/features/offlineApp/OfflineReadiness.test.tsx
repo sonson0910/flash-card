@@ -149,7 +149,7 @@ describe('OfflineReadiness', () => {
     const html = renderToStaticMarkup(<OfflineReadiness production serviceWorker={undefined} />);
 
     expect(html).toContain('Prepare offline');
-    expect(html).toContain('app files, up to 6 MiB');
+    expect(html).toContain('app files, up to 7 MiB');
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('aria-busy="false"');
   });
@@ -468,7 +468,7 @@ describe('OfflineReadiness', () => {
     />);
 
     expect(html).toContain('Available offline');
-    expect(html).not.toContain('app files, up to 6 MiB');
+    expect(html).not.toContain('app files, up to 7 MiB');
   });
 
   it('does not report the shell as available when another worker owns the root scope', () => {
@@ -480,6 +480,100 @@ describe('OfflineReadiness', () => {
     />);
 
     expect(html).not.toContain('Available offline');
+  });
+
+  it('shows no card outside My Files until an update is waiting', () => {
+    for (const html of [
+      renderToStaticMarkup(<OfflineReadiness production serviceWorker={undefined} updatesOnly />),
+      renderToStaticMarkup(<OfflineReadiness production registration={registration} serviceWorker={undefined} updatesOnly />),
+      renderToStaticMarkup(<OfflineReadiness production={false} serviceWorker={undefined} updatesOnly />),
+    ]) {
+      expect(html).not.toContain('data-offline-readiness="true"');
+      expect(html).not.toContain('<button');
+      expect(html).toMatch(/^<p [^>]*role="status"[^>]*class="sr-only"[^>]*><\/p>$/);
+    }
+
+    const waitingRegistration = {
+      active: activatedWorker,
+      installing: null,
+      waiting: { state: 'installed' },
+    } as unknown as ServiceWorkerRegistration;
+    const html = renderToStaticMarkup(<OfflineReadiness production registration={waitingRegistration} serviceWorker={undefined} updatesOnly />);
+    expect(html).toContain('Update available');
+  });
+
+  it('announces the result of a preparation the learner left My Files during, once', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    let workerState: ServiceWorkerState = 'installing';
+    let currentActive: ServiceWorker | null = null;
+    let currentInstalling: ServiceWorker | null = null;
+    const stateListeners = new Set<() => void>();
+    const installingWorker = {
+      get state() { return workerState; },
+      addEventListener: vi.fn((_type: string, listener: () => void) => { stateListeners.add(listener); }),
+      removeEventListener: vi.fn((_type: string, listener: () => void) => { stateListeners.delete(listener); }),
+    } as unknown as ServiceWorker;
+    currentInstalling = installingWorker;
+    const delayedRegistration = {
+      get active() { return currentActive; },
+      get installing() { return currentInstalling; },
+      waiting: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorkerRegistration;
+    let resolveReady!: (value: ServiceWorkerRegistration) => void;
+    const serviceWorker = {
+      register: vi.fn(async () => delayedRegistration),
+      getRegistration: vi.fn(async () => null),
+      ready: new Promise<ServiceWorkerRegistration>(resolve => { resolveReady = resolve; }),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorkerContainer;
+    const show = async (updatesOnly: boolean) => {
+      await act(async () => {
+        root.render(createElement(OfflineReadiness, { production: true, serviceWorker, updatesOnly }));
+        await flushReact();
+      });
+    };
+    const hasButton = () => Boolean(findElement(container, candidate => candidate.tagName === 'button'));
+
+    try {
+      await show(false);
+      const button = findElement(container, candidate => (
+        candidate.tagName === 'button' && textContent(candidate) === 'Prepare offline'
+      ));
+      if (!button) throw new Error('Prepare offline button was not rendered.');
+      await act(async () => {
+        invokeClick(button);
+        await flushReact();
+      });
+
+      await show(true);
+      expect(hasButton()).toBe(false);
+      expect(textContent(container)).toBe('Preparing app files for offline use…');
+
+      workerState = 'activated';
+      currentActive = installingWorker;
+      currentInstalling = null;
+      await act(async () => {
+        for (const listener of stateListeners) listener();
+        resolveReady(delayedRegistration);
+        await flushReact();
+        await flushReact();
+      });
+      expect(hasButton()).toBe(false);
+      expect(textContent(container)).toBe('Available offline.');
+
+      await show(false);
+      expect(textContent(container)).toContain('Available offline.');
+      await show(true);
+      expect(textContent(container)).toBe('');
+    } finally {
+      resolveReady?.(delayedRegistration);
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
   });
 
   it('advises reopening after a waiting update instead of forcing activation', () => {

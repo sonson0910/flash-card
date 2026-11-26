@@ -3,6 +3,9 @@
 
 .practice-picker { max-width: 35rem; }
 html[data-theme-family="crystal"] .practice-picker { max-width: 36.25rem; }
+/* The bottom holo strip belongs to the frame edge, under the footer veil: stacked above it, it read as a
+   cyan bar under the Cancel button. */
+html[data-theme-family="crystal"] .practice-picker .overlay-dialog-ornament-bottom { z-index: auto; }
 
 .practice-picker-grab,
 .practice-picker-count,
@@ -71,6 +74,7 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
 .practice-picker-row-text { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 3px; }
 .practice-picker-row-head { display: flex; align-items: baseline; gap: 8px; }
 .practice-picker-row-name { color: var(--sf-text); font-size: 15px; font-weight: 650; }
+html[data-theme-family="classic"] .practice-picker-row-name { color: var(--sf-text-strong); }
 .practice-picker-row-time { color: var(--od-subtle); font-family: var(--sf-font-mono); font-size: 11.5px; white-space: nowrap; }
 .practice-picker-row-desc { color: var(--sf-text-muted); font-size: 13px; line-height: 1.4; text-wrap: pretty; }
 
@@ -92,6 +96,11 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
   border-top-color: var(--sf-brand);
   border-radius: 50%;
   animation: practice-picker-spin 900ms linear infinite;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .sf-spin {
+    animation: sf-spin-k 900ms linear infinite;
+  }
 }
 @keyframes practice-picker-spin { to { transform: rotate(360deg); } }
 
@@ -135,6 +144,12 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
   font-size: inherit;
 }
 
+/* DlgPractice: the board's text keeps the default line height, the row type is 13.5px, and the key hint and
+   the lock badge are 26px inside their 1px border (28px drawn). */
+:where(html:not([data-theme-family=crystal])) .practice-picker :is(.overlay-dialog-kicker, .overlay-dialog-note, kbd, .practice-picker-row-name, .practice-picker-row-time, .practice-picker-row-status, .practice-picker-row-lock, .practice-picker-row-key) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .practice-picker-row { font-size: 13.5px; }
+:where(html:not([data-theme-family=crystal])) :is(.practice-picker-row-key, .practice-picker-row-lock) { box-sizing: content-box; }
+
 /* Crystal rows: chamfered chips with a left strip, hexagon icons and skewed key badges. */
 html[data-theme-family="crystal"] .practice-picker-row {
   --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
@@ -146,10 +161,15 @@ html[data-theme-family="crystal"] .practice-picker-row {
 }
 html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] {
   --sf-chamfer-fill: linear-gradient(var(--od-loading-bg), var(--od-loading-bg));
-  --sf-chamfer-edge: color-mix(in srgb, var(--sf-success) 45%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-success) 45%, transparent);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
 }
-html[data-theme-family="crystal"] .practice-picker-row:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+/* The board's mode rows keep their edge on hover and rise instead (nk-lift). */
+html[data-theme-family="crystal"] .practice-picker-row { transition: translate 220ms cubic-bezier(.34, 1.56, .64, 1), scale 220ms cubic-bezier(.34, 1.56, .64, 1), filter 220ms ease; }
+html[data-theme-family="crystal"] .practice-picker-row:not(:disabled):hover { filter: brightness(1.06); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .practice-picker-row:not(:disabled):hover { translate: 0 -3px; }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .practice-picker-row:not(:disabled):active { translate: 0 0; scale: .97; }
+}
 html[data-theme-family="crystal"] .practice-picker-row:focus-visible { outline-offset: -3px; }
 html[data-theme-family="crystal"] .practice-picker-row-strip {
   position: absolute;
@@ -174,6 +194,7 @@ html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] .pr
 html[data-theme-family="crystal"] .practice-picker-row[data-state="locked"] .practice-picker-row-icon { background: var(--sf-border); color: var(--od-subtle); }
 html[data-theme-family="crystal"] .practice-picker-row-head { gap: 10px; }
 html[data-theme-family="crystal"] .practice-picker-row-name {
+  color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-size: 19px;
   font-style: italic;
@@ -221,10 +242,17 @@ html[data-theme-family="crystal"] .practice-picker-keys {
 }
 html[data-theme-family="crystal"] .practice-picker-keys kbd { padding: 0; border: 0; }
 html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
+/* The board's secondary button text is the strong ink in both modes. */
+html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { color: var(--sf-text-strong); }
 
 /* Below 640px the picker is a bottom sheet: grab handle, short title, chevrons instead of key
    hints, and a tinted icon per mode. The footer's keyboard hint has no use on touch. */
 @media (max-width: 639px) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .practice-picker.overlay-dialog-frame {
+      animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+    }
+  }
   .practice-picker.overlay-dialog-frame {
     inset: auto 0 0;
     width: 100%;
@@ -282,6 +310,10 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
     white-space: nowrap;
     --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
   }
+  html[data-theme-family="classic"] .practice-picker-scope {
+    background-color: var(--sf-surface-raised);
+    color: var(--sf-text-muted);
+  }
   html[data-theme-family="crystal"] .practice-picker-scope { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
   .practice-picker-row-desc { display: none; }
   .practice-picker-row-desc-short { display: block; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.35; }
@@ -325,9 +357,18 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
   .practice-picker-row[data-state="locked"] .practice-picker-row-chevron,
   .practice-picker-row:not([data-state="locked"]) .practice-picker-row-lock-icon,
   .practice-picker-row[data-state="loading"] .practice-picker-row-chevron { display: none; }
+  /* MobileSheet line 35: the lock on a locked row is drawn at 15px (the chevron stays 16px). */
+  :where(html:not([data-theme-family=crystal])) .practice-picker-row-lock-icon { width: 15px; height: 15px; }
   .practice-picker-row-status { font-size: 12px; }
 
   /* MobileSheet's per-mode icon tints. */
+  html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="quiz"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-brand) 10%, transparent);
+    --pp-icon-fg: var(--sf-brand-text);
+  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="quiz"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-brand) 14%, transparent);
+  }
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="spelling"],
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="language-drill"] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-second) 10%, transparent);
@@ -354,6 +395,16 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
     --pp-icon-bg: color-mix(in srgb, var(--sf-text) 4%, transparent);
     --pp-icon-fg: var(--od-subtle);
   }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-state="locked"][data-practice-choice] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-flare) 5%, transparent);
+  }
+
+  /* MobileSheet: the title row starts 16px under the handle (the close control sits in the handle row,
+     clear of the chip), its text keeps the default line height, and a locked row keeps the board's
+     per-mode icon tint. */
+  :where(html:not([data-theme-family=crystal])) .practice-picker .overlay-dialog-header { padding-top: 16px; }
+  :where(html:not([data-theme-family=crystal])) :is(.practice-picker-count, .practice-picker-scope, .practice-picker-row-desc-short) { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .practice-picker-row[data-state="locked"][data-practice-choice] .practice-picker-row-icon { background: var(--pp-icon-bg); }
 
   html[data-theme-family="crystal"] .practice-picker-row { min-height: 70px; padding: 8px 14px 8px 12px; }
 }

@@ -9,9 +9,9 @@ import { useCourseSession } from './CourseGate';
 import { canonicalGoalLevel, type Course, type CourseGoal } from './courseModel';
 import { goalKindLabel, goalKindsFor } from './courseGoalCatalog';
 
-const rowClass = 'flex min-h-11 w-full items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm';
-const iconButtonClass = 'grid size-11 shrink-0 place-items-center rounded-lg text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
-const goalFieldClass = 'mt-1 block w-full min-h-11 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 text-sm text-[var(--sf-text)]';
+const rowClass = 'flex min-h-11 w-full items-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm';
+const iconButtonClass = 'fx-press grid size-11 shrink-0 place-items-center rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2';
+const goalFieldClass = 'sf-ease mt-1 block w-full min-h-11 rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-2 [html:not([data-theme-family=crystal])_&]:px-3.5 text-sm text-[var(--sf-text)]';
 
 function GoalRow({ ownerId, course, goal, pending }: { readonly ownerId: string | null; readonly course: Course; readonly goal: CourseGoal; readonly pending: boolean }) {
   const { _ } = useLingui();
@@ -62,8 +62,8 @@ function GoalRow({ ownerId, course, goal, pending }: { readonly ownerId: string 
           value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
       </label>
       <div className="flex gap-2">
-        <button type="button" disabled={pending || saving} onClick={() => setEditing(false)} className="min-h-11 flex-1 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.cancel', message: 'Cancel' })} /></button>
-        <button type="submit" disabled={pending || saving} className="min-h-11 flex-1 rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.save', message: 'Save goal' })} /></button>
+        <button type="button" disabled={pending || saving} onClick={() => setEditing(false)} className="fx-press min-h-11 flex-1 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.cancel', message: 'Cancel' })} /></button>
+        <button type="submit" disabled={pending || saving} className="fx-press min-h-11 flex-1 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] bg-[var(--sf-brand)] [html:not([data-theme-family=crystal])_&]:bg-[var(--sf-primary-bg)] px-3 text-sm font-bold text-[var(--sf-on-brand)] [html:not([data-theme-family=crystal])_&]:text-[var(--sf-on-primary)] disabled:opacity-60"><Trans {...msg({ context: 'course.goal.edit.save', message: 'Save goal' })} /></button>
       </div>
     </form>}
     {ielts && !editing && ownerId && <div className="w-full pt-2">
@@ -86,7 +86,7 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
   }, [optionKinds]);
   if (options.length === 0) return null;
   const selected = options.find(option => option.kind === kind) ?? options[0];
-  return <form className="mt-2 space-y-2 rounded-xl border border-dashed border-[var(--sf-border)] p-3" onSubmit={event => {
+  return <form className="mt-2 space-y-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-dashed border-[var(--sf-border)] p-3" onSubmit={event => {
     event.preventDefault();
     if (pending || saving) return;
     setSaving(true);
@@ -109,7 +109,7 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
       <input type="date" className={goalFieldClass}
         value={targetDate} onChange={event => setTargetDate(event.target.value)} disabled={pending || saving} />
     </label>
-    <button type="submit" disabled={pending || saving} className="min-h-11 w-full rounded-xl bg-[var(--sf-brand)] px-3 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60">
+    <button type="submit" disabled={pending || saving} className="fx-press min-h-11 w-full rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] bg-[var(--sf-brand)] [html:not([data-theme-family=crystal])_&]:bg-[var(--sf-primary-bg)] px-3 text-sm font-bold text-[var(--sf-on-brand)] [html:not([data-theme-family=crystal])_&]:text-[var(--sf-on-primary)] disabled:opacity-60">
       <Plus size={16} aria-hidden="true" className="mr-1 inline" /><Trans {...msg({ context: 'course.goal.add.submit', message: 'Add goal' })} />
     </button>
   </form>;
@@ -119,7 +119,7 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
 export function CourseGoalsPanel({ course, onClose }: { readonly course: Course; readonly onClose: () => void }) {
   const { model } = useCourseSession();
   return <div className="claude-course-goals-panel">
-    <button type="button" onClick={onClose} className="mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]"><span aria-hidden="true">← </span><Trans {...msg({ context: 'course.goals.back', message: 'Back to courses' })} /></button>
+    <button type="button" onClick={onClose} className="fx-press mb-2 min-h-11 text-sm font-bold text-[var(--sf-brand-text)]"><span aria-hidden="true">← </span><Trans {...msg({ context: 'course.goals.back', message: 'Back to courses' })} /></button>
     {course.goals.length === 0
       ? <p className="text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'course.goals.empty', message: 'No goals yet. Studying without one is fine too.' })} /></p>
       : <ul className="space-y-2">{course.goals.map(goal => <GoalRow key={goal.id} ownerId={model.ownerId ?? null} course={course} goal={goal} pending={model.pending} />)}</ul>}

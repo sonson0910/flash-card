@@ -23,6 +23,97 @@
 .study-shell-end { justify-self: end; gap: 10px; }
 .study-shell-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 999px; }
 .study-shell :is(.study-shell-close, .study-shell-tool) { border-color: var(--practice-line); box-shadow: inset 0 1px rgb(255 255 255 / .12); }
+html:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease;
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-summary, .study-shell-learn-first, .study-shell-intro__begin) {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease;
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), box-shadow 180ms ease;
+  }
+}
+/* LangReview header (LangReview.dc.html 5 and 31): close uses fx-press, theme uses sf-ease. */
+@media (min-width: 641px) and (prefers-reduced-motion: no-preference) {
+  html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close {
+    transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease;
+  }
+  html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close {
+    transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease, transform 200ms cubic-bezier(.16, 1, .3, 1);
+  }
+}
+html:not([data-theme-family=crystal]).dark .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme) {
+  border-color: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  background: color-mix(in srgb, var(--sf-text) 4%, transparent);
+  box-shadow: none;
+}
+html:not([data-theme-family=crystal]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme) {
+  border-color: color-mix(in srgb, var(--sf-text) 14%, transparent);
+  background: var(--sf-surface-raised, var(--sf-surface));
+  box-shadow: 0 1px 2px rgb(60 40 20 / .08);
+}
+@media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) and (pointer: fine) {
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step):not(:disabled):hover {
+      transform: scale(1.06);
+    }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-summary, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+      transform: translateY(-3px);
+    }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px -12px rgb(60 40 20 / .45);
+    }
+    @media (min-width: 641px) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / .2));
+        box-shadow: 0 1px 2px rgb(60 40 20 / .08);
+      }
+      html:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme:not(:disabled):hover {
+        transform: none;
+        box-shadow: none;
+      }
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme:not(:disabled):hover {
+        box-shadow: 0 1px 2px rgb(60 40 20 / .08);
+      }
+    }
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell :is(.study-shell-summary, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+    transform: translateY(0) scale(.97);
+  }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+    transform: translateY(0) scale(.97);
+  }
+  @media (min-width: 641px) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):active {
+      transform: translateY(0) scale(.97);
+      filter: brightness(.98);
+    }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-close:not(:disabled):active {
+      transform: translateY(1px) scale(.98);
+      filter: none;
+    }
+    html:not([data-theme-family=crystal]):not([data-motion="reduced"]) [data-study-session][data-study-kind="language"] .study-shell-theme:not(:disabled):active {
+      transform: none;
+    }
+  }
+}
+@media (min-width: 641px) {
+  html:not([data-theme-family=crystal]) .practice-board--study.study-shell [data-study-header] { min-height: 76px; padding-inline: 16px; }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-header] { min-height: 80px; }
+}
 .study-shell-title { display: none; }
 .study-shell-timer { min-width: 3rem; color: var(--sf-text-muted); font: 700 12px/1 var(--sf-font-mono); font-variant-numeric: tabular-nums; text-align: right; }
 .study-shell-summary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
@@ -35,34 +126,90 @@
 .study-shell-progress [data-study-progress-segments] { display: flex; min-width: 0; flex: 1; align-items: center; gap: 3px; }
 .practice-board--study.study-shell [data-study-progress-segments] > span { height: 4px; flex: 1; transform: none; border-radius: 4px; background: color-mix(in srgb, var(--sf-border) 90%, transparent); box-shadow: none; }
 .practice-board--study.study-shell [data-study-progress-segment='complete'] { background: var(--sf-brand); }
-.dark .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 6px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 6px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+:where(html:not([data-theme-family=crystal])) .practice-board--study.study-shell [data-study-progress-segment='current'] { background: var(--sf-brand-text); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segments] > span {
+  transition: background-color 400ms ease;
+}
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--sf-brand-text) 65%, transparent);
+  animation: au-pulse 1.6s ease-in-out infinite;
+}
+@keyframes au-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@media (min-width: 641px) {
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current'] {
+    --sf-pulse: rgb(40 211 244 / 0.45);
+    animation: sf-pulse-k 1.6s ease-out infinite;
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current']::before {
+    --sf-pulse: rgb(180 70 26 / 0.32);
+    animation: sf-pulse-k 1.6s ease-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segments] > span { transition: none; }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'],
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current']::before { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active),
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close,
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close:is(:hover, :active),
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-theme { transition: none; transform: none; filter: none; }
+}
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .dark .practice-board--study.study-shell [data-study-progress-segments] > span { transition: none; }
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .dark .practice-board--study.study-shell [data-study-progress-segment='current'],
+html[data-motion="reduced"]:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell[data-study-kind="language"] [data-study-progress-segment='current']::before { animation: none; }
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active),
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close,
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-close:is(:hover, :active),
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) [data-study-session][data-study-kind="language"] .study-shell-theme { transition: none; transform: none; filter: none; }
 .study-shell-count { flex: none; color: var(--sf-text-muted); font: 700 12px/1 var(--sf-font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* Ink & Paper: the light classic board reads the run as a dotted line of cards. */
-html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segments] {
-  gap: 0;
-  background: linear-gradient(var(--sf-border), var(--sf-border)) center / 100% 1px no-repeat;
+/* Ink & Paper desktop: read the run as an editorial dotted line with a terracotta current dot; phones use bars. */
+@media (min-width: 641px) {
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-progress-segments] {
+    gap: 0;
+    background: linear-gradient(color-mix(in srgb, var(--sf-text) 18%, transparent), color-mix(in srgb, var(--sf-text) 18%, transparent)) center / 100% 1px no-repeat;
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-progress-segments] > span {
+    position: relative;
+    height: 14px;
+    border-radius: 0;
+    background: none;
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-progress-segment='complete'] {
+    background: linear-gradient(var(--sf-text), var(--sf-text)) center / 100% 1px no-repeat;
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-progress-segments] > span::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--sf-text-muted);
+    border-radius: 50%;
+    background: var(--sf-surface);
+    content: '';
+    translate: -50% -50%;
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-progress-segment='complete']::before {
+    border-color: var(--sf-text);
+    background: var(--sf-text);
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-progress-segment='current']::before {
+    width: 12px;
+    height: 12px;
+    border-color: var(--sf-brand);
+    background: var(--sf-brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 18%, transparent);
+  }
+  html:not([data-theme-family=crystal]):not(.dark) .study-shell-count {
+    color: var(--sf-text);
+    font: italic 500 15px/1 var(--sf-font-display);
+  }
 }
-html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segments] > span {
-  position: relative;
-  height: 12px;
-  border-radius: 0;
-  background: none;
-}
-html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segments] > span::before {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 7px;
-  height: 7px;
-  border: 1px solid var(--sf-text-muted);
-  border-radius: 50%;
-  background: var(--sf-surface);
-  content: '';
-  translate: -50% -50%;
-}
-html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segment='complete']::before { border-color: var(--sf-text); background: var(--sf-text); }
-html[data-theme-family=classic]:not(.dark) .study-shell-count { color: var(--sf-text); font: italic 500 15px/1 var(--sf-font-display); }
 
 /* The hint under the card while the answer is hidden; phones reveal with the card's own button. */
 .study-shell-hint {
@@ -87,46 +234,581 @@ html[data-theme-family=classic]:not(.dark) .study-shell-count { color: var(--sf-
   color: var(--sf-text-muted);
   font: 600 11px/1 var(--sf-font-mono);
 }
-html[data-theme-family=classic]:not(.dark) .study-shell-hint { font: italic 500 15px/1.3 var(--sf-font-display); }
+html:not([data-theme-family=crystal]):not(.dark) :is(.study-shell-kbd, .study-shell-shortcuts__key) { border-radius: 5px; }
+html:not([data-theme-family=crystal]):not(.dark) .study-shell-hint { font: italic 400 17px/1.3 var(--sf-font-display); }
+/* The seed boards' grade tray is wider than the card: 576px in Aurora, 558px in Atelier (Aurora.dc.html 232-235, Atelier.dc.html 212-215). */
+html:not([data-theme-family=crystal]).dark .practice-board--study.study-shell [data-study-rating] { max-width: 576px; }
+html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-rating] { max-width: 558px; }
+/* Classic deals each card in from the seed boards' stack (Aurora.dc.html 30, Atelier.dc.html 27). */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]).dark .study-shell-deal { animation: au-deal-a 560ms cubic-bezier(.16, 1, .3, 1) both; }
+  html:not([data-theme-family=crystal]):not([data-motion="reduced"]):not(.dark) .study-shell-deal { animation: ip-deal-a 600ms cubic-bezier(.16, 1, .3, 1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+}
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+/* Aurora's hint and its Space key (Aurora.dc.html 241-244). */
+html:not([data-theme-family=crystal]).dark .study-shell-hint { font-size: 14px; font-weight: 400; }
+html:not([data-theme-family=crystal]).dark .study-shell-hint .study-shell-kbd { min-width: 0; height: 24px; padding: 0 8px; border-color: rgb(255 255 255 / 0.14); background: none; color: inherit; font: 400 11px/1 var(--sf-font-mono); }
 
 .practice-board--study.study-shell .study-shell-combo { max-width: 460px; }
-/* Crystal combo: white type on an opaque crimson plate, so it never reads off a see-through chip. Both
-   ends of the plate keep AA contrast for the small label. */
-html[data-theme-family=crystal] .study-shell [data-study-combo] {
+/* The right-column wrapper only takes a box in Crystal on wide screens. */
+.study-shell-aside { display: contents; }
+.study-shell-lumi { display: none; }
+.study-shell-title__kicker { display: none; }
+
+/* ---- Crystal: the AnimeReview shell, ported from its board source. ---- */
+
+/* Header chips: 44px, the small corner cut, the chip fill with a 1px strong line inside. clip-path removes an
+   outline, so keyboard focus draws an inset ring instead. */
+html[data-theme-family=crystal] .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
   border: 0;
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
-  background: linear-gradient(90deg, var(--sf-brand-hover), color-mix(in srgb, var(--sf-brand) 78%, var(--sf-star-shade)));
-  color: var(--sf-on-primary);
-  text-shadow: 0 1px 0 var(--sf-star-shade);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text);
 }
+html[data-theme-family=crystal] .study-shell .study-shell-tool[aria-pressed='true'] { box-shadow: inset 0 0 0 1px var(--sf-panel-edge); color: var(--sf-brand-text); }
+html[data-theme-family=crystal] .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step, .study-shell-summary, .study-shell-learn-first, .study-shell-recall__select):focus-visible {
+  outline-color: transparent;
+  box-shadow: inset 0 0 0 2px var(--sf-holo-text);
+}
+html[data-theme-family=crystal] .study-shell .study-shell-nav__step:disabled { opacity: .45; }
 
-/* Crystal: the AnimeReview header, with the italic step label, slanted segments and a large count. */
-html[data-theme-family=crystal] .study-shell .study-shell-close { border-radius: 0; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+/* "PRACTICE // REVIEW": Kanit italic 800 16px, tracked .08em, the slashes in the crimson text colour. */
 html[data-theme-family=crystal] .study-shell-title {
   display: block;
   color: var(--sf-text-muted);
-  font: italic 800 16px/1 var(--sf-font-display);
+  font: italic 800 16px/normal var(--sf-font-display);
   letter-spacing: .08em;
   text-transform: uppercase;
   white-space: nowrap;
 }
-html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] { gap: 4px; }
-html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] > span { height: 10px; border-radius: 0; transform: skewX(-30deg); }
-html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segment='complete'] { background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 70%, var(--sf-text-strong))); box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
-html[data-theme-family=crystal] .study-shell-count { color: var(--sf-text-muted); font: italic 700 15px/1 var(--sf-font-display); }
+html[data-theme-family=crystal] .study-shell-title__kicker { display: inline; }
+html[data-theme-family=crystal] .study-shell-title__slashes { color: var(--sf-brand-text); }
+
+/* Twelve 32 x 10 segments slanted -30deg, 4px apart: done in the holo gradient, the card in hand crimson,
+   the rest on the track. The count sits 16px after the last segment (4px gap plus 12px margin on the board). */
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress] { width: auto; max-width: none; gap: 16px; }
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] { flex: none; gap: 4px; }
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] > span {
+  flex: none;
+  width: 32px;
+  height: 10px;
+  border-radius: 0;
+  background: var(--sf-border);
+  box-shadow: none;
+  transform: skewX(-30deg);
+}
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segment='complete'] { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 8px rgb(94 242 255 / .5); }
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segment='current'] { background: #ff2a4d; box-shadow: 0 0 14px rgb(255 42 77 / .9); }
+html[data-theme-family=crystal] .study-shell-count { color: var(--sf-text-subtle); font: italic 900 15px/normal var(--sf-font-display); }
 html[data-theme-family=crystal] .study-shell-count__current { color: var(--sf-text-strong); font-size: 24px; font-weight: 900; }
-html[data-theme-family=crystal] .study-shell-timer { font-family: var(--sf-font-display); font-style: italic; }
+
+/* Session tools the board does not draw, in its language: the timer reads like the step label, Summary is the
+   board's secondary button. */
+html[data-theme-family=crystal] .study-shell-timer { min-width: 4em; color: var(--sf-text-muted); font: italic 800 16px/normal var(--sf-font-display); letter-spacing: .08em; }
+html[data-theme-family=crystal] .study-shell .study-shell-summary,
+html[data-theme-family=crystal] .study-shell .study-shell-learn-first {
+  height: 46px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text-strong);
+  font: italic 800 15px/1 var(--sf-font-display);
+  letter-spacing: .05em;
+}
+html[data-theme-family=crystal]:not(.dark) .study-shell :is(.study-shell-summary, .study-shell-learn-first) { background: var(--sf-surface); }
+html[data-theme-family=crystal] .study-shell .study-shell-summary { height: 44px; min-height: 44px; }
+
+/* Streak: 44px, padding 0 16 0 12, the primary fill, Kanit italic 800 18px, gold flame. The board's dark
+   crimson stops leave white type under AA at 18px, so the plate takes the board's light-mode primary fill. */
+html[data-theme-family=crystal] .study-shell .study-shell-streak {
+  display: flex;
+  height: 44px;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
+  box-shadow: none;
+  color: #fff;
+  font: italic 800 18px/1 var(--sf-font-display);
+}
+html[data-theme-family=crystal] .study-shell .study-shell-streak .claude-streak-flame { width: 17px; height: 17px; color: #ffd166; }
 html[data-theme-family=crystal] .study-shell-streak__unit { display: none; }
-html[data-theme-family=crystal] .study-shell-hint { font-size: 15px; font-weight: 800; }
-html[data-theme-family=crystal] .study-shell-kbd { border: 0; box-shadow: inset 0 0 0 1px var(--sf-border); }
+
+/* Combo, the AnimeQuiz chip: 44px, slanted -14deg, crimson ramp with its glow, upright white Kanit 900 19px. */
+html[data-theme-family=crystal] .study-shell [data-study-combo] {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(90deg, #b30f33, #ff2a4d);
+  box-shadow: 0 0 22px -4px rgb(255 42 77 / .8);
+  color: #fff;
+  font: italic 900 19px/1 var(--sf-font-display);
+  letter-spacing: .04em;
+  text-shadow: none;
+  transform: skewX(-14deg);
+}
+html[data-theme-family=crystal] .study-shell .study-shell-combo__text { display: inline-block; transform: skewX(14deg); }
+
+/* Recall mode is an app setting the board lacks: its select is a chip field. */
+html[data-theme-family=crystal] .study-shell .study-shell-recall__select {
+  height: 44px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background-color: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text-strong);
+  font-size: 15px;
+  font-weight: 800;
+}
+html[data-theme-family=crystal]:not(.dark) .study-shell .study-shell-recall__select { background-color: var(--sf-surface); }
+html[data-theme-family=crystal] .study-shell .study-shell-recall__label { color: var(--sf-holo-text); font: italic 800 13px/normal var(--sf-font-display); letter-spacing: .12em; }
+
+/* Reveal hint: Nunito 800 15px in the secondary text colour, the Space key a 26px chip. */
+html[data-theme-family=crystal] .study-shell-hint { gap: 10px; color: var(--sf-text-muted); font-size: 15px; font-weight: 800; line-height: normal; }
+html[data-theme-family=crystal] .study-shell .study-shell-kbd {
+  display: inline-flex;
+  height: 26px;
+  min-width: 0;
+  align-items: center;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: inherit;
+  font: inherit;
+  font-family: var(--sf-font-mono);
+  font-size: 11px;
+}
+
+/* Introduction: the board's panel (chamfer, panel fill, crimson edge) and its 58px primary action. */
+html[data-theme-family=crystal] .study-shell .study-shell-intro {
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+}
+html[data-theme-family=crystal] .study-shell .study-shell-intro__title { color: var(--sf-text-strong); font: italic 900 24px/1.1 var(--sf-font-display); letter-spacing: .02em; text-transform: uppercase; }
+html[data-theme-family=crystal] .study-shell .study-shell-intro__lede { color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
+html[data-theme-family=crystal] .study-shell .study-shell-intro__begin {
+  min-height: 58px;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+  font: italic 900 20px/1 var(--sf-font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+html[data-theme-family=crystal] .study-shell .study-shell-intro__begin:hover { background: var(--sf-primary-bg); filter: brightness(1.06); }
+html[data-theme-family=crystal] .study-shell .study-shell-intro__begin:focus-visible { outline-color: transparent; box-shadow: inset 0 0 0 3px var(--sf-text-strong); }
+
+/* Session footer: previous and next as header chips, the position as a chip count. */
+html[data-theme-family=crystal] .study-shell .study-shell-nav { gap: 12px; }
+html[data-theme-family=crystal] .study-shell .study-shell-nav__position {
+  display: flex;
+  height: 44px;
+  align-items: center;
+  padding: 0 16px;
+  border: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text-strong);
+  font: italic 900 16px/1 var(--sf-font-display);
+  letter-spacing: .04em;
+}
+html[data-theme-family=crystal] .study-shell .study-shell-nav__step:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+
+/* Shortcuts: a board panel with the holo kicker and chip keys. */
+html[data-theme-family=crystal] .study-shell .study-shell-shortcuts {
+  max-width: 400px;
+  padding: 16px 20px 18px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  color: var(--sf-text-muted);
+  text-align: left;
+}
+html[data-theme-family=crystal] .study-shell .study-shell-shortcuts > div:last-child { font-size: 12.5px; }
+html[data-theme-family=crystal] .study-shell .study-shell-shortcuts__title {
+  justify-content: flex-start;
+  gap: 8px;
+  color: var(--sf-holo-text);
+  font: italic 800 13px/normal var(--sf-font-display);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+html[data-theme-family=crystal] .study-shell .study-shell-shortcuts__title svg { display: none; }
+html[data-theme-family=crystal] .study-shell .study-shell-shortcuts__title::before { flex: none; width: 8px; height: 8px; background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff; content: ''; transform: rotate(45deg); }
+html[data-theme-family=crystal] .study-shell .study-shell-shortcuts__key {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text);
+  font: 500 11px/1 var(--sf-font-mono);
+}
+
+/* Desktop composition: the 84px header sits on the top edge, the card follows it directly, and the reveal
+   hint or the grade row share one 124px band under the card, as on the board. */
+@media (min-width: 641px) {
+  html[data-theme-family=crystal] .practice-board--study.study-shell { padding-top: 0; padding-inline: 0; }
+  /* The board header is a flex row with 40px sides: close, step label, the progress centred in the space
+     left between them and the tools (margin auto), then the tools. */
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-header] {
+    display: flex;
+    height: 84px;
+    min-height: 84px;
+    gap: 16px;
+    margin-bottom: 0;
+    padding: 0 40px;
+  }
+  html[data-theme-family=crystal] .practice-board--study.study-shell .study-shell-start { flex: none; gap: 16px; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell .study-shell-progress { flex: 0 1 auto; margin: 0 auto; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell .study-shell-end { flex: none; gap: 16px; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] { flex: 0 1 auto; min-width: 0; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] > span { flex: 0 1 32px; min-width: 6px; }
+  /* The board's card is 460 x 620 straight under the header; shorter windows keep the band under it in view. */
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-active-recall] { height: min(620px, max(300px, calc(100dvh - 280px))); }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-card] { margin-bottom: 0; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell .study-shell-hint { height: 124px; margin: 0; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-rating]:has(.review-grades[data-review-state='locked']) { display: none; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-rating] {
+    display: flex;
+    width: auto;
+    max-width: none;
+    min-height: 124px;
+    align-items: center;
+    justify-content: center;
+  }
+  html[data-theme-family=crystal] .study-shell [data-study-rating] .review-grades { width: auto; max-width: none; margin: 0; gap: 0; }
+  /* The board's grade row has no caption; the status line stays for screen readers, and an error still shows. */
+  html[data-theme-family=crystal] .study-shell [data-study-rating] .review-grades-message:not([role='alert']) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  html[data-theme-family=crystal] .study-shell [data-study-rating] .review-grades-row { display: flex; width: auto; max-width: none; justify-content: center; gap: 12px; }
+  html[data-theme-family=crystal] .study-shell [data-study-rating] .review-grade { flex: none; width: 132px; height: 64px; min-height: 64px; padding: 0; }
+  html[data-theme-family=crystal] .study-shell [data-study-rating] .review-grade[data-rating='good'] { width: 164px; }
+  html[data-theme-family=crystal] .study-shell .study-shell-nav { margin-top: 8px; }
+  html[data-theme-family=crystal] .study-shell .study-shell-learn-first { margin: 0 0 16px; }
+}
+
+/* Grade buttons from the board, whatever card look the card itself wears: 64px slanted -14deg with an upright
+   face, AGAIN crimson, HARD orange, GOOD the holo ramp with its glow, EASY gold, the others lit by a 1px top
+   highlight. Type is Kanit italic 900 21px; the key line is mono 11px on a small plate (the board's key chip
+   inside a primary button) so it keeps AA on every fill. The selectors outrank the card-look grade rules on
+   purpose. Where the board's ink fails AA the nearest passing board ink is used: HARD takes the gold ink in
+   dark (white is 2.3:1 on #ff8a3d), GOOD takes the deep holo ink in both modes (white is 2.1:1 on the light
+   ramp's top), and light HARD is deepened 8% toward black so its white key line passes. */
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade {
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .3);
+  color: #fff;
+  transform: skewX(-14deg);
+}
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-face { gap: 1px; transform: skewX(14deg); }
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-dot { display: none; }
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-label {
+  font-family: var(--sf-font-display);
+  font-size: clamp(15px, 4.4vw, 21px);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: .06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='again'] { background: #ff2a4d; color: #fff; }
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='hard'] { background: #ff8a3d; color: #4a2a00; }
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='good'] { background: linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9); box-shadow: 0 0 30px -4px rgb(94 242 255 / .85); color: #031820; }
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='easy'] { background: #ffd166; color: #4a2a00; }
+html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='again'] { background: #d1123a; }
+html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='hard'] { background: color-mix(in srgb, #c25a0a 92%, black); color: #fff; }
+html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='good'] { background: linear-gradient(180deg, #2bc4e0, #0a8fb0); }
+html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='easy'] { background: #f0a90f; }
+html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-study-rating] .review-grades .review-grade.review-grade[data-rating='easy']:focus-visible { outline-color: #4a2a00; }
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-key {
+  padding: 1px 6px;
+  background: rgb(255 255 255 / .3);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  opacity: 1;
+}
+html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade[data-rating='again'] .review-grade-key,
+html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-study-rating] .review-grades .review-grade[data-rating='hard'] .review-grade-key { background: rgb(0 0 0 / .22); }
+
+/* Wide screens: Lumi with her LUMI · LINK panel in the left column (left 64, top 220, 290 wide) and the
+   combo and recall mode in the right column (right 60, top 120, 300 wide), measured from the board frame. */
+@media (min-width: 1200px) {
+  /* The aside is not a framed panel: the corner cut the practice boards give every aside would crop Lumi. */
+  html[data-theme-family=crystal] .practice-board.study-shell aside.study-shell-lumi[data-study-lumi] {
+    position: absolute;
+    z-index: 4;
+    top: 220px;
+    left: 64px;
+    display: block;
+    width: 290px;
+    clip-path: none;
+  }
+  html[data-theme-family=crystal] .study-shell-lumi__panel {
+    position: relative;
+    padding: 16px 20px 18px;
+    clip-path: var(--nk-chamfer);
+    background: var(--sf-surface-glass);
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+  }
+  html[data-theme-family=crystal] .study-shell-lumi__panel[data-quiet] { visibility: hidden; }
+  html[data-theme-family=crystal] .study-shell-lumi__strip { position: absolute; top: 18px; bottom: 18px; left: 0; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff); }
+  html[data-theme-family=crystal] .study-shell-lumi__label { color: var(--sf-holo-text); font: italic 800 13px/normal var(--sf-font-display); letter-spacing: .1em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .study-shell-lumi__line { margin-top: 4px; color: var(--sf-text-strong); font-size: 18px; font-weight: 900; line-height: 1.3; }
+  html[data-theme-family=crystal] .study-shell-lumi__art { display: block; width: 290px; height: 310px; margin: 18px 0 0 -10px; }
+  html[data-theme-family=crystal] .study-shell:has([data-study-lumi]) .study-shell-reaction { display: none; }
+
+  html[data-theme-family=crystal] .study-shell .study-shell-aside {
+    position: absolute;
+    z-index: 4;
+    top: 120px;
+    right: 60px;
+    display: flex;
+    width: 300px;
+    flex-direction: column;
+  }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside .study-shell-combo { min-height: 0; margin: 0; justify-content: flex-start; padding-left: 6px; }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside .study-shell-combo:not(:empty) { margin-bottom: 16px; }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside [data-study-recall-mode] {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin: 0;
+    padding: 16px 20px 18px;
+    clip-path: var(--nk-chamfer);
+    background: var(--sf-surface-glass);
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside .study-shell-recall__label { display: flex; align-items: center; gap: 8px; }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside .study-shell-recall__label::before { flex: none; width: 8px; height: 8px; background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff; content: ''; transform: rotate(45deg); }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside .study-shell-recall__select { width: 100%; max-width: none; }
+
+  /* The column stacks 16px apart, as on the board; the banner below replaces the narrow screens' combo chip. */
+  html[data-theme-family=crystal] .study-shell .study-shell-aside { gap: 16px; }
+  html[data-theme-family=crystal] .study-shell .study-shell-aside .study-shell-combo { display: none; }
+
+  /* Combo: a 150px block. The band runs from 6px in to 40px past the column, 96px tall, slanted -16deg; the
+     five-point star sits on its top-left corner; the name is Kanit italic 900 52px in the white-pink metal ramp
+     with a dark crimson drop; COMBO x N is italic 800 17px tracked .14em; the XP the server granted pops in gold. */
+  html[data-theme-family=crystal] .study-shell .study-shell-combo-banner { position: relative; display: block; flex: none; height: 150px; }
+  html[data-theme-family=crystal] .study-shell-combo-banner__band {
+    position: absolute;
+    top: 16px;
+    right: -40px;
+    left: 6px;
+    height: 96px;
+    background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .9) 60%, rgb(255 42 77 / .88) 88%, rgb(255 42 77 / 0));
+    box-shadow: 0 0 40px -6px rgb(255 42 77 / .7);
+    transform: skewX(-16deg);
+  }
+  html[data-theme-family=crystal] .study-shell-combo-banner__star { position: absolute; top: 0; left: 0; width: 70px; height: 70px; filter: drop-shadow(0 0 12px rgb(255 42 77 / .9)); }
+  html[data-theme-family=crystal] .study-shell-combo-banner__star svg { display: block; overflow: visible; }
+  html[data-theme-family=crystal] .study-shell-combo-banner__name {
+    position: absolute;
+    top: 22px;
+    left: 60px;
+    background: linear-gradient(180deg, #fff 0%, #ffe3ea 48%, #ffb3c2 52%, #fff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / .8));
+    font: italic 900 52px/1 var(--sf-font-display);
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  html[data-theme-family=crystal] .study-shell-combo-banner__count {
+    position: absolute;
+    top: 82px;
+    left: 66px;
+    color: #fff;
+    font: italic 800 17px/normal var(--sf-font-display);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  html[data-theme-family=crystal] .study-shell-combo-banner__xp {
+    position: absolute;
+    top: 118px;
+    right: 8px;
+    display: flex;
+    height: 30px;
+    align-items: center;
+    padding: 0 14px;
+    clip-path: var(--nk-chamfer-sm);
+    background: linear-gradient(180deg, #fff0b8, #ffd166);
+    color: #4a2a00;
+    font: italic 800 15px/normal var(--sf-font-display);
+  }
+
+  /* Daily goal: the board panel with the holo edge, the holo kicker and its diamond, the goal in 900 17px, a
+     10px track slanted -24deg filled by the holo-crimson ramp, and the count beside the gold XP. */
+  html[data-theme-family=crystal] .study-shell .study-shell-goal {
+    position: relative;
+    display: block;
+    padding: 16px 20px 18px;
+    clip-path: var(--nk-chamfer);
+    background: var(--sf-surface-glass);
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  }
+  html[data-theme-family=crystal] .study-shell-goal__kicker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--sf-holo-text);
+    font: italic 800 13px/normal var(--sf-font-display);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  html[data-theme-family=crystal] .study-shell-goal__kicker::before { flex: none; width: 8px; height: 8px; background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff; content: ''; transform: rotate(45deg); }
+  html[data-theme-family=crystal] .study-shell-goal__title { margin: 6px 0 0; color: var(--sf-text-strong); font-size: 17px; font-weight: 900; line-height: normal; }
+  html[data-theme-family=crystal] .study-shell-goal__bar { display: block; height: 10px; margin-top: 10px; overflow: hidden; background: var(--sf-border); transform: skewX(-24deg); }
+  html[data-theme-family=crystal] .study-shell-goal__fill {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d);
+    box-shadow: 0 0 12px rgb(255 42 77 / .7);
+    transition: width 600ms cubic-bezier(.2,1.4,.4,1);
+  }
+  html[data-theme-family=crystal] .study-shell-goal__foot { display: flex; justify-content: space-between; margin: 8px 0 0; color: var(--sf-text-muted); font-size: 13px; line-height: normal; }
+  html[data-theme-family=crystal] .study-shell-goal__xp { color: var(--sf-warn); font-weight: 900; }
+
+  /* Legend: the three grades as rim chips (46 x 24, small corner cut, dark ink, Kanit italic 900 14px) beside
+     their review status in 800 strong text, 9px apart. */
+  html[data-theme-family=crystal] .study-shell .study-shell-legend { display: flex; flex-direction: column; gap: 9px; margin: 0; padding: 2px 4px; list-style: none; }
+  html[data-theme-family=crystal] .study-shell-legend__row { display: flex; align-items: center; gap: 10px; color: var(--sf-text-muted); font-size: 13.5px; line-height: normal; }
+  html[data-theme-family=crystal] .study-shell-legend__grade {
+    display: flex;
+    min-width: 46px;
+    height: 24px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    clip-path: var(--nk-chamfer-sm);
+    color: #1a0610;
+    font: italic 900 14px/normal var(--sf-font-display);
+  }
+  html[data-theme-family=crystal] .study-shell-legend__grade[data-tier='new'] { background: var(--sf-rim-new); }
+  html[data-theme-family=crystal] .study-shell-legend__grade[data-tier='learning'] { background: var(--sf-rim-learning); }
+  /* The board paints this chip with the full gold rim, whose crimson stops put the dark label under 2:1; the gold
+     stops alone keep it above 4.5:1. */
+  html[data-theme-family=crystal] .study-shell-legend__grade[data-tier='mastered'] { background: linear-gradient(150deg, #fff3c4, #ffd166 55%, #fff3c4); }
+  html[data-theme-family=crystal] .study-shell-legend__label { color: var(--sf-text-strong); font-weight: 800; }
+
+}
+/* The board's motion on the wide columns: the banner and the name slide in with each XP grant (nk-banner), the
+   grant pops (nk-pop), Lumi's panel rises in (nk-rise) and Lumi floats (nk-float). */
+@media (min-width: 1200px) and (prefers-reduced-motion: no-preference) {
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .study-shell-combo-banner[data-xp-pop] :is(.study-shell-combo-banner__band, .study-shell-combo-banner__name) {
+    animation: nk-banner-k 520ms cubic-bezier(.2,1.4,.4,1) both;
+  }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .study-shell-combo-banner__xp { animation: nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) both; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .study-shell-lumi__panel { animation: nk-rise-k 700ms cubic-bezier(.16,1,.3,1) both; }
+  html[data-theme-family=crystal]:not([data-motion=reduced]) .study-shell-lumi__art { animation: nk-float-k 3.2s ease-in-out infinite; }
+}
+/* The board column only exists on wide screens. */
+@media (max-width: 1199px) {
+  .study-shell :is(.study-shell-combo-banner, .study-shell-goal, .study-shell-legend) { display: none; }
+}
 
 @media (min-width: 641px) {
   .study-shell-hint { display: flex; }
 }
+/* Tablets: the header row keeps the step name and drops its kicker so the progress keeps room. */
+@media (min-width: 641px) and (max-width: 1023px) {
+  html[data-theme-family=crystal] .study-shell-title__kicker { display: none; }
+}
 
 /* Phones: the MobileReview header, a single row of close, progress and the session tools. */
 @media (max-width: 640px) {
+  /* MobileReview keeps the header and the grade tray 16px from the screen edges (MobileReview.dc.html 4 and 54). */
+  html:not([data-theme-family=crystal]) .practice-board--study.study-shell { padding-inline: 16px; }
+  html:not([data-theme-family=crystal]) .study-shell-header.fx-enter { animation: none; }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell-deal { animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 80ms backwards; }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell-deal { animation: ip-in-k 480ms cubic-bezier(.16, 1, .3, 1) 60ms backwards; }
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+      transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease;
+    }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin) {
+      transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in srgb, var(--sf-brand) 35%, transparent));
+      }
+      html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 8px 8px rgb(60 40 20 / .2));
+      }
+    }
+    html.dark:not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+      transform: translateY(0) scale(.97);
+      filter: brightness(.98);
+    }
+    html:not(.dark):not([data-theme-family=crystal]):not([data-motion="reduced"]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):not(:disabled):active {
+      transform: translateY(1px) scale(.98);
+      filter: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+    html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active) { transition: none; transform: none; filter: none; }
+  }
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin),
+  html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-summary, .study-shell-nav__step, .study-shell-learn-first, .study-shell-intro__begin):is(:hover, :active) { transition: none; transform: none; filter: none; }
   .claude-app-shell:has([data-study-session]) .claude-workspace-inner { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   .practice-board--study.study-shell [data-study-header] { display: flex; min-height: 56px; gap: 8px; margin-bottom: 4px; }
   .study-shell-start { flex: none; }
@@ -134,6 +816,11 @@ html[data-theme-family=crystal] .study-shell-kbd { border: 0; box-shadow: inset 
   .study-shell-end { flex: none; gap: 6px; }
   html .study-shell :is(.study-shell-title, .study-shell-theme, .study-shell-streak) { display: none; }
   .study-shell-summary { padding: 0; }
+  html:not([data-theme-family=crystal]) .study-shell-summary {
+    border: 1px solid var(--sf-border);
+    border-radius: 999px;
+    background: var(--sf-surface-control);
+  }
   .study-shell-summary__icon { display: block; }
   .study-shell-summary__label {
     position: absolute;
@@ -144,4 +831,17 @@ html[data-theme-family=crystal] .study-shell-kbd { border: 0; box-shadow: inset 
     white-space: nowrap;
   }
   html[data-theme-family=crystal] .study-shell-count__current { font-size: 18px; }
+  /* Twelve fixed 32px segments do not fit a phone row; they share the width left by the close button and count. */
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress] { width: 100%; gap: 8px; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] { flex: 1; min-width: 0; gap: 3px; }
+  html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] > span { flex: 1; width: auto; height: 8px; }
+  html[data-theme-family=crystal] .study-shell-count { font-size: 12px; }
+  html[data-theme-family=crystal] .study-shell :is(.study-shell-theme, .study-shell-streak) { display: none; }
+  /* MobileReview card: 468px tall on both sides of the turn; short windows keep the grades under it in view. */
+  html[data-theme-family=crystal] .practice-board--study.study-shell :is([data-active-recall], [data-study-card] .flashcard-shell[data-card-mode="standard"]) { height: min(468px, max(300px, calc(100dvh - 300px))); }
+  /* MobileReview grades: a 2 x 2 grid, 10px apart inside 6px sides, 52px buttons slanted -12deg, 18px labels. */
+  html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades-row { grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 6px; }
+  html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade { height: 52px; min-height: 52px; transform: skewX(-12deg); }
+  html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-face { transform: skewX(12deg); }
+  html[data-theme-family=crystal] .practice-board.study-shell [data-study-rating] .review-grades .review-grade-label { font-size: 18px; letter-spacing: .05em; }
 }

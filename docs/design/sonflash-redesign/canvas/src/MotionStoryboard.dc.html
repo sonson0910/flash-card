@@ -4,10 +4,10 @@
   <div style="position: relative; z-index: 2; padding: 40px 56px 0;">
     <header style="display: flex; align-items: flex-end; gap: 40px;">
       <div style="flex-grow: 1;">
-        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Motion spec · shared element</p>
-        <h1 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">One card, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">one continuous motion.</span></h1>
+        <p class="{{t.fx.enter}}" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Motion spec · Classic · shared element, roles, data</p>
+        <h1 class="{{t.fx.title}}" style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">One card, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">one continuous motion.</span></h1>
       </div>
-      <div style="display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+      <div class="{{t.fx.enter}}" style="display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
         <svg width="84" height="52" viewBox="-4 -4 108 68" aria-hidden="true"><path d="M0 60 L100 60 M0 60 L0 0" stroke="{{t.lineStrong}}" stroke-width="1.5" fill="none"></path><path d="M0 60 C16 0 30 0 100 0" stroke="{{curve}}" stroke-width="3" fill="none" stroke-linecap="round"></path><circle cx="16" cy="0" r="3.5" fill="{{curve}}"></circle><circle cx="30" cy="0" r="3.5" fill="{{curve}}"></circle></svg>
         <div>
           <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.textStrong}};">ease-out-expo</div>
@@ -23,12 +23,12 @@
       </div>
     </header>
 
-    <div style="margin-top: 26px; display: flex; align-items: baseline; gap: 12px;">
+    <div class="{{t.fx.enter}}" style="margin-top: 26px; display: flex; align-items: baseline; gap: 12px;">
       <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Today → Review</h2>
       <span style="font-size: 12.5px; color: {{t.text2}};">The card the learner tapped is the card they review. No page swap, no reload.</span>
     </div>
 
-    <div style="margin-top: 14px; display: flex; align-items: flex-start; gap: 42px;">
+    <div class="{{t.fx.stagger}}" style="margin-top: 14px; display: flex; align-items: flex-start; gap: 42px;">
       <figure style="margin: 0; width: 300px; position: relative;">
         <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.line}}; background: {{m.bg}};">
           <div style="height: 22px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid {{t.navLine}};"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.logoBg}};"></span><span style="width: 26px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 20px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span><span style="width: 24px; height: 5px; border-radius: 3px; background: {{m.bar}};"></span></div>
@@ -39,7 +39,7 @@
         </div>
         <figcaption style="margin-top: 12px;">
           <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.accentSoft}}; border: 1px solid {{t.accentLine}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">1</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Rest · tap Start</span></div>
-          <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">0 ms · press scale .97 · 120 ms</div>
+          <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">0 ms · press .97 / .98 · 180 / 160 ms</div>
         </figcaption>
       </figure>
 
@@ -85,7 +85,7 @@
     </div>
 
     <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 42px;">
-      <section>
+      <section class="{{t.fx.enter3}}">
         <div style="display: flex; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Recap → next action</h2><span style="font-size: 12.5px; color: {{t.text2}};">A finish line, never a dead end.</span></div>
         <div style="margin-top: 14px; display: flex; gap: 42px;">
           <figure style="margin: 0; width: 300px;">
@@ -109,7 +109,7 @@
         </div>
       </section>
 
-      <section>
+      <section class="{{t.fx.enter3}}">
         <div style="display: flex; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">Dialog → side sheet</h2><span style="font-size: 12.5px; color: {{t.text2}};">Edit without losing the card.</span></div>
         <div style="margin-top: 14px; display: flex; gap: 42px;">
           <figure style="margin: 0; width: 300px;">
@@ -124,12 +124,56 @@
           <figure style="margin: 0; width: 300px;">
             <div style="position: relative; height: 180px; border-radius: 14px; overflow: hidden; border: 1px solid {{t.accentLine}}; background: {{m.bg}};">
               <div style="position: absolute; left: 30px; top: 30px; width: 116px; height: 124px; box-sizing: border-box; border-radius: 12px; border: {{m.cardBorder}}; background: {{m.card}}; box-shadow: {{m.cardShadow}}; padding: 10px; opacity: 0.8;"><div style="height: 46px; border-radius: 6px; background: {{m.art}};"></div><div style="margin-top: 9px; font-family: Fraunces, Georgia, serif; font-size: 18px; color: {{t.textStrong}};">im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">me</span>diate</div></div>
-              <div class="sf-rise" style="position: absolute; right: 0; top: 0; bottom: 0; width: 120px; box-sizing: border-box; border-left: 1px solid {{t.line}}; background: {{m.sheet}}; box-shadow: -20px 0 40px -24px rgb(0 0 0 / 0.5); padding: 12px;"><div style="width: 56px; height: 8px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 12px; height: 16px; border-radius: 6px; border: 1px solid {{t.accentLine}};"></div><div style="margin-top: 7px; height: 30px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="margin-top: 7px; height: 16px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="position: absolute; left: 12px; right: 12px; bottom: 12px; height: 18px; border-radius: 9px; background: {{t.primaryBg}};"></div></div>
+              <div class="sf-sheet-r" style="position: absolute; right: 0; top: 0; bottom: 0; width: 120px; box-sizing: border-box; border-left: 1px solid {{t.line}}; background: {{m.sheet}}; box-shadow: -20px 0 40px -24px rgb(0 0 0 / 0.5); padding: 12px;"><div style="width: 56px; height: 8px; border-radius: 4px; background: {{m.barStrong}};"></div><div style="margin-top: 12px; height: 16px; border-radius: 6px; border: 1px solid {{t.accentLine}};"></div><div style="margin-top: 7px; height: 30px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="margin-top: 7px; height: 16px; border-radius: 6px; border: 1px solid {{t.line}};"></div><div style="position: absolute; left: 12px; right: 12px; bottom: 12px; height: 18px; border-radius: 9px; background: {{t.primaryBg}};"></div></div>
               <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true" style="position: absolute; left: 150px; top: 80px;"><path d="M28 10H4M9 5l-5 5 5 5" stroke="{{curve}}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             </div>
-            <figcaption style="margin-top: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">✓</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Sheet keeps the card</span></div><div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">x 440 → 0 · 420 ms expo · card x −220</div></figcaption>
+            <figcaption style="margin-top: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{t.primaryBg}}; color: {{t.primaryText}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; display: flex; align-items: center; justify-content: center;">✓</span><span style="font-size: 14px; font-weight: 650; color: {{t.textStrong}};">Sheet keeps the card</span></div><div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};">x 48 → 0 · 360 ms expo · card x −220</div></figcaption>
           </figure>
         </div>
+      </section>
+    </div>
+
+    <div class="{{t.fx.enter4}}" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid {{t.line}}; display: flex; gap: 24px;">
+      <section aria-label="Theme roles" style="width: 568px; flex-shrink: 0;">
+        <div style="{{eyebrow}}">Roles · <span style="font-family: 'Geist Mono', ui-monospace, monospace; letter-spacing: 0; text-transform: none;">t.fx.*</span> · <span style="color: {{looks.au}};">Midnight Aurora</span> / <span style="color: {{looks.ip}};">Ink &amp; Paper</span></div>
+        <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 15px); grid-auto-flow: column; column-gap: 20px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; line-height: 15px; white-space: nowrap;">
+          <sc-for list="{{roles}}" as="r" hint-placeholder-count="10">
+            <div style="display: grid; grid-template-columns: 66px 96px 96px; column-gap: 8px;"><span style="color: {{t.textStrong}};">{{r.role}}</span><span style="color: {{looks.au}};">{{r.au}}</span><span style="color: {{looks.ip}};">{{r.ip}}</span></div>
+          </sc-for>
+        </div>
+      </section>
+      <section aria-label="Data classes" style="width: 326px; flex-shrink: 0;">
+        <div style="{{eyebrow}}">Data · both looks</div>
+        <div style="margin-top: 8px; display: grid; grid-template-rows: repeat(5, 15px); white-space: nowrap;">
+          <div style="display: grid; grid-template-columns: 48px 58px 1fr; column-gap: 10px; align-items: center;">
+            <div class="sf-bars" aria-hidden="true" style="height: 12px; display: flex; align-items: flex-end; gap: 2px;"><sc-for list="{{bars}}" as="b" hint-placeholder-count="6"><span style="width: 6px; height: {{b}}px; border-radius: 1.5px; background: {{curve}};"></span></sc-for></div>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.textStrong}};">sf-bars</span><span style="font-size: 11px; color: {{t.text2}};">bar chart · bars rise 0–280 ms</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 48px 58px 1fr; column-gap: 10px; align-items: center;">
+            <div class="sf-cells" aria-hidden="true" style="display: grid; grid-template-columns: repeat(7, 5px); grid-template-rows: repeat(2, 5px); gap: 2px;"><sc-for list="{{cells}}" as="c" hint-placeholder-count="14"><span style="border-radius: 1px; background: {{c}};"></span></sc-for></div>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.textStrong}};">sf-cells</span><span style="font-size: 11px; color: {{t.text2}};">heatmap · cells fade in by weekday</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 48px 58px 1fr; column-gap: 10px; align-items: center;">
+            <svg width="48" height="12" viewBox="0 0 48 12" aria-hidden="true"><path class="sf-draw" pathLength="1" d="M1 10 L9 7 L17 8 L25 4 L33 5 L47 1.5" fill="none" stroke="{{curve}}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.textStrong}};">sf-draw</span><span style="font-size: 11px; color: {{t.text2}};">{{drawNote}}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 48px 58px 1fr; column-gap: 10px; align-items: center;">
+            <span aria-hidden="true" style="height: 15px; overflow: hidden;"><span class="sf-tick" style="display: inline-block; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 13px; line-height: 15px; color: {{t.textStrong}};">146</span></span>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.textStrong}};">sf-tick</span><span style="font-size: 11px; color: {{t.text2}};">headline number · rises at 240 ms</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 48px 58px 1fr; column-gap: 10px; align-items: center;">
+            <span aria-hidden="true" style="height: 4px; border-radius: 2px; background: {{t.track}}; overflow: hidden;"><span class="sf-grow" style="display: block; width: 70%; height: 100%; background: {{curve}};"></span></span>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.textStrong}};">sf-grow</span><span style="font-size: 11px; color: {{t.text2}};">progress fill · glint on the hero bar</span>
+          </div>
+        </div>
+      </section>
+      <section aria-label="Restraint rules" style="flex-grow: 1; min-width: 0;">
+        <div style="{{eyebrow}}">Restraint</div>
+        <ul style="margin: 8px 0 0; padding: 0; list-style: none; display: grid; grid-template-rows: repeat(5, 15px); font-size: 11px; line-height: 15px; color: {{t.text}}; white-space: nowrap;">
+          <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+            <li style="display: flex; align-items: center; gap: 8px;"><span aria-hidden="true" style="width: 4px; height: 4px; border-radius: 50%; background: {{curve}}; flex-shrink: 0;"></span>{{r}}</li>
+          </sc-for>
+        </ul>
       </section>
     </div>
   </div>
@@ -159,7 +203,32 @@ class Component extends DCLogic {
       focus: '0 0 0 3px rgb(180 70 26 / 0.12)',
       g1: 'rgb(197 54 55 / 0.35)', g2: 'rgb(211 114 30 / 0.35)', g3: 'rgb(51 115 68 / 0.4)', g4: '#1d1a16',
     };
-    return { t, m, grainId: 'motion-grain-' + (dark ? 'd' : 'l'), amb: { ax: 900, ay: -260, bx: -200, by: 520 }, curve: dark ? '#28d3f4' : '#b4461a' };
+    // What each t.fx role resolves to in the two looks; the look being rendered is drawn in the accent.
+    const R = [
+      ['enter', 'au-in 80→380', 'ip-in 60→480'], ['title', 'au-in blur', 'ip-ink wipe'], ['stagger', 'au-stagger +60', 'ip-stagger +60'],
+      ['dialog', 'au-dialog blur', 'ip-dialog tilt'], ['lift', 'au-lift glow', 'ip-lift tilt'], ['press', 'au-press .97', 'ip-press .98'],
+      ['pressDanger', 'au-press-danger', 'ip-press'], ['glint', 'au-glint sweep', '—'], ['correct', 'au-correct', 'ip-correct'],
+      ['reward', 'au-pop .6→1', 'ip-stamp 1.9→1'],
+    ];
+    const ink = dark ? [40, 211, 244] : [180, 70, 26];
+    const heat = [0.2, 0.55, 0.35, 0.8, 0.45, 1, 0.3, 0.6, 0.25, 0.9, 0.5, 0.7, 0.15, 0.4];
+    return {
+      t, m, grainId: 'motion-grain-' + (dark ? 'd' : 'l'), amb: { ax: 900, ay: -260, bx: -200, by: 520 }, curve: dark ? '#28d3f4' : '#b4461a',
+      eyebrow: 'font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ' + t.text2 + ';',
+      looks: { au: dark ? t.accentText : t.text2, ip: dark ? t.text2 : t.accentText },
+      roles: R.map(([role, au, ip]) => ({ role, au, ip })),
+      bars: [5, 8, 6, 10, 12, 9],
+      // Kept in the script: the template rewrites a camelCase attribute written as text in the markup.
+      drawNote: 'ring, sparkline · pathLength="1"',
+      cells: heat.map((a) => 'rgb(' + ink.join(' ') + ' / ' + a + ')'),
+      rules: [
+        'Four entrance steps at most, in reading order; one per element',
+        'Stagger the container, never its children',
+        'No pinning entrance (sf-rise, sf-deal) on a lift or press',
+        'One slow loop per screen; inputs never wait; study cards stay still',
+        'Settles in about 1 s; the still is complete; never the only signal',
+      ],
+    };
   }
 }
 </script>

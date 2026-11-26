@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { createServer, type Plugin, type ViteDevServer } from 'vite';
 
 // Base port for this spec's own Vite fixture server, offset per-worker below.
@@ -22,6 +22,16 @@ async function gotoFixture(page: Page, query = 'locale=en') {
   await page.goto(url);
   const root = page.locator('[data-library-visual-view]');
   await expect(root).toBeVisible({ timeout: 15_000 });
+}
+// LibraryScreen.tsx keeps LibraryTools inside a closed-by-default <details data-library-region="tools">.
+// The disclosure is uncontrolled and sits below the card grid, so a click sent while the fixture's cards
+// are still arriving can miss it or be undone by the re-render. Open it until the wanted tool is there.
+async function openLibraryTools(page: Page, tool: Locator) {
+  const tools = page.locator('[data-library-region="tools"]');
+  await expect(async () => {
+    if (!await tools.evaluate(element => (element as HTMLDetailsElement).open)) await tools.locator('summary').click();
+    await expect(tool).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
 }
 const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: '390px', width: 390, height: 844 }] as const;
 
@@ -68,6 +78,20 @@ async function expectAccessibleAndContained(page: Page, label: string) {
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 }
 
+/**
+ * Crystal paints a library dialog's fill on the frame's chamfered ::after layer, so the frame's drop-shadow glow is
+ * not clipped. The fill must still end in an opaque gradient so nothing behind the dialog shows through.
+ */
+async function expectOpaqueCrystalFill(dialog: Locator, stops: readonly [string, string]) {
+  const fill = await dialog.evaluate(element => {
+    const style = getComputedStyle(element, '::after');
+    return { content: style.content, position: style.position, image: style.backgroundImage };
+  });
+  expect(fill.content).not.toBe('none');
+  expect(fill.position).toBe('absolute');
+  expect(fill.image.endsWith(`linear-gradient(170deg, ${stops[0]} 0%, ${stops[1]} 100%)`)).toBe(true);
+}
+
 async function expectReducedMotion(page: Page, label: string) {
   const animations = await page.evaluate(() => document.getAnimations().filter(animation => Number(animation.effect?.getComputedTiming().duration ?? 0) > 1).map(animation => animation.effect instanceof KeyframeEffect && animation.effect.target instanceof Element ? getComputedStyle(animation.effect.target).animationName : 'unnamed animation'));
   expect(animations, `${label} starts motion despite reduced-motion preference`).toEqual([]);
@@ -109,8 +133,8 @@ test('Library create input defers submit during IME composition', async ({ page 
   // a closed-by-default <details data-library-region="tools"> disclosure —
   // the primary create-card path is the dialog opened from LibraryOverview's
   // "Create card" button. Expand it before the input becomes visible.
-  await page.locator('[data-library-region="tools"] summary').click();
   const input = page.locator('#new-word');
+  await openLibraryTools(page, input);
   const count = page.locator('[data-library-generate-count]');
   await expect(input).toBeVisible({ timeout: 15_000 });
   await input.dispatchEvent('compositionstart');
@@ -136,8 +160,7 @@ for (const mode of ['light', 'dark'] as const) {
     await gotoFixture(page, 'locale=en&dialog=clear');
     await page.addStyleTag({ content: '.library-dialog-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
     const dialog = page.getByRole('alertdialog');
-    await expect(dialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
-    await expect(dialog).toHaveCSS('background-image', /linear-gradient/);
+    await expectOpaqueCrystalFill(dialog, mode === 'light' ? ['rgb(255, 245, 248)', 'rgb(227, 239, 255)'] : ['rgb(26, 16, 32)', 'rgb(11, 10, 20)']);
     await expect(dialog.getByRole('button', { name: 'Keep library' })).toBeInViewport({ ratio: 1 });
     await expect(dialog.getByRole('button', { name: 'Delete everything' })).toBeDisabled();
     await expectAccessibleAndContained(page, `Crystal ${mode} clear dialog without backdrop blur`);
@@ -145,8 +168,7 @@ for (const mode of ['light', 'dark'] as const) {
     await gotoFixture(page, 'locale=en&dialog=import-error');
     await page.addStyleTag({ content: '.library-dialog-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
     const importDialog = page.getByRole('dialog');
-    await expect(importDialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
-    await expect(importDialog).toHaveCSS('background-image', /linear-gradient/);
+    await expectOpaqueCrystalFill(importDialog, mode === 'light' ? ['rgb(245, 251, 255)', 'rgb(219, 238, 255)'] : ['rgb(20, 26, 43)', 'rgb(10, 13, 23)']);
     await expect(importDialog.getByRole('alert')).toBeVisible();
     await expectAccessibleAndContained(page, `Crystal ${mode} import dialog without backdrop blur`);
     await testInfo.attach(`crystal-${mode}-import-without-blur`, { body: await page.screenshot(), contentType: 'image/png' });
@@ -185,7 +207,7 @@ for (const theme of themes) for (const viewport of viewports) {
     // LibraryScreen.tsx now tucks LibraryTools (and its "AI Dialogue"/"Scan
     // Text" buttons) inside a closed-by-default <details data-library-region="tools">
     // disclosure — see the IME test above for the same pattern.
-    await page.locator('[data-library-region="tools"] summary').click();
+    await openLibraryTools(page, page.getByRole('button', { name: 'AI Dialogue' }));
     await page.getByRole('button', { name: 'AI Dialogue' }).click();
     await expect(page.getByRole('heading', { name: 'Practice in context' })).toBeVisible();
     await expectAccessibleAndContained(page, `${name}-dialogue`);
@@ -201,6 +223,53 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectReducedMotion(page, `${name}-extractor`);
     await expectDialogInViewport(page, testInfo, `${name}-extractor`);
     await expectScreen(page, testInfo, `${name}-extractor`);
+  });
+}
+
+for (const mode of ['light', 'dark'] as const) for (const viewport of viewports) {
+  test(`crystal ${mode} Library list view keeps every row inside its rim at ${viewport.name}`, async ({ page }, testInfo) => {
+    page.on('pageerror', error => { throw error; });
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: mode, reducedMotion: 'reduce' });
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+    await page.addInitScript(mode => {
+      localStorage.setItem('sonflash_theme_family', 'crystal');
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, mode);
+    const name = `library-crystal-${mode}-${viewport.name}-list`;
+    await gotoFixture(page);
+    const listView = page.getByRole('button', { name: 'List view' });
+    await listView.click();
+    await expect(listView).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-library-view="list"]')).toBeVisible();
+    await expect(page.getByText('/əˈdæpt/')).toBeVisible();
+    await expect(page.getByText('in 2d')).toBeVisible();
+    // Each row grows with its content, so no part of it may reach past the row's box: a part that did would
+    // cover the rim's chamfered corner or spill into the next row.
+    const spills = await page.locator('.library-word-card').evaluateAll(cards => cards.flatMap((card, index) => {
+      const row = card.getBoundingClientRect();
+      return [...card.children].flatMap(part => {
+        const box = part.getBoundingClientRect();
+        const outside = box.width > 0 && box.height > 0
+          && (box.top < row.top - 0.5 || box.left < row.left - 0.5 || box.bottom > row.bottom + 0.5 || box.right > row.right + 0.5);
+        return outside ? [`row ${index + 1}: ${part.className}`] : [];
+      });
+    }));
+    expect(spills, `${name} has parts outside their row`).toEqual([]);
+    if (viewport.name === '390px') {
+      // On a phone the row actions stay visible and keep a 44 px touch target.
+      const targets = await page.locator('.library-word-card :is(.library-word-controls button, .library-word-select)').evaluateAll(elements => elements
+        .map(element => element.getBoundingClientRect())
+        .filter(box => box.width > 0 && box.height > 0)
+        .map(box => Math.min(box.width, box.height)));
+      expect(targets.length).toBeGreaterThan(0);
+      expect(Math.min(...targets), `${name} has a row action under 44 px`).toBeGreaterThanOrEqual(44);
+    }
+    await expectAccessibleAndContained(page, name);
+    await expectReducedMotion(page, name);
+    await expectScreen(page, testInfo, name);
   });
 }
 
@@ -249,7 +318,10 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
         await expect(page.getByRole('button', { name: 'Create deck' })).toHaveAttribute('aria-busy', 'true');
       }
       if (dialog === 'deck-create-error') await expect(page.getByRole('alert')).toBeVisible();
-      if (dialog === 'import-progress') await expect(page.getByRole('progressbar')).toHaveAttribute('value', '12');
+      if (dialog === 'import-progress') {
+        // Crystal keeps the native bar; Classic draws its own so the fill can animate.
+        await expect(page.getByRole('progressbar', { name: 'Importing 12 of 24' })).toHaveAttribute(theme.family === 'crystal' ? 'value' : 'aria-valuenow', '12');
+      }
       if (dialog === 'import-error') await expect(page.getByRole('alert')).toBeVisible();
       if (dialog === 'edit-review') {
         await expect(page.getByText('Card 2 of 6')).toBeVisible();
@@ -309,7 +381,7 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
 
 async function scanExtractorPassage(page: Page) {
   await gotoFixture(page, 'locale=en&dialog=extract');
-  await page.locator('[data-library-region="tools"] summary').click();
+  await openLibraryTools(page, page.getByRole('button', { name: 'Scan Text' }));
   await page.getByRole('button', { name: 'Scan Text' }).click();
   const dialog = page.getByRole('dialog', { name: 'Scan text' });
   await dialog.getByRole('textbox', { name: 'Text to scan' }).fill(extractorPassage);

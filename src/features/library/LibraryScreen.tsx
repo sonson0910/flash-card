@@ -178,7 +178,7 @@ export function applyLibraryFilter(actions: LibraryScreenActions, filter: Librar
 
 function DeferredLibraryFallback({ label }: { label: ReactNode }) {
   return (
-    <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
+    <div className="skeleton-sheen min-h-40 rounded-[26px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)]" role="status">
       <span className="sr-only">{label}</span>
     </div>
   );
@@ -361,10 +361,10 @@ function LibraryCanvasRail({
 }) {
   const { tools } = model;
   const { i18n } = useLingui();
-  const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" data-library-filter={key} aria-pressed={selected} className={selected ? 'is-active' : ''} onClick={onClick}>{label}</button>;
-  const deck = (key: string, name: ReactNode, selected: boolean, count: string | number | null, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span>{count !== null && <small>{count}</small>}</button>;
+  const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" data-library-filter={key} aria-pressed={selected} className={selected ? 'is-active sf-ease' : 'sf-ease'} onClick={onClick}>{label}</button>;
+  const deck = (key: string, name: ReactNode, selected: boolean, count: string | number | null, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active sf-ease' : 'sf-ease'} onClick={onClick}><span>{name}</span>{count !== null && <small>{count}</small>}</button>;
   const filterMark = (mark: ReactNode) => <span className="library-filter-mark" aria-hidden="true">{mark}</span>;
-  return <div className="library-canvas-rail">
+  return <div className="library-canvas-rail fx-enter">
     <div className="library-canvas-decks" role="tablist" aria-label={i18n._(msg({ id: 'library.decks.nav-label', message: 'Decks' }))}>
       {deck('all-decks', <Trans {...msg({ id: 'library.decks.all', message: 'All decks' })} />, tools.activeCustomDeck.kind === 'all', tools.libraryCount, () => actions.tools.changeCustomDeck({ kind: 'all' }))}
       {tools.customDecks.map(deckName => {
@@ -385,8 +385,8 @@ function LibraryCanvasRail({
       {filter('starred', <><Bookmark size={13} fill="currentColor"/><Trans {...msg({ context: 'library.filters.starred', message: 'Starred' })} /></>, tools.showStarredOnly, () => actions.tools.changeStarredOnly(!tools.showStarredOnly))}
       <span aria-hidden="true" className="library-canvas-rail-divider" />
       <div className="library-canvas-view-toggle" role="group" aria-label={i18n._(msg({ id: 'library.view.label', message: 'View' }))}>
-        <button type="button" aria-label={i18n._(msg({ id: 'library.view.grid', message: 'Grid view' }))} aria-pressed={viewMode === 'grid'} className={viewMode === 'grid' ? 'is-active' : ''} onClick={() => onViewModeChange('grid')}><LayoutGrid size={15} aria-hidden="true" /></button>
-        <button type="button" aria-label={i18n._(msg({ id: 'library.view.list', message: 'List view' }))} aria-pressed={viewMode === 'list'} className={viewMode === 'list' ? 'is-active' : ''} onClick={() => onViewModeChange('list')}><List size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label={i18n._(msg({ id: 'library.view.grid', message: 'Grid view' }))} aria-pressed={viewMode === 'grid'} className={viewMode === 'grid' ? 'is-active sf-ease' : 'sf-ease'} onClick={() => onViewModeChange('grid')}><LayoutGrid size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label={i18n._(msg({ id: 'library.view.list', message: 'List view' }))} aria-pressed={viewMode === 'list'} className={viewMode === 'list' ? 'is-active sf-ease' : 'sf-ease'} onClick={() => onViewModeChange('list')}><List size={15} aria-hidden="true" /></button>
       </div>
     </div>
   </div>;

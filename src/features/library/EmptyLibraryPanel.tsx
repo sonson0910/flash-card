@@ -136,7 +136,7 @@ export function EmptyLibraryPanel({
         </div>
       ) : (
         <div className="empty-library__classic-tile">
-          <div className="empty-library__card-stack" aria-hidden="true">
+          <div className="empty-library__card-stack sf-bob-a" aria-hidden="true">
             <span className="empty-library__card-outline empty-library__card-outline--back" />
             <span className="empty-library__card-outline empty-library__card-outline--front" />
             <span className="empty-library__mini-card">a</span>
@@ -228,7 +228,7 @@ function EmptyLibraryActions({
 
   return (
     <>
-      <form className="empty-library__form" onSubmit={submit} onKeyDown={onKeyDown}>
+      <form className="empty-library__form sf-ease" onSubmit={submit} onKeyDown={onKeyDown}>
         <label className="sr-only" htmlFor="empty-library-word">{wordCopy.wordLabel}</label>
         <input
           id="empty-library-word"
@@ -248,7 +248,7 @@ function EmptyLibraryActions({
           onCompositionStart={onCompositionStart}
           onCompositionEnd={onCompositionEnd}
         />
-        <button className="empty-library__generate" type="submit" onPointerDown={onPointerSubmit} disabled={!canGenerate}>
+        <button className={canGenerate ? 'empty-library__generate fx-press' : 'empty-library__generate'} type="submit" onPointerDown={onPointerSubmit} disabled={!canGenerate}>
           {isGenerating
             ? <Trans {...msg({ id: 'library.create.creating', message: 'Creating card…' })} />
             : isImporting

@@ -358,10 +358,13 @@ for (const theme of themes) {
           const finalAction = panel.querySelector<HTMLElement>('.account-menu-danger-action');
           const panelBounds = panel.getBoundingClientRect();
           const actionBounds = finalAction?.getBoundingClientRect();
+          // Crystal frames the menu with the panel and scrolls the surface inside it; other families scroll the panel.
+          const surface = panel.querySelector<HTMLElement>('.account-menu-surface');
+          const scroller = surface && surface.scrollHeight > surface.clientHeight + 1 ? surface : panel;
           return {
-            scrollHeight: panel.scrollHeight,
-            clientHeight: panel.clientHeight,
-            scrollTop: panel.scrollTop,
+            scrollHeight: scroller.scrollHeight,
+            clientHeight: scroller.clientHeight,
+            scrollTop: scroller.scrollTop,
             panelTop: panelBounds.top,
             panelBottom: panelBounds.bottom,
             actionTop: actionBounds?.top ?? Number.NaN,

@@ -10,7 +10,7 @@
   backdrop-filter: blur(2px);
 }
 
-.course-add {
+:where(html[data-theme-family=crystal]) .course-add {
   position: fixed;
   inset: 50% auto auto 50%;
   z-index: 101;
@@ -26,14 +26,30 @@
   color: var(--sf-text);
   box-shadow: inset 0 1px 0 var(--sf-surface), 0 2px 6px color-mix(in srgb, var(--sf-text) 8%, transparent), 0 50px 90px -40px color-mix(in srgb, var(--sf-text) 55%, transparent);
 }
-html:not([data-theme-family=crystal]) .course-add { background: var(--sf-dialog-bg, var(--sf-surface)); }
-.dark .course-add {
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-add {
   border-radius: 26px;
   box-shadow: 0 40px 90px -30px rgb(0 0 0 / .9), 0 0 70px -34px color-mix(in srgb, var(--sf-brand) 50%, transparent), inset 0 1px 0 var(--sf-edge-highlight);
 }
+:where(html:not([data-theme-family=crystal])) .course-add {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 101;
+  width: min(720px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  translate: -50% -50%;
+  padding: 28px 30px 26px;
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
+  border-radius: var(--sf-dialog-radius, 18px);
+  background-color: var(--sf-surface);
+  color: var(--sf-text);
+  box-shadow: var(--sf-dialog-shadow);
+  line-height: normal;
+}
+html:not([data-theme-family=crystal]) .course-add { background: var(--sf-dialog-bg, var(--sf-surface)); }
 html[data-theme-family=crystal] .course-add {
   --sf-chamfer-fill: var(--sf-dialog-bg);
-  --sf-chamfer-edge: var(--sf-edge-highlight);
   border-color: var(--sf-edge-highlight);
   border-radius: 0;
   box-shadow: none;
@@ -41,9 +57,11 @@ html[data-theme-family=crystal] .course-add {
 
 .course-add__head { display: flex; align-items: flex-start; gap: 14px; }
 .course-add__head > div { min-width: 0; flex: 1; }
-.course-add__title { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 32px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; }
-.course-add__title em { color: var(--sf-brand); font-style: italic; }
-.dark .course-add__title em { font-style: normal; }
+:where(html[data-theme-family=crystal]) .course-add__title { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 32px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; }
+:where(html[data-theme-family=crystal]) .course-add__title em { color: var(--sf-brand); font-style: italic; }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-add__title em { font-style: normal; }
+:where(html:not([data-theme-family=crystal])) .course-add__title { margin: 0; color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-size: 32px; font-weight: var(--sf-display-weight, 380); letter-spacing: -.02em; }
+:where(html:not([data-theme-family=crystal])) .course-add__title em { color: var(--sf-brand); font-style: var(--sf-em-style, italic); }
 .course-add__subtitle { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14px; line-height: 1.5; }
 .course-add__close {
   display: grid;
@@ -58,6 +76,15 @@ html[data-theme-family=crystal] .course-add {
   cursor: pointer;
 }
 .course-add__close:hover { color: var(--sf-text); }
+/* LangCourses close (L133): the board's 36px round button painted inside the 44px target, its line an inset ring,
+   held to the title's top and the dialog's right padding edge like the board's. */
+:where(html:not([data-theme-family=crystal])) .course-add__close {
+  margin: -4px -4px -4px 0;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+}
+:where(html:not([data-theme-family=crystal])) .course-add__close > svg { width: 15px; height: 15px; }
 
 html[data-theme-family=crystal] .course-add__title { font-size: 34px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
 html[data-theme-family=crystal] .course-add__title em { color: var(--sf-brand-text); }
@@ -91,7 +118,9 @@ html[data-theme-family=crystal] .course-add__label--caps { color: var(--sf-brand
 .course-target-card[data-course-language='en'] .course-target-card__name { font-family: var(--sf-font-display); }
 .course-target-card__name { margin-top: auto; font-size: 16px; font-weight: 700; }
 .course-target-card__sample { overflow: hidden; margin-top: 2px; color: var(--sf-text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.course-target-card__tag {
+/* LangCourses language cards (L139-L140): glyph and name in textStrong; the picked glyph keeps the accent below. */
+:where(html:not([data-theme-family=crystal])) :is(.course-target-card__glyph, .course-target-card__name) { color: var(--sf-text-strong); }
+:where(html[data-theme-family=crystal]) .course-target-card__tag {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -107,25 +136,51 @@ html[data-theme-family=crystal] .course-add__label--caps { color: var(--sf-brand
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.course-target-card[data-state='selected'] {
+:where(html[data-theme-family=crystal]) .course-target-card[data-state='selected'] {
   border: 1.5px solid var(--sf-text);
   box-shadow: 0 10px 20px -14px var(--sf-shadow);
 }
+:where(html:not([data-theme-family=crystal])) .course-target-card__tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  height: 20px;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-tertiary);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+:where(html:not([data-theme-family=crystal])) .course-target-card[data-state='selected'] {
+  border: 1.5px solid var(--sf-text);
+  background-color: var(--sf-surface-raised);
+  box-shadow: 0 10px 20px -14px rgb(60 40 20 / .6);
+}
 .course-target-card[data-state='selected'] .course-target-card__glyph { color: var(--sf-brand); }
-.course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-text); color: var(--sf-surface); }
-.dark .course-target-card[data-state='selected'] {
+:where(html[data-theme-family=crystal]) .course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-text); color: var(--sf-surface); }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-target-card[data-state='selected'] {
   border-color: var(--sf-brand);
   background-color: color-mix(in srgb, var(--sf-brand) 10%, transparent);
   box-shadow: 0 0 30px -10px color-mix(in srgb, var(--sf-brand) 70%, transparent);
 }
-.dark .course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-brand); color: var(--sf-on-brand); }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-brand); color: var(--sf-on-brand); }
+:where(html:not([data-theme-family=crystal])) .course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-primary-bg, var(--sf-text)); color: var(--sf-on-primary, var(--sf-surface)); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .course-target-card[data-state='selected'] {
+  border-color: var(--sf-brand);
+  background-color: rgb(40 211 244 / .1);
+  box-shadow: 0 0 30px -10px rgb(40 211 244 / .7);
+}
 .course-target-card[data-state='added'] { cursor: not-allowed; opacity: .5; }
 
 /* The chamfer paints its fill as a background image, so a Crystal fill must be a gradient: a bare colour invalidates
    the whole background image and leaves the card see-through. Every card sits on the opaque panel colour. */
 html[data-theme-family=crystal] .course-target-card { --sf-chamfer-fill: linear-gradient(var(--sf-surface), var(--sf-surface)); border-radius: 0; background-color: transparent; }
 html[data-theme-family=crystal] .course-target-card[data-state='selected'] {
-  --sf-chamfer-edge: var(--sf-brand);
   --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
   border-color: var(--sf-brand);
   box-shadow: none;
@@ -177,14 +232,19 @@ html[data-theme-family=crystal] .course-target-card[data-state='selected'] .cour
 .course-add__select select option { background: var(--sf-surface); color: var(--sf-text); }
 .course-add__select-hint { position: absolute; right: 38px; color: var(--sf-text-muted); font-size: 12px; font-weight: 500; pointer-events: none; }
 .course-add__select-icon { position: absolute; right: 14px; color: var(--sf-text-muted); pointer-events: none; }
-html[data-theme-family=crystal] .course-add__select { --sf-chamfer-edge: var(--sf-edge-highlight); border-radius: 0; }
+/* LangCourses selects (L148, L151): 46px plus the board's 1px line, value in textStrong, the hint in text3 and a
+   14px chevron with the board's 2.2 stroke. */
+:where(html:not([data-theme-family=crystal])) .course-add__select { height: 48px; color: var(--sf-text-strong); }
+:where(html:not([data-theme-family=crystal])) .course-add__select-hint { color: var(--sf-text-tertiary); }
+:where(html:not([data-theme-family=crystal])) .course-add__select-icon { width: 14px; height: 14px; stroke-width: 2.2; }
+html[data-theme-family=crystal] .course-add__select { border-radius: 0; }
 html[data-theme-family=crystal] .course-add__select select:focus-visible { outline-offset: -4px; }
 
 .course-add__error { margin: 14px 0 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
 
 .course-add__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
-.course-add__primary,
-.course-add__secondary {
+:where(html[data-theme-family=crystal]) .course-add__primary,
+:where(html[data-theme-family=crystal]) .course-add__secondary {
   display: inline-flex;
   min-height: 54px;
   align-items: center;
@@ -198,20 +258,36 @@ html[data-theme-family=crystal] .course-add__select select:focus-visible { outli
   white-space: nowrap;
   cursor: pointer;
 }
-.course-add__primary { border: 0; background-color: var(--sf-text); color: var(--sf-surface); }
-.dark .course-add__primary { border-radius: 16px; background-color: var(--sf-brand); color: var(--sf-on-brand); box-shadow: 0 0 26px -6px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
-.course-add__secondary { padding: 0 20px; border: 1px solid var(--sf-border); background-color: var(--sf-surface-control); color: var(--sf-text); font-size: 15px; font-weight: 600; }
-.dark .course-add__secondary { border-radius: 16px; }
+:where(html[data-theme-family=crystal]) .course-add__primary { border: 0; background-color: var(--sf-text); color: var(--sf-surface); }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-add__primary { border-radius: 16px; background-color: var(--sf-brand); color: var(--sf-on-brand); box-shadow: 0 0 26px -6px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
+:where(html[data-theme-family=crystal]) .course-add__secondary { padding: 0 20px; border: 1px solid var(--sf-border); background-color: var(--sf-surface-control); color: var(--sf-text); font-size: 15px; font-weight: 600; }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-add__secondary { border-radius: 16px; }
+:where(html:not([data-theme-family=crystal])) .course-add__primary,
+:where(html:not([data-theme-family=crystal])) .course-add__secondary {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 26px;
+  border-radius: var(--sf-button-radius, 999px);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+:where(html:not([data-theme-family=crystal])) .course-add__primary { border: 0; background: var(--sf-primary-bg, var(--sf-text)); color: var(--sf-on-primary, var(--sf-surface)); box-shadow: var(--sf-primary-shadow); }
+:where(html:not([data-theme-family=crystal])) .course-add__secondary { padding: 0 20px; border: 1px solid var(--sf-border); background-color: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); font-size: 15px; font-weight: 600; }
 :is(.course-add__primary, .course-add__secondary):disabled { cursor: default; opacity: .55; }
 
 html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary) { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .course-add__primary {
   --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
-  --sf-chamfer-edge: transparent;
   color: var(--sf-on-brand);
   box-shadow: none;
 }
-html[data-theme-family=crystal] .course-add__secondary { --sf-chamfer-edge: var(--sf-edge-highlight); border-color: var(--sf-edge-highlight); background-color: var(--sf-surface-control); }
+html[data-theme-family=crystal] .course-add__secondary { border-color: var(--sf-edge-highlight); background-color: var(--sf-surface-control); }
 html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary):focus-visible { outline-offset: -4px; }
 
 @media (max-width: 767px) {
@@ -226,6 +302,7 @@ html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary
   }
   .dark .course-add { border-radius: 28px 28px 0 0; }
   html[data-theme-family=crystal] .course-add { border-radius: 0; }
+  :where(html:not([data-theme-family=crystal])) .course-add { translate: none; }
   .course-add__title { font-size: 26px; }
   html[data-theme-family=crystal] .course-add__title { font-size: 26px; }
   .course-add__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -236,4 +313,14 @@ html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary
 
 @media (prefers-reduced-motion: no-preference) {
   .course-target-card { transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease; }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]):not([data-motion="reduced"]) .course-add.fx-dialog {
+    animation: sf-sheet-b-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .course-add :is(.fx-press, .fx-lift):disabled:is(:hover, :active),
+html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .course-add .course-target-card[data-state='added']:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }

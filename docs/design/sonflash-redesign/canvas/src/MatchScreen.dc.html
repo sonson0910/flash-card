@@ -2,12 +2,12 @@
 <div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column; padding-bottom: 56px;">
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 3; height: 80px; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
-    <a href="#" aria-label="End word match" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+    <a href="#" aria-label="End word match" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
     </a>
     <span style="font-size: 14px; font-weight: 600; color: {{t.text2}};">Word match <span style="color: {{t.text3}};">· 60-second run</span></span>
     <span style="margin-left: auto; font-size: 13px; color: {{t.text3}};">Best: <span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text2}};">14 pairs</span></span>
-    <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+    <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
       <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
       <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
     </button>
@@ -27,7 +27,7 @@
       <div class="sf-pulse" style="--sf-pulse: {{t.pulse}}; position: relative; width: 210px; height: 210px; border-radius: 50%;" role="timer" aria-label="9 seconds left">
         <svg width="210" height="210" viewBox="0 0 210 210" style="position: absolute; inset: 0; transform: rotate(-90deg);">
           <circle cx="105" cy="105" r="94" fill="none" stroke="{{t.track}}" stroke-width="10"></circle>
-          <circle cx="105" cy="105" r="94" fill="none" stroke="{{t.again}}" stroke-width="10" stroke-linecap="round" stroke-dasharray="590.6" stroke-dashoffset="502" style="filter: {{t.ringGlow}};"></circle>
+          <circle class="sf-draw-to" cx="105" cy="105" r="94" pathLength="1" fill="none" stroke="{{t.again}}" stroke-width="10" stroke-linecap="round" stroke-dasharray="1" stroke-dashoffset="0.85" style="filter: {{t.ringGlow}};"></circle>
         </svg>
         <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
           <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 50px; font-weight: 500; letter-spacing: -0.04em; color: {{t.danger}};">0:09</span>
@@ -35,10 +35,10 @@
         </div>
       </div>
       <div style="text-align: center;">
-        <div style="font-family: Fraunces, Georgia, serif; font-size: 64px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">11</div>
+        <div class="sf-tick" style="font-family: Fraunces, Georgia, serif; font-size: 64px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">11</div>
         <div style="margin-top: 6px; font-size: 13px; color: {{t.text2}};">pairs matched</div>
       </div>
-      <span style="height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;">×3 combo · +30 XP</span>
+      <span class="{{t.fx.reward}}" style="height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;">×3 combo · +30 XP</span>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -62,10 +62,10 @@ class Component extends DCLogic {
       pulse: dark ? 'rgb(237 83 80 / 0.4)' : 'rgb(197 54 55 / 0.22)',
       ringGlow: dark ? 'drop-shadow(0 0 8px rgb(237 83 80 / 0.8))' : 'none' };
     const S = {
-      idle: { border: '1px solid ' + t.line, bg: t.surface, shadow: t.surfaceShadow, color: t.text, opacity: 1, tag: '', tagColor: t.text3, strike: 'none', cls: 'sf-press' },
+      idle: { border: '1px solid ' + t.line, bg: t.surface, shadow: t.surfaceShadow, color: t.text, opacity: 1, tag: '', tagColor: t.text3, strike: 'none', cls: t.fx.press },
       done: { border: '1px solid ' + t.line, bg: 'transparent', shadow: 'none', color: t.text3, opacity: 0.45, tag: '✓', tagColor: t.ok, strike: 'none', cls: '' },
-      sel: { border: '2px solid ' + t.accent, bg: t.accentSoft, shadow: dark ? '0 0 36px -8px rgb(40 211 244 / 0.7)' : '0 0 0 4px rgb(180 70 26 / 0.12)', color: t.textStrong, opacity: 1, tag: 'Selected', tagColor: t.accentText, strike: 'none', cls: '' },
-      bad: { border: '1.5px solid ' + t.again, bg: t.dangerBg, shadow: 'none', color: t.danger, opacity: 1, tag: '−2s', tagColor: t.danger, strike: 'none', cls: 'sf-shake' },
+      sel: { border: '2px solid ' + t.accent, bg: t.accentSoft, shadow: dark ? '0 0 36px -8px rgb(40 211 244 / 0.7)' : '0 0 0 4px rgb(180 70 26 / 0.12)', color: t.textStrong, opacity: 1, tag: 'Selected', tagColor: t.accentText, strike: 'none', cls: t.fx.press },
+      bad: { border: '1.5px solid ' + t.again, bg: t.dangerBg, shadow: 'none', color: t.danger, opacity: 1, tag: '−2s', tagColor: t.danger, strike: 'none', cls: 'sf-shake ' + t.fx.press },
     };
     const left = [['permanent', 'done'], ['immediate', 'sel'], ['recharge', 'idle'], ['warden', 'bad'], ['exact', 'done'], ['ambition', 'idle']];
     const right = [['người quản lý, cai ngục', 'idle'], ['nạp lại năng lượng', 'idle'], ['vĩnh viễn', 'done'], ['tham vọng', 'idle'], ['ngay lập tức', 'bad'], ['chính xác', 'done']];

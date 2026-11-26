@@ -7,7 +7,7 @@
    would replace the crystal-chamfer edge gradients, so Crystal passes its fill through
    --sf-chamfer-fill instead. */
 
-:is(.progress-board, .achievements-board, .stats-canvas) {
+:where(html[data-theme-family=crystal]) :is(.progress-board, .achievements-board, .stats-canvas) {
   --st-display: var(--sf-font-display);
   --st-body-font: inherit;
   --st-mono: var(--sf-font-mono);
@@ -43,16 +43,44 @@
   --st-shelf-shadow: 0 1px 2px color-mix(in srgb, var(--sf-shadow-tint) 8%, transparent), inset 0 0 0 3px var(--sf-gold-paper);
   --st-success: var(--sf-success);
 }
+:where(html:not([data-theme-family=crystal])) :is(.progress-board, .achievements-board, .stats-canvas) {
+  --st-display: var(--sf-font-display);
+  --st-body-font: inherit;
+  --st-mono: var(--sf-font-mono);
+  --st-weight: var(--sf-display-weight, 380);
+  --st-title: var(--sf-text-strong);
+  --st-body: var(--sf-text-body);
+  --st-text2: var(--sf-text-muted);
+  --st-text3: var(--sf-text-tertiary);
+  --st-line: var(--sf-border);
+  --st-line-strong: var(--sf-edge-highlight);
+  --st-chip: var(--sf-surface-raised);
+  --st-track: var(--sf-track, color-mix(in srgb, var(--sf-text-strong) 8%, transparent));
+  --st-radius: var(--sf-panel-radius, 18px);
+  --st-btn-radius: var(--sf-button-radius, 999px);
+  --st-panel-bg: var(--sf-surface-glass);
+  --st-panel-shadow: var(--sf-panel-shadow);
+  --st-blur: var(--sf-panel-blur, none);
+  --st-accent: var(--sf-brand);
+  --st-accent-text: var(--sf-brand-text);
+  --st-em-style: var(--sf-em-style, italic);
+  --st-em-color: var(--sf-brand);
+  --st-nav-active-bg: var(--sf-nav-active-bg, var(--sf-primary-bg));
+  --st-nav-active-text: var(--sf-nav-active-text, var(--sf-on-primary));
+  --st-mastered: var(--sf-reward);
+  --st-learning: var(--sf-brand);
+  --st-new: transparent;
+  --st-heat-unavailable: var(--sf-heat-0);
+  --st-heat-glow: none;
+  --st-today-glow: none;
+  --st-tomorrow: color-mix(in srgb, var(--sf-brand) 45%, transparent);
+  --st-shelf-border: 1px solid var(--sf-gold-line);
+  --st-shelf-bg: var(--sf-surface);
+  --st-shelf-shadow: 0 1px 2px color-mix(in srgb, var(--sf-shadow-tint) 8%, transparent), inset 0 0 0 3px var(--sf-gold-paper);
+  --st-success: var(--sf-success);
+}
 
 :root.dark:not([data-theme-family='crystal']) :is(.progress-board, .achievements-board, .stats-canvas) {
-  --st-weight: 440;
-  --st-radius: 22px;
-  --st-btn-radius: 16px;
-  --st-blur: blur(18px);
-  --st-em-style: normal;
-  /* The dark board's selected range is a quiet lift, not the cyan primary fill. */
-  --st-nav-active-bg: color-mix(in srgb, var(--sf-text-strong) 8%, transparent);
-  --st-nav-active-text: var(--sf-text-strong);
   --st-heat-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 40%, transparent);
   --st-today-glow: 0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent);
   --st-shelf-border: 1px solid transparent;
@@ -108,7 +136,21 @@
   backdrop-filter: var(--st-blur);
 }
 :root:not([data-theme-family='crystal']) .stats-panel { background: var(--st-panel-bg); }
-:root[data-theme-family='crystal'] .stats-panel { --sf-chamfer-fill: var(--st-panel-bg); --sf-chamfer-edge: var(--st-line-strong); }
+:root[data-theme-family='crystal'] .stats-panel { --sf-chamfer-fill: var(--st-panel-bg); }
+/* AnimeProgress panels: the 18px chamfer, the panel fill, and a 1px inset edge in the panel's own colour along the
+   straight sides; the cut corners carry no line. Activity is edged cyan, Mastery crimson, the others with the
+   strong line. */
+:root[data-theme-family='crystal'] .stats-panel {
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--st-panel-edge, var(--st-line-strong));
+  padding: 18px 24px 16px;
+}
+:root[data-theme-family='crystal'] .stats-activity { --st-panel-edge: var(--sf-panel-edge-2); display: flex; flex-direction: column; }
+:root[data-theme-family='crystal'] .stats-mastery { --st-panel-edge: var(--sf-panel-edge); padding: 18px 22px 16px; }
+:root[data-theme-family='crystal'] .stats-grid { gap: 18px 22px; }
+@media (min-width: 1024px) {
+  :root[data-theme-family='crystal'] .stats-grid { grid-template-columns: minmax(0, 1fr) 410px; }
+}
 
 .stats-panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .stats-panel-head--stack { display: block; }
@@ -144,11 +186,40 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+:where(html[data-theme-family=crystal]) .stats-range-button {
   transition: background-color .16s ease, color .16s ease;
 }
 .stats-range-button[aria-pressed='true'] { background: var(--st-nav-active-bg); color: var(--st-nav-active-text); }
 @media (hover: hover) and (pointer: fine) {
   .stats-range-button:not([aria-pressed='true']):hover { color: var(--st-title); }
+}
+/* ProgressScreen board range: the buttons sit edge to edge in the 4px-padded group and are 36px tall. With a mouse
+   the 36px plate is drawn inside a button that keeps the 44px target and gives the extra 8px back to the group;
+   touch screens show the 44px button. */
+:where(html:not([data-theme-family=crystal])) .stats-range { gap: 0; }
+@media (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) .stats-range-button { position: relative; z-index: 0; margin-block: -4px; }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button::before {
+    content: '';
+    position: absolute;
+    inset: 4px 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: transparent;
+    transition: background-color 200ms ease;
+  }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button[aria-pressed='true'] { background: transparent; }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button[aria-pressed='true']::before { background: var(--st-nav-active-bg); }
+  /* The focus ring follows the 36px plate, inside the group's frame, in the ring colour the button resolves. */
+  :where(html:not([data-theme-family=crystal])) .stats-range-button.stats-range-button:focus-visible { outline-style: none; }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button:focus-visible::before { outline: 2px solid; outline-color: inherit; outline-offset: 2px; }
+}
+@media (pointer: fine) and (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) .stats-range-button::before { transition: none; }
+}
+@media (pointer: fine) {
+  html[data-motion="reduced"]:not([data-theme-family="crystal"]) .stats-range-button::before { transition: none; }
 }
 
 /* Heatmap */
@@ -164,16 +235,42 @@
 .stats-heat-cell { display: block; flex-shrink: 0; width: 22px; height: 22px; border-radius: 5px; }
 .stats-heat-cell[data-level='3'], .stats-heat-cell[data-level='4'] { box-shadow: var(--st-heat-glow); }
 .stats-heat-button[aria-pressed='true'] .stats-heat-cell { outline: 2px solid var(--st-title); outline-offset: 1px; }
+html:not([data-theme-family="crystal"]) .stats-heat-cell {
+  animation: sf-cells-k 360ms cubic-bezier(.16, 1, .3, 1) 400ms both;
+}
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(2):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(2) > .stats-heat-cell { animation-delay: 430ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(3):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(3) > .stats-heat-cell { animation-delay: 460ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(4):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(4) > .stats-heat-cell { animation-delay: 490ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(5):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(5) > .stats-heat-cell { animation-delay: 520ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(6):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(6) > .stats-heat-cell { animation-delay: 550ms; }
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(7):is(.stats-heat-cell),
+html:not([data-theme-family="crystal"]) .stats-heat-week > :nth-child(7) > .stats-heat-cell { animation-delay: 580ms; }
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .stats-heat-cell { animation: none; }
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .stats-heat-cell { animation: none; }
 .stats-heat-months { display: flex; gap: var(--heat-gap); margin-top: 6px; font-size: 11px; color: var(--sf-text-tertiary); }
 .stats-heat-month { width: var(--heat-row); flex-shrink: 0; overflow: visible; white-space: nowrap; }
+/* ProgressScreen board: the month row starts 10px under the last row of cells; a day button reaches 1px below its cell. */
+:where(html:not([data-theme-family=crystal])) .stats-heat-months { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .stats-heatmap[data-interactive] .stats-heat-months { margin-top: 9px; }
 .stats-heat-foot { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; font-size: 12px; color: var(--sf-text-muted); }
 .stats-heat-summary { display: flex; gap: 16px; }
-.stats-heat-legend { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--sf-text-muted); }
+:where(html[data-theme-family=crystal]) .stats-heat-legend { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--sf-text-muted); }
+:where(html:not([data-theme-family=crystal])) .stats-heat-legend { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--st-text3); }
+:where(html:not([data-theme-family=crystal])) .stats-panel-head > .stats-heat-legend { margin-left: auto; }
 .stats-heat-swatch { width: 12px; height: 12px; border-radius: 3px; }
 
 .stats-inspect { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sf-border); display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
 .stats-inspect-label { font-size: 12px; font-weight: 600; color: var(--sf-text-muted); }
-.stats-inspect-input { border-radius: 12px; font-size: 14px; color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .stats-inspect-input { border-radius: 12px; font-size: 14px; color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .stats-inspect-input { border-radius: var(--sf-input-radius, 12px); font-size: 14px; color: var(--sf-text); }
+:root:not([data-theme-family='crystal']) .stats-inspect-input { padding-inline: 14px; }
 .stats-quiet-button {
   border: 1px solid var(--sf-border);
   border-radius: var(--st-btn-radius);
@@ -206,9 +303,12 @@
 .stats-mastery-legend li[data-kind='new'] .stats-legend-swatch { border: 1.5px solid var(--st-line-strong); }
 .stats-legend-label { min-width: 0; overflow-wrap: anywhere; color: var(--st-body); }
 .stats-legend-value { margin-left: auto; font-family: var(--sf-font-mono); font-size: 13px; color: var(--st-title); }
+:root:not([data-theme-family='crystal']) .stats-legend-label { color: var(--sf-text); }
+:root:not([data-theme-family='crystal']) .stats-legend-value { color: var(--st-text2); }
 .stats-mastery-foot { margin: auto 0 0; padding-top: 18px; border-top: 1px solid var(--sf-border); display: flex; justify-content: space-between; font-size: 13px; color: var(--sf-text-muted); }
 .stats-mastery-fact { display: flex; gap: 6px; }
 .stats-mastery-fact dd { margin: 0; font-weight: 600; color: var(--st-success); }
+:root:not([data-theme-family='crystal']) .stats-mastery-fact[data-fact='best-streak'] dd { color: var(--sf-text); }
 .stats-mastery-chart + .stats-mastery-foot { margin-top: 18px; }
 .stats-mastery > .stats-mastery-foot { margin-top: auto; }
 
@@ -221,7 +321,9 @@
   text-transform: uppercase;
   color: var(--sf-brand-text);
 }
-:root[data-theme-family='crystal'] .stats-activity .stats-panel-title { display: inline-flex; align-items: center; gap: 8px; color: var(--st-title); }
+:root[data-theme-family='crystal'] .stats-activity .stats-panel-title { display: inline-flex; align-items: center; gap: 8px; color: var(--st-holo-text); }
+:root[data-theme-family='crystal'] .stats-panel-head { gap: 6px 12px; }
+:root[data-theme-family='crystal'] .stats-panel-head > .stats-heat-legend { margin-left: auto; }
 :root[data-theme-family='crystal'] .stats-activity .stats-panel-title::before {
   content: '';
   width: 8px;
@@ -249,10 +351,31 @@
   text-transform: uppercase;
 }
 :root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true'] { background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: var(--sf-on-primary); }
+/* The board's range plates are 36px tall. With a mouse the plate is drawn 36px inside a button that
+   keeps the 44px target and gives the extra 8px back to the row; touch screens show the 44px plate. */
+@media (pointer: fine) {
+  :root[data-theme-family='crystal'] .stats-range-button {
+    position: relative;
+    margin-block: -4px;
+    padding: 0 16px;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root[data-theme-family='crystal'] .stats-range-button::before {
+    content: '';
+    position: absolute;
+    inset: 4px 0;
+    background: var(--st-chip);
+    box-shadow: inset 0 0 0 1px var(--st-line-strong);
+  }
+  :root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true'] { background: transparent; box-shadow: none; }
+  :root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true']::before { background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); }
+  :root[data-theme-family='crystal'] .stats-range-button > span { position: relative; }
+}
 
 :root[data-theme-family='crystal'] .stats-heatmap { --heat-row: 26px; --heat-gap: 4px; margin-top: 14px; }
 :root[data-theme-family='crystal'] .stats-heat-grid { width: 100%; }
-:root[data-theme-family='crystal'] .stats-heat-weekdays { font-family: var(--sf-font-display); }
+:root[data-theme-family='crystal'] .stats-heat-weekdays { font-family: var(--sf-font-mono); }
 :root[data-theme-family='crystal'] .stats-heat-week { flex: 1 1 0; min-width: 22px; }
 :root[data-theme-family='crystal'] .stats-heat-button { width: 100%; }
 :root[data-theme-family='crystal'] .stats-heat-cell {
@@ -264,7 +387,16 @@
   box-shadow: none;
 }
 :root[data-theme-family='crystal'] .stats-heatmap:not([data-interactive]) .stats-heat-cell { width: auto; height: 26px; }
+/* Busy days glow crimson, as the board's level 3 and 4 cells do. */
+:root[data-theme-family='crystal'] .stats-heat-cell:is([data-level='3'], [data-level='4']) { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
+/* The empty grid before the first review: days at rest, today ringed in the activity cyan, the rest of this week open. */
+:root[data-theme-family='crystal'] .stats-heat-cell[data-ghost='rest'] { background: var(--sf-heat-0); }
+:root[data-theme-family='crystal'] .stats-heat-cell[data-ghost='today'] { background: color-mix(in srgb, var(--sf-second) 14%, transparent); box-shadow: inset 0 0 0 1.5px var(--sf-second); }
+:root[data-theme-family='crystal'] .stats-heat-cell[data-ghost='after'] { background: transparent; }
 :root[data-theme-family='crystal'] .stats-heat-button[aria-pressed='true'] .stats-heat-cell { outline: 0; filter: brightness(1.25); }
+/* Month names are wider than a week column in some languages. The row fills the body but adds nothing to its
+   intrinsic width, so long names overhang their column instead of widening the grid past the panel. */
+:root[data-theme-family='crystal'] .stats-heat-months { width: 0; min-width: 100%; }
 :root[data-theme-family='crystal'] .stats-heat-month {
   flex: 1 1 0;
   min-width: 22px;
@@ -276,6 +408,7 @@
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+:root[data-theme-family='crystal'] .stats-heat-legend { color: var(--sf-text-tertiary); }
 :root[data-theme-family='crystal'] .stats-heat-swatch { width: 13px; height: 13px; border-radius: 0; clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px); }
 :root[data-theme-family='crystal'] .stats-heat-summary strong,
 :root[data-theme-family='crystal'] .stats-recall dd { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
@@ -317,18 +450,19 @@
 }
 :root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='learning'] .stats-grade-chip { --st-mark-fill: var(--sf-tier-bloom-fill); --st-mark-shadow: var(--sf-tier-bloom-fill-shadow); }
 :root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='new'] .stats-grade-chip { --st-mark-fill: var(--sf-tier-bud-fill); --st-mark-shadow: var(--sf-tier-bud-fill-shadow); }
-:root[data-theme-family='crystal'] .stats-legend-label { font-weight: 800; color: var(--st-title); }
-:root[data-theme-family='crystal'] .stats-legend-value { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 16px; }
+:root[data-theme-family='crystal'] .stats-legend-label { font-weight: 800; color: var(--sf-text-muted); }
+:root[data-theme-family='crystal'] .stats-legend-value { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 18px; }
 :root[data-theme-family='crystal'] .stats-mastery-foot { border-top: 0; padding-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 :root[data-theme-family='crystal'] .stats-mastery-fact {
   display: block;
   padding: 8px 12px;
-  border: 1px solid var(--sf-border);
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
   --sf-chamfer-fill: linear-gradient(var(--st-chip), var(--st-chip));
-  --sf-chamfer-edge: var(--sf-border);
 }
 :root[data-theme-family='crystal'] .stats-mastery-fact dt { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--sf-text-tertiary); }
 :root[data-theme-family='crystal'] .stats-mastery-fact dd { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 22px; color: var(--sf-second-text); }
+:root[data-theme-family='crystal'] .stats-mastery-fact[data-fact='best-streak'] dd { color: var(--sf-warn); }
 
 @media (max-width: 639px) {
   .stats-panel-title { font-size: 22px; }
@@ -341,3 +475,7 @@
 @media (prefers-reduced-motion: reduce) {
   .stats-range-button { transition: none; }
 }
+
+/* Crystal draws bars square (the board has no rounded bar ends), including the app-only XP bars. */
+:root[data-theme-family='crystal'] .stats-canvas span:has(> [data-chart-motion='bar']),
+:root[data-theme-family='crystal'] .stats-canvas [data-chart-motion='bar'] { border-radius: 0; }

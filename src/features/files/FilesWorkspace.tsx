@@ -256,7 +256,7 @@ interface UploadPanelProps {
   readonly onOpen: (fileId: string) => Promise<string>;
 }
 
-function PanelHead({ title, subtitle, chip, tone, mono = false }: { title: ReactNode; subtitle: ReactNode; chip?: ReactNode; tone?: Tone; mono?: boolean }) {
+function PanelHead({ title, subtitle, chip, tone, mono = false, icon }: { title: ReactNode; subtitle: ReactNode; chip?: ReactNode; tone?: Tone; mono?: boolean; icon?: ReactNode }) {
   return (
     <div className="sf-files-panel__head">
       <div className="sf-files-panel__heading">
@@ -264,6 +264,7 @@ function PanelHead({ title, subtitle, chip, tone, mono = false }: { title: React
         <p data-mono={mono || undefined}>{subtitle}</p>
       </div>
       {chip && <span className="sf-files__chip sf-files__chip--small crystal-chamfer-sm" data-tone={tone}>{chip}</span>}
+      {icon && <span className="sf-files-panel__icon crystal-chamfer-sm" aria-hidden="true">{icon}</span>}
     </div>
   );
 }
@@ -283,6 +284,7 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
         <PanelHead
           title={<Trans {...msg({ id: 'files.select.title', message: 'Choose a file' })} />}
           subtitle={<Trans {...msg({ id: 'files.select.subtitle', message: 'Quick checks run here first; the service confirms the file after it arrives.' })} />}
+          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>}
         />
         <div
           className="sf-files-drop crystal-chamfer"
@@ -291,13 +293,15 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
         >
-          <span className="sf-files-drop__tile crystal-chamfer-sm"><UploadCloud aria-hidden="true" /></span>
+          <span className="sf-files-drop__tile-pulse" style={{ display: 'inline-flex' }}>
+            <span className="sf-files-drop__tile crystal-chamfer-sm sf-pulse"><UploadCloud aria-hidden="true" /></span>
+          </span>
           <h3><Trans {...msg({ id: 'files.select.drop-title', message: 'Select a source' })} /></h3>
           <p><Trans {...msg({ id: 'files.select.drop-detail', message: 'PDF, EPUB, and images go through the same checks. Drop a file here or browse your device.' })} /></p>
           {upload.kind === 'image' && (
             <p className="sf-files-drop__note"><Trans {...msg({ id: 'files.select.image-note', message: 'Images are resized in your browser and saved as WebP.' })} /></p>
           )}
-          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm" onClick={() => onBrowse(upload.kind ?? undefined)}>
+          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press" onClick={() => onBrowse(upload.kind ?? undefined)}>
             <Trans {...msg({ id: 'files.select.browse', message: 'Browse files' })} />
           </button>
         </div>
@@ -306,7 +310,7 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
             <button
               key={kind}
               type="button"
-              className="sf-files-kind crystal-chamfer-sm"
+              className="sf-files-kind crystal-chamfer-sm sf-ease"
               data-kind={kind}
               aria-pressed={upload.kind === kind}
               onClick={() => { session.pickKind(kind); onBrowse(kind); }}
@@ -340,7 +344,7 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
           chip={_(CHECK_CHIPS[check])}
           tone={tone}
         />
-        <div className="sf-files-status crystal-chamfer-sm" data-tone={tone} role={failed ? 'alert' : 'status'}>
+        <div className={`sf-files-status crystal-chamfer-sm${failed ? ' sf-shake' : ''}`} data-tone={tone} role={failed ? 'alert' : 'status'}>
           <span className="sf-files-status__icon" aria-hidden="true">{failed ? '!' : <span className="sf-files-spinner" />}</span>
           <span>
             <strong>{heading}</strong>
@@ -369,7 +373,7 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
           <Trans {...msg({ id: 'files.check.footnote', message: 'Checks here give quick feedback. The service has the final say on type, size, plan, and ownership.' })} />
         </p>
         <div className="sf-files-panel__actions">
-          <button type="button" className="sf-files-button crystal-chamfer-sm" onClick={() => (failed && check !== 'plan' ? session.reset() : onBrowse())}>
+          <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" onClick={() => (failed && check !== 'plan' ? session.reset() : onBrowse())}>
             {failed && check !== 'plan'
               ? <Trans {...msg({ id: 'files.check.back', message: 'Back' })} />
               : <Trans {...msg({ id: 'files.check.another', message: 'Choose another' })} />}
@@ -377,13 +381,13 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
           {failed ? (
             <button
               type="button"
-              className="sf-files-button sf-files-button--primary crystal-chamfer-sm"
+              className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press"
               onClick={() => (check === 'plan' ? void session.continueToService() : onBrowse())}
             >
               {_(CHECK_FAILED[check].action)}
             </button>
           ) : (
-            <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm" disabled aria-busy="true">
+            <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press" disabled aria-busy="true">
               <Trans {...msg({ id: 'files.check.continue', message: 'Continue' })} />
             </button>
           )}
@@ -451,7 +455,7 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
             aria-valuemax={100}
             aria-valuenow={percent}
           >
-            <span style={{ width: `${percent}%` }} />
+            <span className={upload.phase === 'uploading' ? 'sf-grow' : undefined} style={{ width: `${percent}%` }} />
           </div>
           <span className="sf-files-transfer__caption">{sizes}</span>
         </div>
@@ -462,11 +466,11 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
         <div className="sf-files-panel__actions sf-files-panel__actions--end">
           <span className="sf-files-panel__helper">{_(copy.helper)}</span>
           {upload.phase === 'uploading' ? (
-            <button type="button" className="sf-files-button crystal-chamfer-sm" onClick={() => session.cancel()}>
+            <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" onClick={() => session.cancel()}>
               <Trans {...msg({ id: 'files.transfer.cancel', message: 'Cancel upload' })} />
             </button>
           ) : (
-            <button type="button" className="sf-files-button crystal-chamfer-sm" onClick={() => { void session.retry(); }}>
+            <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" onClick={() => { void session.retry(); }}>
               <Trans {...msg({ id: 'files.transfer.retry-action', message: 'Retry upload' })} />
             </button>
           )}
@@ -511,10 +515,10 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
           </span>
         </div>
         <div className="sf-files-panel__actions">
-          <button type="button" className="sf-files-button crystal-chamfer-sm" onClick={() => onBrowse()}>
+          <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" onClick={() => onBrowse()}>
             <Trans {...msg({ id: 'files.rejected.another', message: 'Choose another file' })} />
           </button>
-          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm" onClick={onShowFiles}>
+          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press" onClick={onShowFiles}>
             {quota
               ? <Trans {...msg({ id: 'files.quota.manage', message: 'Manage files' })} />
               : <Trans {...msg({ id: 'files.rejected.review', message: 'Review My files' })} />}
@@ -629,8 +633,8 @@ function ResultPanel({ upload, session, courses, defaultCourseId, onOpen }: {
   return (
     <div className="sf-files-panel" data-panel="result">
       <PanelHead title={_(copy.heading)} subtitle={_(copy.subtitle)} chip={_(copy.label)} tone={tone} />
-      <div className="sf-files-status sf-files-status--result crystal-chamfer-sm" data-tone={tone} role="status">
-        <span className="sf-files-badge crystal-chamfer-sm" data-kind={selection.kind} aria-hidden="true"><KindIcon kind={selection.kind} /></span>
+      <div className={`sf-files-status sf-files-status--result crystal-chamfer-sm${upload.phase === 'results' ? ' fx-correct' : ''}`} data-tone={tone} data-phase={upload.phase} role="status">
+        <span className="sf-files-badge-pulse" style={{ display: 'inline-flex' }} aria-hidden="true"><span className="sf-files-badge crystal-chamfer-sm" data-kind={selection.kind}><KindIcon kind={selection.kind} /></span></span>
         <span className="sf-files-status__file">
           <strong>{selection.name}</strong>
           <span>{_(KIND_LABELS[selection.kind])} · {formatBytes(file?.bytes ?? selection.bytes, i18n.locale)}</span>
@@ -652,7 +656,7 @@ function ResultPanel({ upload, session, courses, defaultCourseId, onOpen }: {
         <div className="sf-files-panel__box sf-files-attach crystal-chamfer-sm">
           <div className="sf-files-attach__row">
             <label htmlFor={selectId}><Trans {...msg({ id: 'files.result.attach-to', message: 'Attach to' })} /></label>
-            <select id={selectId} value={courseId} onChange={event => setCourseId(event.currentTarget.value)} disabled={!file || busy}>
+            <select id={selectId} className="sf-ease" value={courseId} onChange={event => setCourseId(event.currentTarget.value)} disabled={!file || busy}>
               <option value=""><Trans {...msg({ id: 'files.result.no-course', message: 'No course' })} /></option>
               {courses.map(course => <option key={course.id} value={course.id}>{course.label}</option>)}
             </select>
@@ -662,15 +666,15 @@ function ResultPanel({ upload, session, courses, defaultCourseId, onOpen }: {
       )}
       {notice && <p className="sf-files-panel__notice" data-tone={notice.kind} role={notice.kind === 'error' ? 'alert' : 'status'}>{notice.text}</p>}
       <div className="sf-files-panel__actions">
-        <button type="button" className="sf-files-button crystal-chamfer-sm" disabled={!file} onClick={() => { void open(); }}>
+        <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" disabled={!file} onClick={() => { void open(); }}>
           <Trans {...msg({ id: 'files.result.open', message: 'Open file' })} />
         </button>
         {courses.length > 0 ? (
-          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm" disabled={!file || busy} onClick={() => { void attach(); }}>
+          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press" disabled={!file || busy} onClick={() => { void attach(); }}>
             <Trans {...msg({ id: 'files.result.attach', message: 'Attach source' })} />
           </button>
         ) : (
-          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm" disabled={upload.phase === 'processing'} onClick={() => session.reset()}>
+          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press" disabled={upload.phase === 'processing'} onClick={() => session.reset()}>
             <Trans {...msg({ id: 'files.result.another', message: 'Upload another' })} />
           </button>
         )}
@@ -723,7 +727,7 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
           <span className="sf-files-shelf__state-icon" aria-hidden="true">!</span>
           <strong><Trans {...msg({ id: 'files.shelf.error-title', message: 'My files could not load' })} /></strong>
           <p><Trans {...msg({ id: 'files.shelf.error-detail', message: 'Check your connection, then retry the list.' })} /></p>
-          <button type="button" className="sf-files-button crystal-chamfer-sm" onClick={onRetry}>
+          <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" onClick={onRetry}>
             <Trans {...msg({ id: 'files.shelf.retry', message: 'Retry list' })} />
           </button>
         </div>
@@ -734,7 +738,7 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
           <span className="sf-files-shelf__state-icon crystal-chamfer-sm" aria-hidden="true"><FileText /></span>
           <strong><Trans {...msg({ id: 'files.shelf.empty-title', message: 'No files yet' })} /></strong>
           <p><Trans {...msg({ id: 'files.shelf.empty-detail', message: 'Upload a PDF, EPUB, or image to start your source shelf.' })} /></p>
-          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm" onClick={onBrowse}>
+          <button type="button" className="sf-files-button sf-files-button--primary crystal-chamfer-sm fx-press" onClick={onBrowse}>
             <Trans {...msg({ id: 'files.shelf.upload', message: 'Upload a source' })} />
           </button>
         </div>
@@ -744,7 +748,7 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
             <span><Trans {...msg({ id: 'files.shelf.files', message: 'Files' })} /></span>
             <span><Trans {...msg({ id: 'files.shelf.all-courses', message: 'All courses' })} /></span>
           </div>
-          <ul className="sf-files-list crystal-chamfer-sm">
+          <ul className="sf-files-list crystal-chamfer-sm fx-stagger">
             {files.map(file => (
               <li key={file.id} data-status={file.status}>
                 <span className="sf-files-badge crystal-chamfer-sm" data-kind={file.kind} aria-hidden="true"><KindIcon kind={file.kind} /></span>
@@ -768,14 +772,14 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
             ))}
           </ul>
           {listing.nextCursor && onLoadMore && (
-            <button type="button" className="sf-files-button crystal-chamfer-sm" disabled={library.status === 'loading'} onClick={onLoadMore}>
+            <button type="button" className="sf-files-button crystal-chamfer-sm fx-press" disabled={library.status === 'loading'} onClick={onLoadMore}>
               <Trans {...msg({ id: 'files.shelf.more', message: 'Show more files' })} />
             </button>
           )}
         </>
       )}
       {onManageFiles && (
-        <button type="button" className="sf-files-button sf-files-shelf__manage crystal-chamfer-sm" onClick={onManageFiles}>
+        <button type="button" className="sf-files-button sf-files-shelf__manage crystal-chamfer-sm fx-press" onClick={onManageFiles}>
           <Trans {...msg({ id: 'files.shelf.manage', message: 'Manage all files' })} />
         </button>
       )}
@@ -831,7 +835,7 @@ function DeleteFileDialog({ file, countCardPhotos, onCancel, onConfirm }: { file
 
   return (
     <div
-      className="sf-files-dialog"
+      className="sf-files-dialog sf-scrim"
       onKeyDown={event => {
         if (event.key === 'Escape' && !busy) onCancel();
         if (event.key === 'Tab') {
@@ -843,7 +847,7 @@ function DeleteFileDialog({ file, countCardPhotos, onCancel, onConfirm }: { file
         }
       }}
     >
-      <div className="sf-files-dialog__card crystal-chamfer" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={detailId}>
+      <div className="sf-files-dialog__card crystal-chamfer fx-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={detailId}>
         <span className="sf-files-dialog__icon crystal-chamfer-sm" aria-hidden="true"><Trash2 /></span>
         <h3 id={titleId}><Trans {...msg({ id: 'files.delete.title', message: 'Delete this file?' })} /></h3>
         <p id={detailId}>
@@ -852,12 +856,12 @@ function DeleteFileDialog({ file, countCardPhotos, onCancel, onConfirm }: { file
         </p>
         {failed && <p className="sf-files-panel__notice" data-tone="error" role="alert"><Trans {...msg({ id: 'files.delete.failed', message: 'The file could not be deleted. Try again.' })} /></p>}
         <div className="sf-files-dialog__actions">
-          <button ref={keepRef} type="button" className="sf-files-button crystal-chamfer-sm" disabled={busy} onClick={onCancel}>
+          <button ref={keepRef} type="button" className="sf-files-button crystal-chamfer-sm fx-press" disabled={busy} onClick={onCancel}>
             <Trans {...msg({ id: 'files.delete.keep', message: 'Keep file' })} />
           </button>
           <button
             type="button"
-            className="sf-files-button sf-files-button--danger crystal-chamfer-sm"
+            className="sf-files-button sf-files-button--danger crystal-chamfer-sm fx-press"
             disabled={busy || cardCount.status === 'checking'}
             aria-busy={busy || cardCount.status === 'checking' || undefined}
             onClick={async () => {

@@ -1,6 +1,8 @@
 import { romanizeHangul } from '../../features/languagePacks/hangulRomanization';
 import type { HeadwordReadingPlan, PinyinTone } from '../../features/languagePacks/types';
+import { parseSyllables } from '../../lib/syllableParser';
 import type { CardData } from '../../types/card';
+import { cardTargetLanguageKey } from './cardLanguage';
 import { romanizeKana, splitKanaMorae, toHiragana } from './kanaRomaji';
 
 /** A run of the headword, with the reading drawn above it when the card's reading data places one. */
@@ -147,16 +149,155 @@ export interface ExampleSegment {
   readonly ruby?: string;
 }
 
+export interface LatinHeadwordParts {
+  readonly article: string;
+  readonly bareWord: string;
+  readonly wPre: string;
+  readonly wStress: string;
+  readonly wRest: string;
+  readonly syllables: readonly string[];
+  readonly stressIndex: number | null;
+}
+
 const escapePattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+
+/** Removes a matching leading article from the headword so display and example matching avoid duplication. */
+export function stripLeadingArticle(word: string, article?: string): string {
+  const trimmedWord = word.trim();
+  const trimmedArticle = article?.trim();
+  if (!trimmedWord || !trimmedArticle) return trimmedWord;
+  const spaced = new RegExp(`^${escapePattern(trimmedArticle)}\\s+(.+)$`, 'iu').exec(trimmedWord);
+  if (spaced) return spaced[1].trim();
+  if (trimmedArticle.endsWith('\'') || trimmedArticle.endsWith('’')) {
+    const elided = new RegExp(`^${escapePattern(trimmedArticle)}(.+)$`, 'iu').exec(trimmedWord);
+    if (elided) return elided[1].trim();
+  }
+  return trimmedWord;
+}
+
+/**
+ * Splits a Latin-script headword into optional article plus pre-stress, stressed, and trailing
+ * spans, reading `languageDetails.syllables` + `stressIndex` first and falling back to English
+ * opening stress / syllable analysis only when the target language is English.
+ */
+export function splitLatinHeadword(
+  card: Pick<CardData, 'word' | 'phonetic' | 'language' | 'languageDetails'>,
+): LatinHeadwordParts {
+  const article = card.languageDetails?.article?.trim() ?? '';
+  const bareWord = stripLeadingArticle(card.word, article);
+  const explicitSyllables = card.languageDetails?.syllables?.map(part => part.trim()).filter(Boolean) ?? [];
+  const explicitStress = card.languageDetails?.stressIndex;
+
+  if (explicitSyllables.length > 0) {
+    const validStress = typeof explicitStress === 'number'
+      && Number.isInteger(explicitStress)
+      && explicitStress >= 0
+      && explicitStress < explicitSyllables.length
+      ? explicitStress
+      : null;
+
+    if (validStress !== null) {
+      const joined = explicitSyllables.join('');
+      const preLen = explicitSyllables.slice(0, validStress).join('').length;
+      const stressLen = explicitSyllables[validStress].length;
+      if (joined.toLocaleLowerCase('en-US') === bareWord.toLocaleLowerCase('en-US') && bareWord.length >= preLen + stressLen) {
+        return {
+          article,
+          bareWord,
+          wPre: bareWord.slice(0, preLen),
+          wStress: bareWord.slice(preLen, preLen + stressLen),
+          wRest: bareWord.slice(preLen + stressLen),
+          syllables: explicitSyllables,
+          stressIndex: validStress,
+        };
+      }
+      return {
+        article,
+        bareWord,
+        wPre: explicitSyllables.slice(0, validStress).join(''),
+        wStress: explicitSyllables[validStress],
+        wRest: explicitSyllables.slice(validStress + 1).join(''),
+        syllables: explicitSyllables,
+        stressIndex: validStress,
+      };
+    }
+
+    return {
+      article,
+      bareWord,
+      wPre: bareWord,
+      wStress: '',
+      wRest: '',
+      syllables: explicitSyllables,
+      stressIndex: null,
+    };
+  }
+
+  if (cardTargetLanguageKey(card) === 'en') {
+    const analysis = parseSyllables(bareWord, card.phonetic);
+    const syllables = analysis.hasMultipleSyllables && analysis.syllables.length > 1
+      ? analysis.syllables.map(part => part.text)
+      : [];
+    const ipa = (card.phonetic || '').trim().replace(/^[/[]\s*/, '');
+    if (ipa.startsWith('ˈ') && bareWord && !/\s/.test(bareWord)) {
+      const orthographic = parseSyllables(bareWord);
+      const opening = orthographic.syllables[0]?.text ?? '';
+      if (orthographic.hasMultipleSyllables && opening && bareWord.startsWith(opening) && opening.length < bareWord.length) {
+        return {
+          article,
+          bareWord,
+          wPre: '',
+          wStress: opening,
+          wRest: bareWord.slice(opening.length),
+          syllables,
+          stressIndex: null,
+        };
+      }
+    }
+    return {
+      article,
+      bareWord,
+      wPre: bareWord,
+      wStress: '',
+      wRest: '',
+      syllables,
+      stressIndex: null,
+    };
+  }
+
+  return {
+    article,
+    bareWord,
+    wPre: bareWord,
+    wStress: '',
+    wRest: '',
+    syllables: [],
+    stressIndex: null,
+  };
+}
 
 /**
  * Finds the card's word in its example sentence. Korean and Japanese conjugate, so after the exact
  * word the stem is tried: a Korean stem takes the rest of its spaced word (결심했어요), a Japanese stem
- * stands alone (食べ in 食べました, 勉強 in 勉強します). Without a match the sentence stays unmarked.
+ * stands alone (食べ in 食べました, 勉強 in 勉強します). Latin-script words match the bare headword
+ * (after stripping any leading article) case-insensitively. Without a match the sentence stays unmarked.
  */
-export function findExampleWord(sentence: string, card: Pick<CardData, 'word' | 'partOfSpeech'>, pack: 'ko' | 'ja' | 'zh'): { start: number; end: number } | null {
+export function findExampleWord(
+  sentence: string,
+  card: Pick<CardData, 'word' | 'partOfSpeech' | 'languageDetails'>,
+  pack: 'ko' | 'ja' | 'zh' | 'latin',
+): { start: number; end: number } | null {
   const target = card.word.trim();
   if (!target || !sentence) return null;
+  if (pack === 'latin') {
+    const bare = stripLeadingArticle(target, card.languageDetails?.article);
+    if (!bare) return null;
+    const escaped = escapePattern(bare);
+    const boundary = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu').exec(sentence);
+    if (boundary) return { start: boundary.index, end: boundary.index + boundary[0].length };
+    const anywhere = new RegExp(escaped, 'iu').exec(sentence);
+    return anywhere ? { start: anywhere.index, end: anywhere.index + anywhere[0].length } : null;
+  }
   const exact = sentence.indexOf(target);
   if (exact >= 0) return { start: exact, end: exact + target.length };
   const characters = Array.from(target);
@@ -180,7 +321,12 @@ export function findExampleWord(sentence: string, card: Pick<CardData, 'word' | 
 }
 
 /** The example split around the card's word; the exact Japanese word carries its known reading. */
-export function buildExampleSegments(sentence: string, card: Pick<CardData, 'word' | 'partOfSpeech'>, pack: 'ko' | 'ja' | 'zh', reading: LanguageCardReading | null): ExampleSegment[] {
+export function buildExampleSegments(
+  sentence: string,
+  card: Pick<CardData, 'word' | 'partOfSpeech' | 'languageDetails'>,
+  pack: 'ko' | 'ja' | 'zh' | 'latin',
+  reading: LanguageCardReading | null,
+): ExampleSegment[] {
   const found = findExampleWord(sentence, card, pack);
   if (!found) return [{ text: sentence }];
   const text = sentence.slice(found.start, found.end);

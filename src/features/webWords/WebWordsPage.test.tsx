@@ -148,10 +148,10 @@ describe('WebWordsPage', () => {
 
     const html = render();
     expect(html).not.toContain('data-placement');
-    expect(html).toMatch(/class="ww-back"><span aria-hidden="true">←<\/span> Vocabulary/);
+    expect(html).toMatch(/class="ww-back[^"]*"><span aria-hidden="true">←<\/span> Vocabulary/);
     expect(html).toContain('Add all 1 to today');
     expect(html).not.toContain('role="dialog"');
-    expect(render('today')).toMatch(/class="ww-back"><span aria-hidden="true">←<\/span> Today/);
+    expect(render('today')).toMatch(/class="ww-back[^"]*"><span aria-hidden="true">←<\/span> Today/);
   });
 
   it('filters by status with labelled tabs and keeps the site and day filters', () => {
@@ -165,7 +165,7 @@ describe('WebWordsPage', () => {
     const html = render();
     expect(html).toContain('role="radiogroup" aria-label="Status"');
     expect(html).toContain('All 7');
-    expect(html).toContain('data-checked="true"><input type="radio" class="sr-only" name="web-words-status" checked=""/><span class="ww-tab__face">Learning');
+    expect(html).toMatch(/data-checked="true"><input type="radio" class="sr-only" name="web-words-status" checked=""\/><span class="ww-tab__face[^"]*">Learning/);
     expect(html).toContain('>Site<');
     expect(html).toContain('>Day<');
     expect(html).toContain('Close web words');

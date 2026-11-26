@@ -2,7 +2,7 @@
    canvas/src/tokens.js and anime-tokens.js. Small text uses the nearest tone that keeps AA on the page,
    where the board's own tone falls just short. */
 
-.session-bridge {
+:where(html[data-theme-family=crystal]) .session-bridge {
   --sb-text-strong: #1d1a16; --sb-text2: #6b6255; --sb-text3: #6b6255; --sb-body: #3d372f;
   --sb-line: rgb(29 26 22 / .1); --sb-chip: #fbf8f2; --sb-track: rgb(29 26 22 / .08);
   --sb-accent: #b4461a; --sb-accent-text: #97400d; --sb-em: #b4461a; --sb-em-style: italic; --sb-em-glow: none; --sb-display-weight: 380;
@@ -19,8 +19,25 @@
   position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100dvh; flex-direction: column; overflow: hidden;
   background: var(--sf-canvas); color: var(--sf-text);
 }
+:where(html:not([data-theme-family=crystal])) .session-bridge {
+  --sb-text-strong: #1d1a16; --sb-text2: #6b6255; --sb-text3: var(--sf-text-subtle); --sb-body: #3d372f;
+  --sb-line: rgb(29 26 22 / .1); --sb-chip: #fbf8f2; --sb-track: rgb(29 26 22 / .08);
+  --sb-accent: #b4461a; --sb-accent-text: #97400d; --sb-em: #b4461a; --sb-em-style: italic; --sb-em-glow: none; --sb-display-weight: 380;
+  --sb-bar: #b4461a; --sb-bar-glow: none; --sb-combo: #97400d; --sb-combo-glow: none; --sb-tick: #97400d; --sb-tick-glow: none;
+  --sb-warm: #97400d; --sb-warm-bg: #fbf8f2; --sb-warm-line: rgb(151 64 13 / .22);
+  --sb-aura: radial-gradient(circle, rgb(180 70 26 / .14), transparent 65%);
+  --sb-ghost-bg: #fffcf5; --sb-ghost-border: 1px solid rgb(29 26 22 / .12); --sb-trail: linear-gradient(90deg, transparent, rgb(180 70 26 / .5));
+  --sb-card-radius: var(--sf-card-radius, 20px); --sb-card-border: 0; --sb-card-bg: #fffcf5;
+  --sb-card-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
+  --sb-primary-bg: #1d1a16; --sb-primary-text: #fbf6ec; --sb-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --sb-btn-radius: var(--sf-button-radius, 999px);
+  --sb-secondary-bg: #fffcf5;
+  --sb-ambient: radial-gradient(rgb(29 26 22 / .08) 1px, transparent 1.2px) 0 0 / 28px 28px;
+  --sb-serif: var(--sf-font-display); --sb-mono: 'Geist Mono', ui-monospace, monospace;
+  position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100dvh; flex-direction: column; overflow: hidden;
+  background: var(--sf-canvas); color: var(--sf-text); line-height: normal;
+}
 :root.dark:not([data-theme-family="crystal"]) .session-bridge {
-  --sb-text-strong: #f1f6f9; --sb-text2: #99a7b0; --sb-text3: #7a8a94; --sb-body: #b5c2ca;
+  --sb-text-strong: #f1f6f9; --sb-text2: #99a7b0; --sb-text3: var(--sf-text-subtle); --sb-body: #b5c2ca;
   --sb-line: rgb(255 255 255 / .08); --sb-chip: rgb(255 255 255 / .04); --sb-track: rgb(255 255 255 / .08);
   --sb-accent: #28d3f4; --sb-accent-text: #7ee6fa; --sb-em: #28d3f4; --sb-em-style: normal; --sb-em-glow: 0 0 36px rgb(40 211 244 / .5); --sb-display-weight: 440;
   --sb-bar: linear-gradient(90deg, #28d3f4, #966cd7); --sb-bar-glow: 0 0 10px rgb(40 211 244 / .6);
@@ -28,12 +45,16 @@
   --sb-warm: #f5ae39; --sb-warm-bg: rgb(245 174 57 / .08); --sb-warm-line: rgb(245 174 57 / .28);
   --sb-aura: radial-gradient(circle, rgb(40 211 244 / .4), rgb(150 108 215 / .28) 50%, transparent 70%);
   --sb-ghost-bg: linear-gradient(180deg, #0f2430, #0a1a22); --sb-ghost-border: 1px solid rgb(126 230 250 / .35); --sb-trail: linear-gradient(90deg, transparent, rgb(126 230 250 / .8));
-  --sb-card-radius: 30px; --sb-card-border: 1.5px solid transparent;
+  --sb-card-radius: var(--sf-card-radius, 30px); --sb-card-border: 1.5px solid transparent;
   --sb-card-bg: radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / .25), transparent 70%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, var(--sf-rim-new) border-box;
   --sb-card-shadow: 0 0 60px -16px rgb(40 211 244 / .55), 0 40px 80px -30px rgb(0 0 0 / .95);
-  --sb-primary-bg: #28d3f4; --sb-primary-text: #04141c; --sb-primary-shadow: 0 16px 40px -14px rgb(40 211 244 / .8), inset 0 1px 0 rgb(255 255 255 / .5); --sb-btn-radius: 16px;
+  --sb-primary-bg: #28d3f4; --sb-primary-text: #04141c; --sb-primary-shadow: 0 16px 40px -14px rgb(40 211 244 / .8), inset 0 1px 0 rgb(255 255 255 / .5); --sb-btn-radius: var(--sf-button-radius, 16px);
   --sb-secondary-bg: rgb(255 255 255 / .04);
-  --sb-ambient: radial-gradient(circle 280px at 480px -20px, rgb(150 108 215 / .32), transparent), radial-gradient(circle 260px at 1160px 680px, rgb(40 211 244 / .26), transparent);
+  --sb-ambient: var(--shell-aurora);
+}
+/* SessionBridge places its two glows at its own spots (see the shell's Midnight Aurora rule). */
+@media (min-width: 641px) {
+  :root.dark:not([data-theme-family="crystal"]) .session-bridge { --shell-aurora-violet-at: 33.3% -2.2%; --shell-aurora-cyan-at: 80.6% 75.6%; }
 }
 .session-bridge::before { position: absolute; z-index: -1; inset: 0; background: var(--sb-ambient); content: ''; pointer-events: none; }
 :root:not(.dark):not([data-theme-family="crystal"]) .session-bridge::before {
@@ -61,6 +82,8 @@
 .session-bridge-wave > span { width: 2px; height: 14px; border-radius: 2px; background: var(--sb-accent); animation: session-bridge-wave 1.1s ease-in-out infinite; }
 .session-bridge-wave > span:nth-child(2) { animation-delay: 150ms; }
 .session-bridge-wave > span:nth-child(3) { animation-delay: 300ms; }
+html:not([data-theme-family="crystal"]) .session-bridge-wave > span.sf-wave:nth-child(2) { animation-delay: 150ms; }
+html:not([data-theme-family="crystal"]) .session-bridge-wave > span.sf-wave:nth-child(3) { animation-delay: 300ms; }
 @keyframes session-bridge-wave { 50% { transform: scaleY(.45); } }
 
 /* Three columns: what was done, the next card, what comes next. */
@@ -88,8 +111,10 @@
 .session-bridge-ghosts > span:nth-child(3) { opacity: .36; transform: translate(80px, 60px) rotate(4deg) scale(.94); filter: blur(1px); }
 .session-bridge-trails > span { position: absolute; top: 50%; left: 50%; height: 3px; border-radius: 3px; background: var(--sb-trail); transform: rotate(-24deg); filter: blur(1px); pointer-events: none; }
 .session-bridge-trails > span:nth-child(1) { width: 260px; margin: 40px 0 0 100px; }
-.session-bridge-trails > span:nth-child(2) { width: 180px; height: 2px; margin: 100px 0 0 140px; opacity: .6; filter: none; }
+:where(html[data-theme-family=crystal]) .session-bridge-trails > span:nth-child(2) { width: 180px; height: 2px; margin: 100px 0 0 140px; opacity: .6; filter: none; }
+:where(html:not([data-theme-family=crystal])) .session-bridge-trails > span:nth-child(2) { width: 180px; height: 2px; margin: 100px 0 0 140px; border-radius: 2px; opacity: .6; filter: none; }
 
+.session-bridge-card-deal { display: block; }
 .session-bridge-card { position: relative; display: block; width: 340px; height: 450px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transform: rotate(-2deg); perspective: 1400px; }
 .session-bridge-card-rotor { position: absolute; inset: 0; display: block; transform-style: preserve-3d; transition: transform 640ms cubic-bezier(.2, .8, .2, 1); }
 .session-bridge-card-rotor[data-flipped] { transform: rotateY(180deg); }
@@ -121,8 +146,22 @@
 .session-bridge-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .session-bridge-actions button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border-radius: var(--sb-btn-radius); font-size: 14px; font-weight: 650; cursor: pointer; }
 .session-bridge-primary { border: 0; background: var(--sb-primary-bg); color: var(--sb-primary-text); box-shadow: var(--sb-primary-shadow); }
-.session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); }
 .session-bridge :is(button, a):focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
+
+/* SessionBridge values the shared rules above do not carry. The board's spans and divs are content-box, so the
+   sound chip, the XP chip, the card's source chip and the ghost cards add their 1 px edges to the stated size;
+   its exit is a 40 px button at desktop width, where the app's 44 px touch target is not needed. */
+:where(html:not([data-theme-family=crystal])) .session-bridge-feedback { box-sizing: content-box; font-size: 12px; }
+:where(html:not([data-theme-family=crystal])) .session-bridge-xp { box-sizing: content-box; gap: 6px; }
+:where(html:not([data-theme-family=crystal])) .session-bridge-card-category { box-sizing: content-box; }
+@media (min-width: 761px) {
+  :where(html:not([data-theme-family=crystal])) .session-bridge-ghosts > span { box-sizing: content-box; margin: -226px 0 0 -171px; }
+}
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .session-bridge-exit { width: 40px; height: 40px; }
+}
 
 /* Crystal Star: AnimeBridge. */
 .session-bridge[data-family="crystal"] {
@@ -132,17 +171,23 @@
   --cb-card-back: linear-gradient(115deg, rgb(255 214 236 / .22), rgb(207 238 255 / .18) 50%, rgb(255 227 241 / .22)), linear-gradient(180deg, #141a2a, #090c16);
   --cb-rim: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #1aa7c9 75%, #e9feff); --cb-rim-soft: rgb(94 242 255 / .5); --cb-beam: rgb(255 255 255 / .08);
   --cb-title-metal: linear-gradient(180deg, #fff 0%, #ffe3ea 46%, #ff8fa3 54%, #fff 100%); --cb-title-shadow: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .6));
-  --cb-display: var(--sf-font-display); --cb-wing-opacity: .55;
+  --cb-display: var(--sf-font-display); --cb-wing-opacity: .55; --cb-panel-edge-2: rgb(94 242 255 / .4);
+  line-height: normal;
   background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%), var(--sf-canvas);
 }
 html[data-theme-family="crystal"]:not(.dark) .session-bridge {
-  --cb-text-strong: #081329; --cb-text2: #3f5272; --cb-text3: #3f5272; --cb-body: #243553; --cb-holo: #065a6e; --cb-crimson: #a30c2d;
+  --cb-text-strong: #081329; --cb-text2: #3f5272; --cb-text3: #3f5272; --cb-body: #243553; --cb-holo: #0a4a5e; --cb-crimson: #b30f33;
   --cb-chip: rgb(226 244 255 / .9); --cb-line-strong: rgb(13 40 80 / .24); --cb-track: rgb(13 40 80 / .12);
   --cb-panel: linear-gradient(160deg, rgb(238 249 255 / .9), rgb(208 234 255 / .86)); --cb-card-front: linear-gradient(180deg, #f2faff 0%, #d9eeff 100%);
   --cb-card-back: linear-gradient(115deg, #ffe0ef, #cdeaff 30%, #bfe9ff 55%, #d0fbf2 75%, #ffe6f2); --cb-beam: rgb(255 255 255 / .5);
-  --cb-title-metal: linear-gradient(180deg, #13306b 0%, #1f4d9c 46%, #0d1a33 54%, #1f4d9c 100%); --cb-title-shadow: drop-shadow(0 4px 0 rgb(255 255 255 / .9)); --cb-wing-opacity: .42;
+  --cb-title-metal: linear-gradient(180deg, #13306b 0%, #1f4d9c 46%, #0d1a33 54%, #1f4d9c 100%); --cb-title-shadow: drop-shadow(0 4px 0 rgb(255 255 255 / .9)); --cb-wing-opacity: .42; --cb-panel-edge-2: rgb(26 167 201 / .45);
   background: radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, rgb(255 84 112 / .18), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%);
 }
+/* Light text keeps AA with the nearest board colours that pass: on the backdrop and panels the board's holo #0a7d99,
+   text3 #627392 and crimson #c40f35 measure 3.5 to 4.5:1, so they step to the board's #0a4a5e, #3f5272 and #b30f33.
+   The card face is lighter, so it keeps #c40f35; the sound chip shows icons only (3:1) and keeps #0a7d99. */
+html[data-theme-family="crystal"]:not(.dark) .session-bridge-card { --cb-crimson: #c40f35; }
+html[data-theme-family="crystal"]:not(.dark) .session-bridge-feedback { --cb-holo: #0a7d99; }
 .session-bridge[data-family="crystal"]::before { background: var(--nk-stars), repeating-linear-gradient(100deg, transparent 0 46px, rgb(255 255 255 / .04) 46px 48px, transparent 48px 120px); }
 /* The board's crystal shards in two corners, behind every panel. */
 .session-bridge-wing { position: absolute; z-index: -1; width: 640px; height: 430px; opacity: var(--cb-wing-opacity); filter: drop-shadow(0 0 30px rgb(255 42 77 / .55)); }
@@ -150,7 +195,7 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
 .session-bridge-wing--end { top: -60px; right: -150px; transform: scaleX(-1) rotate(-18deg); }
 
 [data-family="crystal"] .session-bridge-header { height: 96px; gap: 22px; padding: 0 40px; }
-[data-family="crystal"] :is(.session-bridge-exit, .session-bridge-theme) { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text-strong); }
+[data-family="crystal"] :is(.session-bridge-exit, .session-bridge-theme) { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--sf-text); }
 [data-family="crystal"] .session-bridge-rail { display: flex; justify-content: center; gap: 14px; margin: 0 auto; }
 [data-family="crystal"] .session-bridge-rail li { display: flex; flex: 0 1 196px; flex-direction: column; gap: 7px; color: var(--cb-text3); }
 [data-family="crystal"] .session-bridge-rail li[data-completed] { color: var(--cb-text2); }
@@ -160,7 +205,7 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
 [data-family="crystal"] .session-bridge-rail li[data-completed] .session-bridge-rail-track > span { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 10px rgb(94 242 255 / .6); }
 [data-family="crystal"] .session-bridge-rail li[aria-current="step"] .session-bridge-rail-track { box-shadow: 0 0 0 1px rgb(255 42 77 / .6); }
 [data-family="crystal"] .session-bridge-rail li[aria-current="step"] .session-bridge-rail-track > span { width: 5%; background: #ff2a4d; box-shadow: 0 0 12px rgb(255 42 77 / .9); }
-[data-family="crystal"] .session-bridge-rail-row { align-items: baseline; margin: 0; font-family: var(--cb-display); font-style: italic; }
+[data-family="crystal"] .session-bridge-rail-row { align-items: baseline; margin: 0; font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 400; }
 [data-family="crystal"] .session-bridge-rail-label { font-size: 15px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 [data-family="crystal"] .session-bridge-rail-number { display: inline; }
 [data-family="crystal"] .session-bridge-rail-meta { color: var(--cb-text3); font-family: inherit; font-size: 13px; font-weight: 700; }
@@ -170,50 +215,84 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
 [data-family="crystal"] .session-bridge-main { grid-template-columns: 380px minmax(0, 1fr) 400px; gap: 20px; padding: 0 56px 30px 64px; }
 [data-family="crystal"] .session-bridge-result { display: flex; height: 100%; flex-direction: column; justify-self: stretch; }
 [data-family="crystal"] .session-bridge-eyebrow { margin-top: 40px; color: var(--cb-holo); font-family: var(--cb-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
-[data-family="crystal"] .session-bridge-combo { height: 170px; flex-direction: row; align-items: center; gap: 16px; margin-top: 10px; padding: 16px 0 0 58px; }
+[data-family="crystal"] .session-bridge-eyebrow-sep { color: var(--cb-text3); }
+/* The board pins the count 58 px in and 22 px down, the tier name 196 px in and 50 px down and the label 4 px past
+   the name and 92 px down. A row keeps those offsets for a one-digit run and lets a longer run push the words right. */
+[data-family="crystal"] .session-bridge-combo { height: 170px; flex-direction: row; align-items: flex-start; gap: 0; margin-top: 10px; padding: 22px 0 0 58px; }
 /* The banner runs past the tier name and fades only beyond it, so no word sits on a clear strip. */
 [data-family="crystal"] .session-bridge-combo-banner { position: absolute; top: 26px; right: -44px; left: -10px; display: block; height: 110px; background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .9) 60%, rgb(255 42 77 / .88) 88%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / .7); transform: skewX(-16deg); }
-[data-family="crystal"] .session-bridge-combo strong { position: relative; background: var(--sf-metal-hot); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-shadow: none; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .8)); }
+[data-family="crystal"] .session-bridge-combo strong { position: relative; flex: none; background: var(--sf-metal-hot); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-shadow: none; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .8)); }
 [data-family="crystal"] .session-bridge-combo-star { position: absolute; top: 0; left: -16px; width: 76px; height: 76px; filter: drop-shadow(0 0 12px rgb(255 42 77 / .9)); }
-[data-family="crystal"] .session-bridge-combo-text { position: relative; gap: 2px; }
-[data-family="crystal"] .session-bridge-combo-tier { color: #fff; font-family: var(--cb-display); font-size: 34px; font-style: italic; font-weight: 900; line-height: 1.1; letter-spacing: .04em; text-shadow: 0 3px 0 #7a0820; text-transform: uppercase; white-space: nowrap; }
-[data-family="crystal"] .session-bridge-combo-label { position: relative; margin: 0; color: #ffe3ea; font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .14em; line-height: 1.3; text-transform: uppercase; text-shadow: 0 2px 0 #7a0820; }
+[data-family="crystal"] .session-bridge-combo-text { position: relative; gap: 0; margin: 28px 0 0 47px; }
+[data-family="crystal"] .session-bridge-combo-tier { color: #fff; font-family: var(--cb-display); font-size: 34px; font-style: italic; font-weight: 900; line-height: normal; letter-spacing: .04em; text-shadow: 0 3px 0 #7a0820; text-transform: uppercase; white-space: nowrap; }
+/* The board's #ffe3ea stays under 4.5:1 on the crimson banner even in white, so the label keeps a dark drop line. */
+[data-family="crystal"] .session-bridge-combo-label { position: relative; margin: -8px 0 0 4px; color: #ffe3ea; font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .14em; line-height: normal; text-transform: uppercase; text-shadow: 0 2px 0 #7a0820; }
 [data-family="crystal"] .session-bridge-stat strong { background: var(--cb-title-metal); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-style: italic; font-weight: 900; letter-spacing: 0; filter: var(--cb-title-shadow); }
 [data-family="crystal"] .session-bridge-stat span { color: var(--cb-body); }
-[data-family="crystal"] .session-bridge-ticks { gap: 6px; margin-top: 6px; padding-left: 6px; }
+[data-family="crystal"] .session-bridge-ticks { gap: 6px; margin-top: 6px; }
 [data-family="crystal"] .session-bridge-ticks li { width: 32px; height: 12px; border-radius: 0; background: var(--cb-track); transform: skewX(-30deg); }
 [data-family="crystal"] .session-bridge-ticks li[data-correct] { background: linear-gradient(90deg, #ffd166, #ff8a3d); box-shadow: 0 0 10px rgb(255 209 102 / .6); }
 [data-family="crystal"] .session-bridge-xp { margin-top: 14px; padding: 0 16px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
 [data-family="crystal"] .session-bridge-companion { display: flex; align-items: flex-end; gap: 8px; margin-top: auto; }
-[data-family="crystal"] .session-bridge-lumi { flex: none; width: 170px; height: auto; filter: drop-shadow(0 0 18px rgb(255 42 77 / .45)); }
-[data-family="crystal"] .session-bridge-speech { position: relative; display: flex; flex: 1; flex-direction: column; gap: 3px; margin-bottom: 18px; padding: 11px 14px 13px; clip-path: var(--nk-chamfer); background: var(--cb-panel); box-shadow: inset 0 0 0 1px rgb(94 242 255 / .4); }
+[data-family="crystal"] .session-bridge-mascot { display: block; flex: none; width: 170px; height: 176px; filter: drop-shadow(0 0 16px rgb(94 242 255 / .35)); pointer-events: none; }
+[data-family="crystal"] .session-bridge-lumi { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); }
+[data-family="crystal"] .session-bridge-speech { position: relative; display: flex; flex: 1; flex-direction: column; gap: 3px; margin-bottom: 18px; padding: 11px 14px 13px; clip-path: var(--nk-chamfer); background: var(--cb-panel); box-shadow: inset 0 0 0 1px var(--cb-panel-edge-2); }
 [data-family="crystal"] .session-bridge-speech::before { position: absolute; top: 12px; bottom: 12px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
 [data-family="crystal"] .session-bridge-speech-name { color: var(--cb-holo); font-family: var(--cb-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 [data-family="crystal"] .session-bridge-speech strong { color: var(--cb-text-strong); font-size: 15px; font-weight: 900; line-height: 1.3; }
 [data-family="crystal"] .session-bridge-speech span:last-child { color: var(--cb-text2); font-size: 12.5px; line-height: 1.4; }
 
-[data-family="crystal"] .session-bridge-preview { height: min(660px, calc(100dvh - 126px)); }
-[data-family="crystal"] .session-bridge-aura { width: 560px; height: 560px; background: radial-gradient(circle, rgb(94 242 255 / .45), rgb(255 42 77 / .25) 50%, transparent 70%); filter: blur(50px); opacity: .55; }
-[data-family="crystal"] .session-bridge-ghosts > span { width: 330px; height: 440px; margin: -220px 0 0 -165px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--cb-card-front) padding-box; box-shadow: inset 0 0 0 2px #5ef2ff; }
+[data-family="crystal"] .session-bridge-preview { height: 100%; }
+[data-family="crystal"] .session-bridge-aura { width: 560px; height: 560px; background: radial-gradient(circle, rgb(94 242 255 / .45), rgb(255 42 77 / .25) 50%, transparent 70%); filter: blur(50px); opacity: .55; transition: opacity 320ms ease-out; }
+/* Ghost cards: the Bud rim with the card face 2 px inside it, both cut on the chamfer. */
+[data-family="crystal"] .session-bridge-ghosts > span { width: 330px; height: 440px; margin: -220px 0 0 -165px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--sf-rim-new); }
+[data-family="crystal"] .session-bridge-ghosts > span::after { position: absolute; inset: 2px; clip-path: var(--nk-chamfer); background: var(--cb-card-front); content: ''; }
 [data-family="crystal"] .session-bridge-ghosts > span:nth-child(1) { opacity: .14; transform: translate(-150px, 96px) rotate(-12deg) scale(.8); }
 [data-family="crystal"] .session-bridge-ghosts > span:nth-child(2) { opacity: .26; transform: translate(-100px, 64px) rotate(-8deg) scale(.88); }
 [data-family="crystal"] .session-bridge-ghosts > span:nth-child(3) { opacity: .42; transform: translate(-50px, 32px) rotate(-4deg) scale(.94); }
 [data-family="crystal"] .session-bridge-trails > span:nth-child(1) { width: 300px; height: 4px; margin: 150px 0 0 -330px; border-radius: 0; background: linear-gradient(90deg, transparent, #5ef2ff); box-shadow: 0 0 12px #5ef2ff; }
 [data-family="crystal"] .session-bridge-trails > span:nth-child(2) { width: 220px; height: 3px; margin: 100px 0 0 -310px; border-radius: 0; background: linear-gradient(90deg, transparent, #ff5470); opacity: 1; filter: blur(1px); }
-[data-family="crystal"] .session-bridge-card { width: 330px; height: 440px; transform: none; filter: drop-shadow(0 30px 40px rgb(0 0 0 / .45)) drop-shadow(0 0 22px var(--cb-rim-soft)); }
-[data-family="crystal"] .session-bridge-card-face { padding: 25px 27px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: transparent; box-shadow: none; isolation: isolate; }
-[data-family="crystal"] .session-bridge-card-face::before { position: absolute; z-index: -1; inset: 0; clip-path: var(--nk-chamfer); background: var(--cb-rim); content: ''; }
-[data-family="crystal"] .session-bridge-card-face::after { position: absolute; z-index: -1; inset: 3px; clip-path: var(--nk-chamfer); background: var(--cb-card-front); content: ''; }
+/* The card takes the rim and glow of its tier, as the board's tier tokens give them. */
+[data-family="crystal"] .session-bridge-card { width: 330px; height: 440px; transform: none; }
+[data-family="crystal"] .session-bridge-card[data-tier="learning"] { --cb-rim: var(--sf-rim-learning); --cb-rim-soft: rgb(255 143 182 / .55); }
+[data-family="crystal"] .session-bridge-card[data-tier="mastered"] { --cb-rim: var(--sf-gold-rim); --cb-rim-soft: rgb(255 42 77 / .6); }
+/* Each face casts the shadow and glow; the rim and the face colour are drawn behind the content and cut on the
+   chamfer, so the face itself stays unclipped and its shadow is not cut off. */
+[data-family="crystal"] .session-bridge-card-face { padding: 25px 27px; border: 0; border-radius: 0; background: transparent; box-shadow: none; isolation: isolate; filter: drop-shadow(0 30px 40px rgb(0 0 0 / .45)) drop-shadow(0 0 22px var(--cb-rim-soft)); }
+[data-family="crystal"] .session-bridge-card-face::before { position: absolute; z-index: -2; inset: 0; clip-path: var(--nk-chamfer); background: var(--cb-rim); content: ''; }
+[data-family="crystal"] .session-bridge-card-face::after { position: absolute; z-index: -2; inset: 3px; clip-path: var(--nk-chamfer); background: var(--cb-card-front); content: ''; }
 [data-family="crystal"] .session-bridge-card-back::after { background: var(--cb-card-back); }
-[data-family="crystal"] .session-bridge-card-category { height: 30px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text2); font-size: 12.5px; font-weight: 800; }
-/* Small tier chip: the flat tier fill keeps the name crisp under 30 px. */
-[data-family="crystal"] .session-bridge-card-tier { display: inline-flex; height: 30px; align-items: center; gap: 6px; padding: 0 10px; clip-path: var(--nk-chamfer-sm); background: var(--sf-tier-bud-fill); font-family: var(--cb-display); font-style: italic; --cb-tier-shadow: var(--sf-tier-bud-fill-shadow); }
-[data-family="crystal"] .session-bridge-card-tier[data-tier="learning"] { background: var(--sf-tier-bloom-fill); --cb-tier-shadow: var(--sf-tier-bloom-fill-shadow); }
-[data-family="crystal"] .session-bridge-card-tier[data-tier="mastered"] { background: var(--sf-tier-star-fill); --cb-tier-shadow: var(--sf-tier-star-fill-shadow); }
-[data-family="crystal"] .session-bridge-card-tier b { color: #fff; font-size: 16px; font-weight: 900; text-shadow: 0 2px 0 var(--cb-tier-shadow); }
-[data-family="crystal"] .session-bridge-card-tier span { color: #031820; font-size: 12px; font-weight: 700; }
+/* The board's light beam across the front, kept inside the face colour. */
+[data-family="crystal"] .session-bridge-card-beam { position: absolute; z-index: -1; inset: 3px; overflow: hidden; clip-path: var(--nk-chamfer); pointer-events: none; }
+[data-family="crystal"] .session-bridge-card-beam > span { position: absolute; top: -30%; left: 22%; width: 80px; height: 160%; background: linear-gradient(90deg, transparent, var(--cb-beam), transparent); filter: blur(3px); transform: rotate(22deg); }
+/* Hover, mouse only: the aura brightens, the shards unfold beside the card, the card tilts toward the pointer and a
+   spot with a cross flare follows it. */
+[data-family="crystal"] .session-bridge-card-wing { position: absolute; top: 20px; width: 400px; height: 270px; opacity: 0; filter: drop-shadow(0 0 20px rgb(255 42 77 / .7)); transition: transform 460ms cubic-bezier(.2, 1.4, .4, 1), opacity 300ms ease; pointer-events: none; }
+[data-family="crystal"] .session-bridge-card-wing--start { left: -280px; transform: scale(.55) rotate(-16deg); transform-origin: 90% 75%; }
+[data-family="crystal"] .session-bridge-card-wing--end { right: -280px; transform: scaleX(-1) scale(.55) rotate(-16deg); transform-origin: 10% 75%; }
+[data-family="crystal"] .session-bridge-card-spot { position: absolute; inset: 3px; overflow: hidden; clip-path: var(--nk-chamfer); background: radial-gradient(circle at var(--sb-mx, 50%) var(--sb-my, 50%), var(--cb-rim-soft) 0%, transparent 42%); mix-blend-mode: screen; opacity: 0; transition: opacity 200ms ease; pointer-events: none; }
+[data-family="crystal"] .session-bridge-card-cross { position: absolute; top: calc(var(--sb-my, 50%) - 44px); left: calc(var(--sb-mx, 50%) - 44px); width: 88px; height: 88px; }
+[data-family="crystal"] .session-bridge-card-cross > span:first-child { position: absolute; top: 50%; right: 0; left: 0; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #fff, transparent); }
+[data-family="crystal"] .session-bridge-card-cross > span:last-child { position: absolute; top: 8px; bottom: 8px; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #fff, transparent); }
+[data-family="crystal"] .session-bridge-card-rotor { transform: rotateX(var(--sb-rx, 0deg)) rotateY(var(--sb-ry, 0deg)); transition: transform 280ms cubic-bezier(.22, 1, .36, 1); }
+[data-family="crystal"] .session-bridge-card-rotor[data-flipped] { transform: rotateX(var(--sb-rx, 0deg)) rotateY(calc(180deg + var(--sb-ry, 0deg))); }
+[data-family="crystal"] .session-bridge-card-rotor[data-turning] { transition: transform 640ms cubic-bezier(.2, .8, .2, 1); }
+@media (hover: hover) {
+  [data-family="crystal"] .session-bridge-preview:has(.session-bridge-card:hover) .session-bridge-aura { opacity: .95; }
+  [data-family="crystal"] .session-bridge-card:hover .session-bridge-card-wing { opacity: 1; }
+  [data-family="crystal"] .session-bridge-card:hover .session-bridge-card-wing--start { transform: scale(1.1) rotate(0deg); }
+  [data-family="crystal"] .session-bridge-card:hover .session-bridge-card-wing--end { transform: scaleX(-1) scale(1.1) rotate(0deg); }
+  [data-family="crystal"] .session-bridge-card:hover .session-bridge-card-spot { opacity: 1; }
+}
+[data-family="crystal"] .session-bridge-card-category { height: 30px; gap: 7px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text2); font-size: 12.5px; font-weight: 800; }
+/* Tier chip: the tier's rim as the board paints it, the name over the tier's dark drop line. */
+[data-family="crystal"] .session-bridge-card-tier { display: inline-flex; height: 30px; align-items: center; gap: 6px; padding: 0 10px; clip-path: var(--nk-chamfer-sm); background: var(--sf-rim-new); --cb-tier-shadow: var(--sf-tier-bud-fill-shadow); }
+[data-family="crystal"] .session-bridge-card-tier[data-tier="learning"] { background: var(--sf-rim-learning); --cb-tier-shadow: var(--sf-tier-bloom-fill-shadow); }
+[data-family="crystal"] .session-bridge-card-tier[data-tier="mastered"] { background: var(--sf-gold-rim); --cb-tier-shadow: var(--sf-tier-star-fill-shadow); }
+[data-family="crystal"] .session-bridge-card-tier b { color: #fff; font-family: var(--cb-display); font-size: 16px; font-style: italic; font-weight: 900; text-shadow: 0 2px 0 var(--cb-tier-shadow); }
+[data-family="crystal"] .session-bridge-card-tier span { color: #031820; font-family: var(--cb-display); font-size: 12px; font-style: italic; font-weight: 700; }
 [data-family="crystal"] .session-bridge-card-tier[data-tier="mastered"] span { color: #fff; text-shadow: 0 1px 0 var(--cb-tier-shadow); }
-[data-family="crystal"] .session-bridge-card-site { width: 18px; height: 18px; border-radius: 0; background: #b30f33; color: #fff; font-size: 11px; font-weight: 900; }
+[data-family="crystal"] .session-bridge-card-site { width: 18px; height: 18px; border-radius: 0; background: #bb1919; color: #fff; font-size: 11px; font-weight: 900; }
 [data-family="crystal"] .session-bridge-card-kind { display: block; margin-top: auto; color: var(--cb-crimson); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 [data-family="crystal"] .session-bridge-card-kind span { color: var(--cb-text3); }
 [data-family="crystal"] .session-bridge-card-kind + .session-bridge-card-word { margin-top: 2px; }
@@ -232,7 +311,7 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
 
 [data-family="crystal"] .session-bridge-next { max-width: none; justify-self: stretch; text-align: left; }
 [data-family="crystal"] .session-bridge-step { color: var(--cb-crimson); font-family: var(--cb-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
-[data-family="crystal"] #session-bridge-heading { margin-top: 8px; font-family: var(--cb-display); font-size: 108px; font-style: italic; font-weight: 900; line-height: .9; letter-spacing: 0; text-transform: uppercase; }
+[data-family="crystal"] #session-bridge-heading { margin-top: 8px; color: var(--sf-text); font-family: var(--cb-display); font-size: 108px; font-style: italic; font-weight: 900; line-height: .9; letter-spacing: 0; text-transform: uppercase; }
 [data-family="crystal"] #session-bridge-heading em { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; font-style: italic; text-shadow: none; filter: drop-shadow(0 0 24px rgb(255 42 77 / .85)); }
 [data-family="crystal"] #session-bridge-heading > span { background: var(--cb-title-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: var(--cb-title-shadow); }
 [data-family="crystal"] :is(.session-bridge-summary, .session-bridge-description) { margin-top: 16px; color: var(--cb-body); font-size: 18px; }
@@ -248,7 +327,14 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   .session-bridge-main { grid-template-columns: minmax(0, 1fr) 440px minmax(0, 1fr); padding: 0 32px 40px; }
   [data-family="crystal"] .session-bridge-main { grid-template-columns: 300px minmax(0, 1fr) 320px; padding: 0 32px 30px; }
   [data-family="crystal"] #session-bridge-heading { font-size: 84px; }
-  [data-family="crystal"] .session-bridge-lumi { width: 130px; }
+  [data-family="crystal"] .session-bridge-mascot { width: 130px; height: 135px; }
+  /* The 300 px column: a smaller run count and words keep the banner clear of the card. */
+  [data-family="crystal"] .session-bridge-combo { padding: 30px 0 0 32px; }
+  [data-family="crystal"] .session-bridge-combo-banner { right: -12px; }
+  [data-family="crystal"] .session-bridge-combo strong { font-size: 76px; }
+  [data-family="crystal"] .session-bridge-combo-text { margin: 27px 0 0 20px; }
+  [data-family="crystal"] .session-bridge-combo-tier { font-size: 26px; }
+  [data-family="crystal"] .session-bridge-combo-label { margin: -6px 0 0 3px; font-size: 11px; letter-spacing: .12em; }
 }
 
 /* Phone: one column; the card keeps the board proportions at a smaller size. */
@@ -264,12 +350,13 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   .session-bridge-result, [data-family="crystal"] .session-bridge-result { height: auto; }
   [data-family="crystal"] .session-bridge-eyebrow { margin-top: 4px; }
   .session-bridge-combo strong, .session-bridge-stat strong { font-size: 64px; }
-  [data-family="crystal"] .session-bridge-combo { height: 110px; gap: 10px; padding: 6px 0 0 40px; }
-  [data-family="crystal"] .session-bridge-combo-banner { top: 14px; height: 80px; }
+  [data-family="crystal"] .session-bridge-combo { height: 110px; padding: 24px 0 0 40px; }
+  [data-family="crystal"] .session-bridge-combo-banner { top: 14px; right: -44px; height: 80px; }
   [data-family="crystal"] .session-bridge-combo strong { font-size: 60px; }
   [data-family="crystal"] .session-bridge-combo-star { top: -6px; left: -12px; width: 56px; height: 56px; }
+  [data-family="crystal"] .session-bridge-combo-text { margin: 8px 0 0 14px; }
   [data-family="crystal"] .session-bridge-combo-tier { font-size: 22px; }
-  [data-family="crystal"] .session-bridge-combo-label { font-size: 11px; letter-spacing: .1em; }
+  [data-family="crystal"] .session-bridge-combo-label { margin: -5px 0 0 3px; font-size: 11px; letter-spacing: .1em; }
   .session-bridge-wing { width: 320px; height: 215px; }
   .session-bridge-wing--start { bottom: -60px; left: -90px; }
   .session-bridge-wing--end { top: -24px; right: -100px; }
@@ -277,12 +364,13 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   .session-bridge-xp { margin-top: 14px; }
   [data-family="crystal"] .session-bridge-companion { position: absolute; top: 0; right: 0; margin: 0; }
   [data-family="crystal"] .session-bridge-speech { display: none; }
-  [data-family="crystal"] .session-bridge-lumi { width: 96px; }
+  [data-family="crystal"] .session-bridge-mascot { width: 96px; height: 99px; }
   .session-bridge-result { position: relative; }
   .session-bridge-preview, [data-family="crystal"] .session-bridge-preview { height: 400px; min-height: 0; }
   .session-bridge-aura { width: 300px; height: 300px; }
   .session-bridge-card { width: 270px; height: 360px; }
   [data-family="crystal"] .session-bridge-card { width: 270px; height: 360px; }
+  [data-family="crystal"] .session-bridge-card-wing { display: none; }
   .session-bridge-card-face { padding: 24px; }
   .session-bridge-card-word { font-size: 44px; }
   [data-family="crystal"] .session-bridge-card-word { font-size: 44px; }
@@ -303,11 +391,21 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   .session-bridge-actions button { flex: 1 1 auto; }
 }
 
+/* Reduced motion: the card turns at once and never tilts toward the pointer. */
 @media (prefers-reduced-motion: reduce) {
   .session-bridge-card, [data-family="crystal"] .session-bridge-card { transform: none; }
-  .session-bridge-card-rotor { transition: none; }
+  .session-bridge-card-rotor, [data-family="crystal"] .session-bridge-card-rotor, [data-family="crystal"] .session-bridge-card-rotor[data-turning] { transition: none; }
+  [data-family="crystal"] .session-bridge-card-rotor { transform: none; }
+  [data-family="crystal"] .session-bridge-card-rotor[data-flipped] { transform: rotateY(180deg); }
   .session-bridge-wave > span { animation: none; }
 }
 html[data-motion="reduced"] .session-bridge-card { transform: none; }
-html[data-motion="reduced"] .session-bridge-card-rotor { transition: none; }
+html[data-motion="reduced"] .session-bridge-card-rotor, html[data-motion="reduced"] [data-family="crystal"] .session-bridge-card-rotor[data-turning] { transition: none; }
+html[data-motion="reduced"] [data-family="crystal"] .session-bridge-card-rotor { transform: none; }
+html[data-motion="reduced"] [data-family="crystal"] .session-bridge-card-rotor[data-flipped] { transform: rotateY(180deg); }
 html[data-motion="reduced"] .session-bridge-wave > span { animation: none; }
+/* The board's card rests at -2 degrees in every motion setting; reduced motion only stops the deal-in. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-theme-family="crystal"]) .session-bridge-card { transform: rotate(-2deg); }
+}
+:root[data-motion="reduced"]:not([data-theme-family="crystal"]) .session-bridge-card { transform: rotate(-2deg); }

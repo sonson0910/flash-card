@@ -293,7 +293,7 @@ test('Crystal Lumi only enters the hero where it preserves the headline and card
   // "Sample English vocabulary cards" (plural) stage — .crystal-demo-left
   // ("Spelling") and .crystal-demo-main ("Instant") — not the single
   // "Sample English vocabulary card" flip-card that ClassicLandingHero
-  // renders for non-crystal themes. .crystal-hero-lumi sits at `left: -14%`
+  // renders for non-crystal themes. .crystal-hero-lumi-wrap sits at `left: -70px`
   // of the stage (landing-page.css), closest to .crystal-demo-left.
   const cardStage = page.getByLabel('Sample English vocabulary cards');
   // Each demo article also renders its meaning in lowercase (e.g. "spelling"),
@@ -307,6 +307,16 @@ test('Crystal Lumi only enters the hero where it preserves the headline and card
   await expect(cardLeftWord).toBeVisible();
   await expect(cardMainWord).toBeVisible();
   await expect(lumi).toBeVisible();
+  // Lumi grows in once loaded and then floats with a slow tilt, and a tilted or scaled box reports a
+  // different bounding box on every frame. The layout is the subject, so measure her resting box.
+  // The reveal waits two animation frames after the image loads, and a software-rendered WebKit takes
+  // seconds per frame on this page while it is still painting the backdrop.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(lumi).toHaveAttribute('data-revealed', 'true', { timeout: 20_000 });
+  await expect.poll(() => lumi.evaluate(element => [
+    getComputedStyle(element).transform,
+    getComputedStyle(element.parentElement!).animationName,
+  ].join(' '))).toBe('none none');
   const [headlineTextBox, cardLeftBox, cardMainBox, lumiBox] = await Promise.all([
     headline.evaluate(element => {
       const range = document.createRange();

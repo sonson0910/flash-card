@@ -65,7 +65,7 @@ function ThemePreviews({ kind, family, mode }: { readonly kind: ThemeCard; reado
 }
 
 function ThemeOption({ checked, kind, family, mode, onChange, children }: { readonly checked: boolean; readonly kind: ThemeCard; readonly family: 'classic' | 'crystal'; readonly mode: 'dark' | 'light'; readonly onChange: () => void; readonly children: ReactNode }) {
-  return <label className="ss-theme-option crystal-chamfer-sm min-h-11" data-checked={checked ? 'true' : undefined}>
+  return <label className="ss-theme-option sf-ease crystal-chamfer-sm min-h-11" data-checked={checked ? 'true' : undefined}>
     <input className="sr-only" type="radio" name="settings-theme" checked={checked} onChange={onChange} />
     <span className="ss-theme-option__head"><span className="ss-theme-option__text">{children}</span>{checked && <Check className="ss-theme-option__check" size={18} aria-hidden="true" />}</span>
     <ThemePreviews kind={kind} family={family} mode={mode} />
@@ -76,7 +76,7 @@ function SwitchRow({ checked, description, label, onChange, disabled = false, le
   return <label className={`ss-row ss-switch-row${disabled ? ' is-disabled' : ''}`}>
     {leading}
     <span className="ss-row__text"><span className="ss-row__title">{label}</span><span className="ss-row__sub">{description}</span></span>
-    <input type="checkbox" role="switch" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
+    <input type="checkbox" role="switch" className="sf-ease" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
   </label>;
 }
 
@@ -86,22 +86,22 @@ export function SoundsAndHaptics() {
   const { isSoundEnabled, setSoundEnabled } = useSoundSettings();
   const { isHapticsEnabled, setHapticsEnabled } = useHapticsSettings();
   const canVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-  return <div className="ss-sound-grid">
+  return <div className="ss-sound-grid fx-enter-3">
     <div className="ss-sound-tile crystal-chamfer-sm">
-      <button type="button" className="ss-sound-tile__play" disabled={!isSoundEnabled} onClick={playFlipSound} aria-label={_(msg({ id: 'settings.sound.preview', message: 'Play a sample study sound' }))}><span className="ss-sound-tile__dot"><Play size={12} fill="currentColor" aria-hidden="true" /></span></button>
-      <label className="ss-sound-tile__label"><span className="ss-sound-tile__name"><Volume2 size={15} aria-hidden="true" className="ss-sound-tile__icon" /><Trans {...msg({ context: 'settings.sound.label', message: 'Study sounds' })} /></span><input type="checkbox" role="switch" checked={isSoundEnabled} onChange={event => setSoundEnabled(event.target.checked)} /></label>
+      <button type="button" className="ss-sound-tile__play fx-press" disabled={!isSoundEnabled} onClick={playFlipSound} aria-label={_(msg({ id: 'settings.sound.preview', message: 'Play a sample study sound' }))}><span className="ss-sound-tile__dot"><Play size={12} fill="currentColor" aria-hidden="true" /></span></button>
+      <label className="ss-sound-tile__label"><span className="ss-sound-tile__name"><Volume2 size={15} aria-hidden="true" className="ss-sound-tile__icon" /><Trans {...msg({ context: 'settings.sound.label', message: 'Study sounds' })} /></span><input type="checkbox" role="switch" className="sf-ease" checked={isSoundEnabled} onChange={event => setSoundEnabled(event.target.checked)} /></label>
     </div>
     <div className="ss-sound-tile crystal-chamfer-sm">
-      <button type="button" className="ss-sound-tile__play" disabled={!isHapticsEnabled || !canVibrate} onClick={() => triggerHaptic('medium')} aria-label={_(msg({ id: 'settings.haptics.preview', message: 'Try a haptic pulse' }))}><span className="ss-sound-tile__dot"><Play size={12} fill="currentColor" aria-hidden="true" /></span></button>
-      <label className="ss-sound-tile__label"><span className="ss-sound-tile__name"><Vibrate size={15} aria-hidden="true" className="ss-sound-tile__icon" /><Trans {...msg({ context: 'settings.haptics.label', message: 'Haptics' })} /></span><input type="checkbox" role="switch" checked={isHapticsEnabled} onChange={event => setHapticsEnabled(event.target.checked)} /></label>
+      <button type="button" className="ss-sound-tile__play fx-press" disabled={!isHapticsEnabled || !canVibrate} onClick={() => triggerHaptic('medium')} aria-label={_(msg({ id: 'settings.haptics.preview', message: 'Try a haptic pulse' }))}><span className="ss-sound-tile__dot"><Play size={12} fill="currentColor" aria-hidden="true" /></span></button>
+      <label className="ss-sound-tile__label"><span className="ss-sound-tile__name"><Vibrate size={15} aria-hidden="true" className="ss-sound-tile__icon" /><Trans {...msg({ context: 'settings.haptics.label', message: 'Haptics' })} /></span><input type="checkbox" role="switch" className="sf-ease" checked={isHapticsEnabled} onChange={event => setHapticsEnabled(event.target.checked)} /></label>
     </div>
   </div>;
 }
 
 function PageHeading({ headingRef, children, subtitle }: { readonly headingRef?: RefObject<HTMLHeadingElement | null>; readonly children: ReactNode; readonly subtitle: ReactNode }) {
   return <header className="ss-page-heading">
-    <h1 ref={headingRef} tabIndex={-1} className="ss-title">{children}</h1>
-    <p className="ss-subtitle">{subtitle}</p>
+    <h1 ref={headingRef} tabIndex={-1} className="ss-title fx-title">{children}</h1>
+    <p className="ss-subtitle fx-enter">{subtitle}</p>
   </header>;
 }
 
@@ -134,8 +134,8 @@ function AppearanceSection({ headingRef }: { readonly headingRef?: RefObject<HTM
     <PageHeading headingRef={headingRef} subtitle={<Trans {...msg({ context: 'settings.description', message: 'Choose a look and tune the details that help you focus.' })} />}>
       <Trans {...msg({ context: 'settings.title', message: 'Make your study space <0>yours</0>' })} components={{ 0: <em /> }} />
     </PageHeading>
-    <h2 id="settings-appearance" className="ss-eyebrow"><Trans {...msg({ context: 'settings.appearance.title', message: 'Appearance' })} /></h2>
-    <div className="ss-panel crystal-chamfer">
+    <h2 id="settings-appearance" className="ss-eyebrow fx-enter-2"><Trans {...msg({ context: 'settings.appearance.title', message: 'Appearance' })} /></h2>
+    <div className="ss-panel fx-enter-2 crystal-chamfer">
       <fieldset className="settings-theme-picker"><legend className="ss-label"><Trans {...msg({ context: 'settings.theme.label', message: 'Theme' })} /></legend><div className="ss-theme-grid">
         <ThemeOption kind="midnight" family={family} mode={mode} checked={family === 'classic' && mode === 'dark'} onChange={() => choose('midnight')}><span className="ss-theme-option__name"><Trans {...msg({ context: 'settings.theme.midnight', message: 'Midnight Aurora' })} /></span><span className="ss-theme-option__sub"><Trans {...msg({ context: 'settings.theme.midnight.description', message: 'A deep, calm night palette.' })} /></span></ThemeOption>
         <ThemeOption kind="paper" family={family} mode={mode} checked={family === 'classic' && mode === 'light'} onChange={() => choose('paper')}><span className="ss-theme-option__name"><Trans {...msg({ context: 'settings.theme.paper', message: 'Ink & Paper' })} /></span><span className="ss-theme-option__sub"><Trans {...msg({ context: 'settings.theme.paper.description', message: 'A warm, bright reading surface.' })} /></span></ThemeOption>
@@ -146,14 +146,14 @@ function AppearanceSection({ headingRef }: { readonly headingRef?: RefObject<HTM
         <label className="ss-crystal-mode__option crystal-chamfer-sm"><input type="radio" name="settings-crystal-mode" checked={mode === 'light'} onChange={() => setMode('light')} /><Sun size={18} aria-hidden="true" /><span><Trans {...msg({ context: 'settings.crystal-mode.day', message: 'Prism Day' })} /></span></label>
       </div></fieldset>}
     </div>
-    <h2 className="ss-eyebrow"><Trans {...msg({ context: 'settings.display.title', message: 'Display' })} /></h2>
-    <div className="ss-panel ss-panel--rows crystal-chamfer">
+    <h2 className="ss-eyebrow fx-enter-3"><Trans {...msg({ context: 'settings.display.title', message: 'Display' })} /></h2>
+    <div className="ss-panel ss-panel--rows fx-enter-3 crystal-chamfer">
       <SwitchRow checked={followSystem} leading={<span className="ss-row__icon"><Monitor size={16} aria-hidden="true" /></span>} label={<Trans {...msg({ context: 'settings.follow-system.label', message: 'Follow system' })} />} description={<Trans {...msg({ context: 'settings.follow-system.description', message: 'Match your device’s light or dark setting.' })} />} onChange={setFollowSystem} />
       <SwitchRow checked={reducedMotion} leading={<span className="ss-row__icon"><Palette size={16} aria-hidden="true" /></span>} label={<Trans {...msg({ context: 'settings.reduced-motion.label', message: 'Reduced motion' })} />} description={<Trans {...msg({ context: 'settings.reduced-motion.description', message: 'Limit movement and animated effects.' })} />} onChange={setReducedMotion} />
       <SwitchRow checked={lumiEnabled} disabled={family !== 'crystal'} leading={<span className="ss-row__icon ss-row__icon--lumi" data-settings-lumi><Lumi pose="happy" size={36} /></span>} label={<Trans {...msg({ context: 'settings.lumi.label', message: 'Lumi' })} />} description={<Trans {...msg({ context: 'settings.lumi.description', message: 'Show your Crystal Star study companion.' })} />} onChange={setLumi} />
       <SwitchRow checked={focusModeEnabled} leading={<span className="ss-row__icon"><Check size={16} aria-hidden="true" /></span>} label={<Trans {...msg({ context: 'settings.focus-mode.label', message: 'Focus mode' })} />} description={<Trans {...msg({ context: 'settings.focus-mode.description', message: 'Hide combo banners while studying.' })} />} onChange={setFocusModeEnabled} />
     </div>
-    <h2 className="ss-eyebrow"><Trans {...msg({ context: 'settings.sounds.eyebrow', message: 'Sounds & haptics' })} /></h2>
+    <h2 className="ss-eyebrow fx-enter-3"><Trans {...msg({ context: 'settings.sounds.eyebrow', message: 'Sounds & haptics' })} /></h2>
     <SoundsAndHaptics />
   </section>;
 }
@@ -163,7 +163,7 @@ function SoundsSection({ headingRef }: { readonly headingRef?: RefObject<HTMLHea
     <PageHeading headingRef={headingRef} subtitle={<Trans {...msg({ context: 'settings.sounds.description', message: 'Feedback while you study, on this device.' })} />}>
       <Trans {...msg({ context: 'settings.sounds.title', message: 'Sounds & <0>haptics</0>' })} components={{ 0: <em /> }} />
     </PageHeading>
-    <h2 id="settings-sounds" className="ss-eyebrow"><Trans {...msg({ context: 'settings.sounds.eyebrow', message: 'Sounds & haptics' })} /></h2>
+    <h2 id="settings-sounds" className="ss-eyebrow fx-enter-3"><Trans {...msg({ context: 'settings.sounds.eyebrow', message: 'Sounds & haptics' })} /></h2>
     <SoundsAndHaptics />
   </section>;
 }
@@ -174,12 +174,12 @@ function DataSection({ headingRef }: { readonly headingRef?: RefObject<HTMLHeadi
     <PageHeading headingRef={headingRef} subtitle={<Trans {...msg({ context: 'settings.data.description', message: 'Download what you have saved, or delete your account.' })} />}>
       <Trans {...msg({ context: 'settings.data.title', message: 'Data & <0>export</0>' })} components={{ 0: <em /> }} />
     </PageHeading>
-    <h2 id="settings-data" className="ss-eyebrow"><Trans {...msg({ context: 'settings.data.eyebrow', message: 'Your account data' })} /></h2>
-    <div className="ss-panel ss-panel--rows crystal-chamfer">
+    <h2 id="settings-data" className="ss-eyebrow fx-enter-2"><Trans {...msg({ context: 'settings.data.eyebrow', message: 'Your account data' })} /></h2>
+    <div className="ss-panel ss-panel--rows fx-enter-2 crystal-chamfer">
       <div className="ss-row">
         <span className="ss-row__icon"><Database size={16} aria-hidden="true" /></span>
         <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.data.row.title', message: 'Export or delete' })} /></span><span className="ss-row__sub"><Trans {...msg({ context: 'settings.data.row.description', message: 'Download your account data as a file, or permanently delete your account.' })} /></span></span>
-        <button type="button" className="ss-secondary crystal-chamfer-sm" onClick={() => setOpen(true)}><Trans {...msg({ context: 'settings.data.open', message: 'Open data & export' })} /></button>
+        <button type="button" className="ss-secondary fx-press crystal-chamfer-sm" onClick={() => setOpen(true)}><Trans {...msg({ context: 'settings.data.open', message: 'Open data & export' })} /></button>
       </div>
     </div>
     {open && <Suspense fallback={null}><AccountDataSection open={open} onOpenChange={setOpen} /></Suspense>}
@@ -228,16 +228,16 @@ export default function SettingsScreen({ headingRef, focusIntent = 0, section: c
   }, [focusIntent, headingRef]);
 
   const soundsBlock = <>
-    <h2 className="ss-eyebrow"><Trans {...msg({ context: 'settings.sounds.eyebrow', message: 'Sounds & haptics' })} /></h2>
+    <h2 className="ss-eyebrow fx-enter-3"><Trans {...msg({ context: 'settings.sounds.eyebrow', message: 'Sounds & haptics' })} /></h2>
     <SoundsAndHaptics />
   </>;
 
   return <div className="settings-screen sf-settings-scope" data-settings-section={section}>
-    <nav aria-label={_(msg({ id: 'settings.menu.label', message: 'Settings sections' }))} className="ss-menu">
+    <nav aria-label={_(msg({ id: 'settings.menu.label', message: 'Settings sections' }))} className="ss-menu fx-enter">
       <p className="ss-menu__title" aria-hidden="true"><Trans {...msg({ context: 'settings.kicker', message: 'Settings' })} /></p>
       <ul className="ss-menu__list">
         {MENU.map(({ id, icon: Icon }) => <li key={id}>
-          <button type="button" className="ss-menu__item" aria-current={section === id ? 'page' : undefined} onClick={() => selectSection(id)}>
+          <button type="button" className="ss-menu__item sf-ease" aria-current={section === id ? 'page' : undefined} onClick={() => selectSection(id)}>
             <span className="ss-menu__label"><Icon size={17} aria-hidden="true" /><MenuLabel id={id} /></span>
           </button>
         </li>)}

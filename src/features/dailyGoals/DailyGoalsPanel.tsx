@@ -10,6 +10,14 @@ import './daily-goals-panel.css';
 
 const UNKNOWN_PROGRESS = '—';
 
+/**
+ * Keeps each number on the line of its unit ("15 h" and "25 min" never break inside), so a countdown that has to
+ * wrap beside the heading never strands a bare number.
+ */
+function bindNumbersToUnits(text: string): string {
+  return text.replace(/(\d)\s+/g, '$1\u00a0');
+}
+
 export interface DailyGoalsPanelProps {
   /** The verified gamification state (`useVerifiedGamification`); only server-written fields are read. */
   readonly gamification: DailyGoalsSource & { readonly rewardTimeZone?: string };
@@ -21,7 +29,7 @@ export interface DailyGoalsPanelProps {
   readonly now?: Date;
 }
 
-function GoalRow({ goal }: { readonly goal: DailyGoal }) {
+function GoalRow({ goal, spacedCount }: { readonly goal: DailyGoal; readonly spacedCount: boolean }) {
   const { _ } = useLingui();
   const label = goal.id === 'study-cards'
     ? _({ ...msg({ id: 'daily-goals.goal.study-cards', message: '{count, plural, one {Study # card} other {Study # cards}}' }), values: { count: goal.cards } })
@@ -54,7 +62,7 @@ function GoalRow({ goal }: { readonly goal: DailyGoal }) {
         <span className="daily-goal__bar" aria-hidden="true"><span className="daily-goal__fill" style={{ width: '0%' }} /></span>
       )}
       {progress.state === 'counted' ? (
-        <span className="daily-goal__count" aria-hidden="true">{`${progress.done}/${progress.target}`}</span>
+        <span className="daily-goal__count" aria-hidden="true">{spacedCount ? `${progress.done} / ${progress.target}` : `${progress.done}/${progress.target}`}</span>
       ) : (
         <span className="daily-goal__count">
           <span aria-hidden="true">{UNKNOWN_PROGRESS}</span>
@@ -76,6 +84,7 @@ export function DailyGoalsPanel({ gamification, planHasMatch, dailyPace, now: fi
   const now = useMinuteClock(fixedNow);
   const pace = useMemo(() => dailyPace ?? readDailyPace(), [dailyPace]);
   const timeZone = resolveStudyTimeZone(gamification.rewardTimeZone);
+  const crystal = family === 'crystal';
   const model = buildDailyGoals({
     now,
     timeZone,
@@ -90,6 +99,7 @@ export function DailyGoalsPanel({ gamification, planHasMatch, dailyPace, now: fi
     rewards: gamification.rewards,
     hydrationFailed: gamification.hydrationFailed,
   });
+  const resetsIn = _({ ...msg({ id: 'daily-goals.resets-in', message: 'Resets in {hours} h {minutes} min' }), values: { hours: model.resetsIn.hours, minutes: model.resetsIn.minutes } });
   return (
     <section className={`daily-goals-panel daily-goals-panel--${family} crystal-chamfer`} aria-labelledby={headingId} data-daily-goals="true">
       <div className="daily-goals-panel__head">
@@ -99,11 +109,11 @@ export function DailyGoalsPanel({ gamification, planHasMatch, dailyPace, now: fi
         </h2>
         <span className="daily-goals-panel__separator" aria-hidden="true">{'·'}</span>
         <span className="daily-goals-panel__reset">
-          {_({ ...msg({ id: 'daily-goals.resets-in', message: 'Resets in {hours} h {minutes} min' }), values: { hours: model.resetsIn.hours, minutes: model.resetsIn.minutes } })}
+          {crystal ? bindNumbersToUnits(resetsIn) : resetsIn}
         </span>
       </div>
       <ul className="daily-goals-panel__list">
-        {model.goals.map(goal => <GoalRow key={goal.id} goal={goal} />)}
+        {model.goals.map(goal => <GoalRow key={goal.id} goal={goal} spacedCount={crystal} />)}
       </ul>
     </section>
   );

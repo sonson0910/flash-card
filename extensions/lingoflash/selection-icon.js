@@ -121,6 +121,7 @@
     style.textContent = `
       :host { all: initial; }
       @keyframes sf-pop { 0% { opacity: 0; transform: scale(0.75); } 100% { opacity: 1; transform: scale(1); } }
+      @keyframes nk-pop { 0% { opacity: 0; transform: scale(.6) rotate(-6deg); } 70% { opacity: 1; transform: scale(1.08) rotate(1deg); } 100% { opacity: 1; transform: none; } }
       button {
         --icon-bg: linear-gradient(145deg, #7ee6fa, #28d3f4 45%, #966cd7);
         --icon-text: #04141c;
@@ -138,14 +139,25 @@
         border-radius: 0; box-shadow: none; height: 38px; margin: 0; padding: 7px; width: 38px;
         clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
         filter: drop-shadow(0 6px 10px rgb(255 42 77 / 0.5));
+        animation: nk-pop 520ms cubic-bezier(.34, 1.56, .64, 1) backwards;
+        transition: translate 160ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 160ms ease;
       }
       button[data-family="crystal"][data-scheme="light"] { --icon-bg: linear-gradient(145deg, #ffffff, #d6ecff); --icon-focus: #0a7d99; }
-      button:hover { transform: translateY(-2px) scale(1.06); }
-      button:active { transform: scale(0.95); }
+      /* The appear animation ends on the resting look, so Classic lets go of it and the press can move the icon. */
+      button:not([data-family="crystal"]) { animation-fill-mode: backwards; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+      button:not([data-family="crystal"])[data-scheme="light"] { transition: transform 160ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease; }
+      @media (hover: hover) and (pointer: fine) {
+        button[data-family="crystal"]:hover { translate: -2px -2px; }
+        button:not([data-family="crystal"]):hover { transform: translateY(-2px); filter: brightness(1.08) drop-shadow(0 10px 18px rgb(40 211 244 / .35)); }
+        button:not([data-family="crystal"])[data-scheme="light"]:hover { transform: translateY(-2px); filter: drop-shadow(0 8px 8px rgb(60 40 20 / .2)); }
+      }
+      button[data-family="crystal"]:active { translate: 3px 3px; }
+      button:not([data-family="crystal"]):active { transform: translateY(0) scale(.97); filter: brightness(.98); }
+      button:not([data-family="crystal"])[data-scheme="light"]:active { transform: translateY(1px) scale(.98); filter: none; }
       button:focus-visible { outline: 2px solid var(--icon-focus); outline-offset: 2px; }
       button svg { display: block; height: 100%; width: 100%; }
       button text { fill: currentColor; font-family: Fraunces, Georgia, 'Times New Roman', serif; font-size: 17px; font-style: italic; }
-      @media (prefers-reduced-motion: reduce) { button { animation: none; transition: none; } button:hover { transform: none; } }
+      @media (prefers-reduced-motion: reduce) { button { animation: none; transition: none; } button:hover { transform: none; } button:not([data-family="crystal"]):is(:hover, :active) { transform: none; filter: none; } }
     `;
     const button = document.createElement('button');
     button.type = 'button';

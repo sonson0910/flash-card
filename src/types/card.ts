@@ -141,6 +141,38 @@ export interface CardData {
   masteredAt?: string;
   /** Verified UniDic pitch metadata for an exact Japanese word and kana reading. */
   japanesePitchAccent?: JapanesePitchAccent;
+  /** Optional structured linguistic cues for the Study Card language form. */
+  languageDetails?: CardLanguageDetails;
   /** Immutable after creation; set only by the browser-extension capture path via `createCard`. */
   source?: CardSourceMetadata;
+}
+
+export interface CardLanguagePronunciation {
+  tag: string;
+  ipa: string;
+}
+
+export interface CardLanguageSinoForm {
+  source: string;
+  reading?: string;
+}
+
+export interface CardLanguageMeasureWord {
+  word: string;
+  reading?: string;
+}
+
+export interface CardLanguageDetails {
+  pronunciations?: CardLanguagePronunciation[];
+  syllables?: string[];
+  stressIndex?: number;
+  article?: string;
+  indefiniteArticle?: string;
+  gender?: 'm' | 'f' | 'n';
+  plural?: string;
+  sinoForm?: CardLanguageSinoForm;
+  measureWord?: CardLanguageMeasureWord;
+  spokenForm?: string;
+  exampleReading?: string;
+  hints?: string[];
 }

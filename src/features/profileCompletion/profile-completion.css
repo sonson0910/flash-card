@@ -20,7 +20,7 @@
   .profile-gate__main,
   .profile-gate__footer { position: relative; z-index: 1; }
 
-  .profile-gate__bar {
+  :where(html[data-theme-family=crystal]) .profile-gate__bar {
     display: flex;
     height: 76px;
     flex: none;
@@ -29,11 +29,19 @@
     padding: 0 56px;
     border-bottom: 1px solid var(--sf-border);
   }
+:where(html:not([data-theme-family=crystal])) .profile-gate__bar {
+    display: flex;
+    height: 76px;
+    flex: none;
+    align-items: center;
+    gap: 24px;
+    padding: 0 56px;
+  }
 
   .profile-gate__star path:first-child { fill: var(--sf-brand); }
   .profile-gate__star path:last-child { fill: color-mix(in srgb, var(--sf-brand) 45%, var(--sf-canvas)); }
 
-  .profile-gate__pill {
+  :where(html[data-theme-family=crystal]) .profile-gate__pill {
     display: inline-flex;
     min-height: 30px;
     align-items: center;
@@ -41,6 +49,18 @@
     border: 1px solid color-mix(in srgb, var(--sf-brand) 35%, transparent);
     border-radius: 999px;
     background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface));
+    color: var(--sf-brand-text);
+    font-size: 12px;
+    font-weight: 700;
+  }
+:where(html:not([data-theme-family=crystal])) .profile-gate__pill {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 35%, transparent));
+    border-radius: 999px;
+    background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
     color: var(--sf-brand-text);
     font-size: 12px;
     font-weight: 700;
@@ -138,7 +158,6 @@
     border-radius: var(--sf-card-radius);
     background-color: var(--sf-surface);
     box-shadow: var(--sf-panel-shadow);
-    --sf-chamfer-edge: var(--pg-edge);
   }
 
   .profile-gate__panel-title {
@@ -154,7 +173,7 @@
   .profile-gate__field { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
   .profile-gate__field > label { color: var(--sf-text-muted); font-size: 12px; font-weight: 600; }
 
-  .profile-gate__control {
+  :where(html[data-theme-family=crystal]) .profile-gate__control {
     width: 100%;
     min-height: 44px;
     padding: 0 16px;
@@ -164,6 +183,17 @@
     color: var(--sf-text);
     font: inherit;
     font-size: 14px;
+  }
+:where(html:not([data-theme-family=crystal])) .profile-gate__control {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 16px;
+    border: 1px solid var(--sf-accent-line, var(--sf-edge-highlight));
+    border-radius: 14px;
+    background-color: var(--sf-surface-control);
+    color: var(--sf-text-strong, var(--sf-text));
+    font: inherit;
+    font-size: 16px;
   }
 
   .profile-gate__control::placeholder { color: var(--sf-text-muted); opacity: 1; }
@@ -286,7 +316,6 @@
     padding: 10px 14px;
     border: 1px solid var(--pg-warning-line);
     border-radius: 999px;
-    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__fact dt { color: var(--sf-text-muted); font-size: 11px; font-weight: 700; }
@@ -306,7 +335,6 @@
     border-radius: 12px;
     background-color: var(--sf-surface-muted);
     font-size: 13px;
-    --sf-chamfer-edge: var(--sf-border);
   }
 
   .profile-gate__tile strong { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -327,7 +355,6 @@
   .profile-gate__tile--next {
     border-color: color-mix(in srgb, var(--sf-brand) 35%, transparent);
     background-color: color-mix(in srgb, var(--sf-brand) 10%, var(--sf-surface));
-    --sf-chamfer-edge: color-mix(in srgb, var(--sf-brand) 55%, transparent);
   }
 
   .profile-gate__tile--next strong,
@@ -336,7 +363,6 @@
   .profile-gate__tile--warning {
     border-color: var(--pg-warning-line);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, var(--sf-surface));
-    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__tile--warning strong,
@@ -378,6 +404,11 @@
 
   @media (prefers-reduced-motion: no-preference) {
     .profile-gate__sheet { animation: profile-gate-enter 240ms ease-out both; }
+  }
+  :where(html:not([data-theme-family=crystal])) .profile-gate__sheet { animation: none; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .profile-gate :is(.fx-press, .sf-ease):disabled:is(:hover, :active) {
+    transform: none;
+    filter: none;
   }
 
   @keyframes profile-gate-enter {
@@ -454,7 +485,6 @@
   html[data-theme-family=crystal] .profile-gate__control {
     border-color: transparent;
     background-color: var(--sf-surface-raised);
-    --sf-chamfer-edge: var(--pg-edge);
   }
 
   html[data-theme-family=crystal] .profile-gate__checkbox { border-radius: 0; }
@@ -467,7 +497,6 @@
 
   html[data-theme-family=crystal] .profile-gate__note--warning {
     border-color: var(--pg-warning-line);
-    --sf-chamfer-edge: var(--pg-warning-edge);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, transparent);
   }
 
@@ -489,7 +518,6 @@
   /* The fill only lightens towards the top so the dark on-brand text keeps its contrast. */
   html[data-theme-family=crystal] .profile-gate__primary {
     --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-surface)), var(--sf-brand) 55%);
-    --sf-chamfer-edge: transparent;
     background-color: var(--sf-brand);
     box-shadow: none;
     color: var(--sf-on-brand);
@@ -500,13 +528,52 @@
     --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-text)), var(--sf-brand) 55%);
   }
 
-  /* Classic dark keeps the brand colour for the main action, as on the dark boards. */
-  html[data-theme-family=classic].dark .profile-gate__primary {
-    background-color: var(--sf-brand);
-    box-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 color-mix(in srgb, var(--sf-text) 50%, transparent);
-    color: var(--sf-on-brand);
+  /* Classic matches the board primary, secondary, display weight and semantic surface tokens. */
+  html:not([data-theme-family=crystal]) .profile-gate__title,
+  html:not([data-theme-family=crystal]) .profile-gate__panel-title {
+    color: var(--sf-text-strong, var(--sf-text));
+    font-weight: var(--sf-display-weight, 380);
   }
-  html[data-theme-family=classic].dark .profile-gate__primary:hover { background-color: var(--sf-brand-hover); }
+
+  html:not([data-theme-family=crystal]) .profile-gate__primary {
+    background-color: var(--sf-primary-bg);
+    box-shadow: var(--sf-primary-shadow);
+    color: var(--sf-on-primary);
+  }
+
+  html:not([data-theme-family=crystal]).dark .profile-gate__primary:hover { background-color: var(--sf-brand-hover); }
+  html:not([data-theme-family=crystal]) .profile-gate__secondary { box-shadow: var(--sf-secondary-shadow, none); }
+
+  html:not([data-theme-family=crystal]) .profile-gate__note--warning,
+  html:not([data-theme-family=crystal]) .profile-gate__tile--warning {
+    border-color: var(--sf-warn-line);
+    background-color: var(--sf-warn-bg);
+  }
+  html:not([data-theme-family=crystal]) .profile-gate__tile--warning strong,
+  html:not([data-theme-family=crystal]) .profile-gate__tile--warning span { color: var(--sf-warn); }
+
+  html:not([data-theme-family=crystal]) .profile-gate__tile--success {
+    border-color: var(--sf-success-line);
+    background-color: var(--sf-success-soft);
+    color: var(--sf-success-text);
+  }
+
+  html:not([data-theme-family=crystal]) .profile-gate__tile--next {
+    border-color: var(--sf-info-line);
+    background-color: var(--sf-info-bg);
+  }
+  html:not([data-theme-family=crystal]) .profile-gate__tile--next strong,
+  html:not([data-theme-family=crystal]) .profile-gate__tile--next span { color: var(--sf-info); }
+
+  /* The gate has no board of its own: its kickers, page title, field labels, inputs and buttons take the Onboarding
+     board's step eyebrow, exam-step h1, date field and footer buttons; the panel keeps the surface tokens. */
+  :where(html:not([data-theme-family=crystal])) :is(.profile-gate__eyebrow, .profile-gate__panel-eyebrow) { font-size: 12px; font-weight: 600; letter-spacing: .12em; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .profile-gate__panel-eyebrow { color: var(--sf-text-muted); }
+  :where(html:not([data-theme-family=crystal])) .profile-gate__field > label { font-size: 13px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) :is(.profile-gate__primary, .profile-gate__secondary) { min-height: 50px; gap: 10px; padding: 0 26px; font-weight: 650; }
+  @media (min-width: 768px) {
+    :where(html:not([data-theme-family=crystal])) .profile-gate__title { margin-top: 12px; font-size: clamp(34px, 3.75vw, 54px); letter-spacing: -.035em; line-height: 1.04; }
+  }
 
   @media (max-width: 767px) {
     .profile-gate__bar { height: 64px; gap: 10px; padding: 0 16px; border-bottom: 0; }
@@ -536,7 +603,6 @@
       border-radius: var(--sf-card-radius);
       background-color: var(--sf-surface);
       box-shadow: var(--sf-panel-shadow);
-      --sf-chamfer-edge: var(--pg-edge);
     }
 
     .profile-gate__sheet--single { max-width: none; }

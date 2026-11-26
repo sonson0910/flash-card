@@ -1,9 +1,10 @@
 <!--#AHEAD Crystal Star mobile-->
 <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
   <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; overflow: hidden;">
-    <div style="position: absolute; inset: 0; background: {{t.space}};"></div>
-    <div class="nk-starfield" style="position: absolute; inset: 0; background: {{t.stars}};"></div>
+    <div style="position: absolute; inset: 0; background: {{t.spaceVeil}}, {{t.space}}, {{t.pageBg}};"></div>
+    <sc-if value="{{isOnboard}}" hint-placeholder-val="{{false}}">
     <div class="nk-beam" style="position: absolute; left: 30%; top: -20%; width: 90px; height: 140%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent); filter: blur(3px);"></div>
+    </sc-if>
     <div style="position: absolute; right: -120px; top: 40px; width: 300px; height: 200px; opacity: {{wingOpacity}}; transform: scaleX(-1) rotate(-16deg); filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.5));">
 <!--#WINGS-->
     </div>
@@ -21,13 +22,13 @@
   <sc-if value="{{isReview}}" hint-placeholder-val="{{true}}">
     <div style="position: relative; z-index: 3; flex-grow: 1; display: flex; flex-direction: column; padding: 0 20px;">
       <div style="height: 50px; display: flex; align-items: center; gap: 10px;">
-        <button aria-label="End session" style="width: 36px; height: 36px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        <button aria-label="End session" class="nk-press" style="width: 36px; height: 36px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
         <div role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="5" style="flex-grow: 1; display: flex; gap: 3px;">
           <sc-for list="{{segments}}" as="seg" hint-placeholder-count="12">
             <span style="flex-grow: 1; height: 8px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
           </sc-for>
         </div>
-        <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">5<span style="font-size: 12px; color: {{t.text3}};">/12</span></span>
+        <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">5<span style="font-size: 12px; color: {{t.text3}};">/12</span></span>
       </div>
 
       <div class="nk-rise" style="position: relative; height: 468px; margin-top: 6px; filter: drop-shadow(0 20px 26px rgb(0 0 0 / 0.4)) drop-shadow(0 0 18px {{learn.soft}});">
@@ -36,19 +37,19 @@
           <div style="position: relative; height: 160px; flex-shrink: 0; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);">
             <img src="../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg" alt="Illustration for Immediate" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             <span style="position: absolute; left: 14px; top: 14px; height: 30px; padding: 0 12px 0 10px; clip-path: {{t.chamferSm}}; background: {{learn.rim}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #4a0614;">Bloom</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; color: #1a0610;">Learning</span></span>
-            <button aria-label="Star this word" style="position: absolute; right: 12px; top: 12px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #ff5470, #b30f33); color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button>
+            <button aria-label="Star this word" class="nk-press" style="position: absolute; right: 12px; top: 12px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #ff5470, #b30f33); color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button>
           </div>
           <div style="padding: 0 20px; margin-top: -6px; display: flex; flex-direction: column; flex-grow: 1;">
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.crimsonText}};">ADJECTIVE <span style="color: {{t.text3}};">// TIME</span></div>
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 42px; line-height: 1.05; color: {{t.textStrong}};">Im<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">me</span>diate</div>
             <div style="margin-top: 6px; display: flex; align-items: center; gap: 10px;">
-              <button aria-label="Listen to pronunciation" style="width: 36px; height: 36px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;">
-                <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 13px;"><span class="sf-wave" style="width: 2.5px; height: 100%; background: currentColor;"></span><span class="sf-wave" style="width: 2.5px; height: 100%; background: currentColor; animation-delay: 120ms;"></span><span class="sf-wave" style="width: 2.5px; height: 100%; background: currentColor; animation-delay: 240ms;"></span></span>
+              <button aria-label="Listen to pronunciation" class="nk-press" style="width: 36px; height: 36px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;">
+                <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 13px;"><span style="width: 2.5px; height: 100%; background: currentColor;"></span><span style="width: 2.5px; height: 100%; background: currentColor;"></span><span style="width: 2.5px; height: 100%; background: currentColor;"></span></span>
               </button>
               <span style="font-family: {{t.fMono}}; font-size: 13.5px; color: {{t.body}};">/ɪˈmiːdiət/</span>
             </div>
             <div style="margin-top: 14px; display: flex; align-items: center; gap: 8px;"><span style="height: 1px; flex-grow: 1; background: {{t.lineStrong}};"></span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; letter-spacing: 0.14em; color: {{t.text3}};">VIETNAMESE</span><span style="height: 1px; flex-grow: 1; background: {{t.lineStrong}};"></span></div>
-            <div class="nk-pop" style="margin-top: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.1; color: {{t.crimsonText}}; text-shadow: 0 0 20px rgb(255 42 77 / 0.35);">Ngay lập tức</div>
+            <div class="nk-rise-2" style="margin-top: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.1; color: {{t.crimsonText}}; text-shadow: 0 0 20px rgb(255 42 77 / 0.35);">Ngay lập tức</div>
             <p style="margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.body}};">“The new policy takes <strong style="color: {{t.textStrong}};">immediate</strong> effect.”<br><span style="color: {{t.text2}};">Chính sách mới có hiệu lực ngay lập tức.</span></p>
             <div style="margin-top: auto; padding-bottom: 16px; display: flex; gap: 8px;">
               <span style="height: 30px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-size: 12.5px; font-weight: 800; color: {{t.textStrong}}; display: flex; align-items: center;">immediately</span>
@@ -60,9 +61,9 @@
 
       <div role="group" aria-label="How well did you remember?" class="nk-rise-2" style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 6px;">
         <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
-          <button style="height: 52px; border: 0; transform: skewX(-12deg); background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; align-items: center; justify-content: center;">
+          <span class="nk-press" style="display: flex; flex-direction: column;"><button style="height: 52px; border: 0; transform: skewX(-12deg); background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; align-items: center; justify-content: center;">
             <span style="transform: skewX(12deg); display: flex; align-items: baseline; gap: 8px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; letter-spacing: 0.05em;">{{g.label}}</span><span style="font-family: {{t.fMono}}; font-size: 11px; opacity: 0.85;">{{g.next}}</span></span>
-          </button>
+          </button></span>
         </sc-for>
       </div>
     </div>
@@ -83,22 +84,22 @@
         <div class="nk-float" style="width: 124px; height: 124px; flex-shrink: 0;">
 <!--#MASCOT $-->
         </div>
-        <div style="position: relative; flex-grow: 1; padding: 12px 14px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <div style="position: relative; flex-grow: 1; padding: 12px 14px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
           <div style="margin-top: 2px; font-weight: 900; font-size: 15.5px; line-height: 1.3; color: {{t.textStrong}};">Hi Khánh! 18 cards are waiting for you.</div>
         </div>
       </div>
 
       <div class="nk-rise-2" style="margin-top: 14px;">
-        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">TUESDAY // DAY 13</div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">TUESDAY // DAY 13</div>
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.5));">DAY 13</div>
       </div>
 
-      <button class="nk-lift nk-rise-2" style="position: relative; margin-top: 14px; height: 60px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 20px; font-weight: 900; letter-spacing: 0.06em; display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <div class="nk-rise-2" style="margin-top: 14px; display: flex; flex-direction: column;"><button class="nk-lift" style="position: relative; height: 60px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 20px; font-weight: 900; letter-spacing: 0.06em; display: flex; align-items: center; justify-content: center; gap: 10px;">
         <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / 0.4);"></span>
         <svg style="position: relative;" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
         <span style="position: relative;">START LESSON · 12 MIN</span>
-      </button>
+      </button></div>
 
       <div class="nk-rise-3" style="margin-top: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
         <sc-for list="{{route}}" as="r" hint-placeholder-count="4">
@@ -106,12 +107,12 @@
         </sc-for>
       </div>
 
-      <div class="nk-rise-3" style="margin-top: 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 14px 16px 12px;">
+      <div class="nk-rise-3" style="margin-top: 16px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 14px 16px 12px;">
         <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>DAILY GOALS<span style="margin-left: auto; font-family: {{t.fBody}}; font-style: normal; font-weight: 700; font-size: 11.5px; letter-spacing: 0; color: {{t.text3}};">Reset 23:59</span></div>
         <sc-for list="{{quests}}" as="q" hint-placeholder-count="3">
           <div style="margin-top: 11px;">
             <div style="display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 800; color: {{t.textStrong}};"><span>{{q.label}}</span><span style="color: {{t.goldText}};">+{{q.xp}} XP</span></div>
-            <div style="margin-top: 6px; height: 7px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{q.pct}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff8fb6, #ff2a4d);"></div></div>
+            <div style="margin-top: 6px; height: 7px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: {{q.pct}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff8fb6, #ff2a4d);"></div></div>
           </div>
         </sc-for>
       </div>
@@ -135,7 +136,7 @@
 
       <div style="margin-top: 16px; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
-          <div class="{{s.cls}}" style="padding: 12px 14px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{s.edge}}; text-align: left;">
+          <div class="{{s.cls}}" style="padding: 12px 14px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{s.edge}}; text-align: left;">
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; letter-spacing: 0.12em; color: {{t.text3}};">{{s.label}}</div>
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.1; color: {{s.fg}};">{{s.value}}</div>
           </div>
@@ -151,16 +152,16 @@
         <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / 0.4);"></span>
         <span style="position: relative;">CONTINUE · NEW WORDS</span>
       </button>
-      <button style="margin: 8px 0 12px; width: 100%; height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 15px; font-weight: 700;">Share result</button>
+      <button class="nk-press" style="margin: 8px 0 12px; width: 100%; height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 15px; font-weight: 700;">Share result</button>
     </div>
   </sc-if>
 
   <sc-if value="{{isQuiz}}" hint-placeholder-val="{{false}}">
     <div style="position: relative; z-index: 3; flex-grow: 1; display: flex; flex-direction: column; padding: 0 20px;">
       <header style="height: 50px; display: flex; align-items: center; gap: 10px;">
-        <button aria-label="Close quiz" style="width: 36px; height: 36px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        <button aria-label="Close quiz" class="nk-press" style="width: 36px; height: 36px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
         <div role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="10" style="flex-grow: 1; height: 9px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 40%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff8fb6, #ff2a4d); box-shadow: 0 0 10px rgb(255 42 77 / 0.7);"></div></div>
-        <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">4<span style="font-size: 12px; color: {{t.text3}};">/10</span></span>
+        <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">4<span style="font-size: 12px; color: {{t.text3}};">/10</span></span>
         <span style="height: 30px; padding: 0 9px 0 7px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>3</span>
       </header>
 
@@ -174,8 +175,8 @@
             <div style="position: relative; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.14em; color: {{t.holoText}};">CHOOSE THE MEANING</div>
             <div style="position: relative; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 12px;">
               <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 42px; line-height: 1; color: {{t.textStrong}};">re<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">sil</span>ient</span>
-              <button aria-label="Play pronunciation" style="width: 38px; height: 38px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;">
-                <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 13px;"><span class="sf-wave" style="width: 2.5px; height: 100%; background: currentColor;"></span><span class="sf-wave" style="width: 2.5px; height: 100%; background: currentColor; animation-delay: 120ms;"></span><span class="sf-wave" style="width: 2.5px; height: 100%; background: currentColor; animation-delay: 240ms;"></span></span>
+              <button aria-label="Play pronunciation" class="nk-press" style="width: 38px; height: 38px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;">
+                <span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 13px;"><span style="width: 2.5px; height: 100%; background: currentColor;"></span><span style="width: 2.5px; height: 100%; background: currentColor;"></span><span style="width: 2.5px; height: 100%; background: currentColor;"></span></span>
               </button>
             </div>
             <div style="position: relative; margin-top: 8px; font-size: 13px; color: {{t.text2}};"><span style="font-family: {{t.fMono}};">/rɪˈzɪliənt/</span> · adjective</div>
@@ -187,7 +188,7 @@
             <button role="radio" aria-checked="{{o.checked}}" class="{{o.cls}}" style="position: relative; height: 58px; border: 0; padding: 0 14px 0 10px; clip-path: {{t.chamferSm}}; background: {{o.bg}}; box-shadow: {{o.edge}}; color: {{o.fg}}; display: flex; align-items: center; gap: 12px; text-align: left; font-family: {{t.fBody}}; font-size: 15px; font-weight: 800;">
               <span style="width: 32px; height: 32px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{o.keyBg}}; color: {{o.keyFg}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center;">{{o.key}}</span>
               <span style="flex-grow: 1;">{{o.text}}</span>
-              <sc-if value="{{o.right}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+              <sc-if value="{{o.right}}" hint-placeholder-val="{{false}}"><svg class="nk-pop-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
               <sc-if value="{{o.wrong}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></sc-if>
             </button>
           </sc-for>
@@ -196,7 +197,7 @@
 
       <div role="status" class="nk-rise-2" style="position: relative; margin: auto -20px 0; padding: 14px 20px 26px; background: {{sheetBg}}; box-shadow: inset 0 2px 0 {{t.crimson}}, 0 -14px 30px -18px rgb(255 42 77 / 0.5);">
         <div style="display: flex; align-items: flex-end; gap: 10px;">
-          <div style="width: 86px; height: 86px; flex-shrink: 0; margin: -40px 0 -4px -6px;">
+          <div class="nk-float" style="width: 86px; height: 86px; flex-shrink: 0; margin: -40px 0 -4px -6px;">
 <!--#MASCOT oops-->
           </div>
           <div style="flex-grow: 1;">
@@ -225,15 +226,15 @@
         <div style="margin-top: 4px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.05; color: {{t.textStrong}};">12 words ready to <span style="color: {{t.crimsonText}};">remember.</span></div>
         <div style="margin: 16px auto 0; width: 220px; height: 140px; clip-path: {{t.chamfer}}; background: {{learn.rim}};"></div>
       </div>
-      <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
+      <div aria-hidden="true" class="sf-scrim" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
 
-      <div role="dialog" aria-modal="true" aria-labelledby="nk-sheet-title" class="nk-rise" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 20px 28px; background: {{sheetBg}}; clip-path: polygon(0 22px, 22px 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%); box-shadow: inset 0 2px 0 {{t.panelEdge}};">
+      <div role="dialog" aria-modal="true" aria-labelledby="nk-sheet-title" class="sf-sheet-b" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 20px 28px; background: {{sheetBg}}; clip-path: polygon(0 22px, 22px 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%); box-shadow: inset 0 2px 0 {{t.panelEdge}};">
         <div aria-hidden="true" style="margin: 0 auto; width: 44px; height: 5px; transform: skewX(-20deg); background: {{t.lineStrong}};"></div>
         <div style="margin-top: 10px; display: flex; align-items: flex-end; gap: 10px;">
           <div style="flex-grow: 1;">
             <h2 id="nk-sheet-title" style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: {{t.textStrong}};">PRACTICE</h2>
             <div style="margin-top: 4px; font-size: 13px; color: {{t.text2}};">From IELTS · 120 cards</div>
-            <button style="margin-top: 8px; height: 32px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; color: {{t.textStrong}}; font-size: 13px; font-weight: 800;"><span style="display: inline-flex; align-items: center; gap: 6px; transform: skewX(12deg);">IELTS<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span></button>
+            <span class="nk-press" style="display: flex; width: max-content;"><button style="margin-top: 8px; height: 32px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; color: {{t.textStrong}}; font-size: 13px; font-weight: 800;"><span style="display: inline-flex; align-items: center; gap: 6px; transform: skewX(12deg);">IELTS<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span></button></span>
           </div>
           <div class="nk-float" style="width: 104px; height: 104px; flex-shrink: 0; margin: -60px -4px -6px 0;">
 <!--#MASCOT hint-->
@@ -241,7 +242,7 @@
         </div>
         <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
           <sc-for list="{{modes}}" as="m" hint-placeholder-count="5">
-            <button aria-disabled="{{m.disabled}}" style="height: 62px; border: 0; padding: 0 14px 0 10px; clip-path: {{t.chamferSm}}; background: {{m.bg}}; box-shadow: {{m.edge}}; opacity: {{m.opacity}}; display: flex; align-items: center; gap: 12px; text-align: left; color: {{t.text}};">
+            <div class="{{m.enter}}" style="display: flex; flex-direction: column;"><button aria-disabled="{{m.disabled}}" class="{{m.cls}}" style="height: 62px; border: 0; padding: 0 14px 0 10px; clip-path: {{t.chamferSm}}; background: {{m.bg}}; box-shadow: {{m.edge}}; opacity: {{m.opacity}}; display: flex; align-items: center; gap: 12px; text-align: left; color: {{t.text}};">
               <span style="width: 40px; height: 40px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{m.iconBg}}; color: {{m.iconFg}}; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg></span>
               <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
                 <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; color: {{t.textStrong}};">{{m.name}}</span>
@@ -249,7 +250,7 @@
               </span>
               <sc-if value="{{m.open}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{m.chev}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></sc-if>
               <sc-if value="{{m.locked}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></sc-if>
-            </button>
+            </button></div>
           </sc-for>
         </div>
       </div>
@@ -259,19 +260,19 @@
   <sc-if value="{{isOnboard}}" hint-placeholder-val="{{false}}">
     <div style="position: relative; z-index: 3; flex-grow: 1; display: flex; flex-direction: column; padding: 0 20px;">
       <header style="height: 50px; display: flex; align-items: center; gap: 12px;">
-        <button aria-label="Back" style="width: 36px; height: 36px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+        <button aria-label="Back" class="nk-press" style="width: 36px; height: 36px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
         <div role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1" aria-label="Step 1 of 5" style="flex-grow: 1; display: flex; gap: 4px;">
           <sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><span style="flex-grow: 1; height: 8px; transform: skewX(-30deg); background: {{d.bg}}; box-shadow: {{d.glow}};"></span></sc-for>
         </div>
-        <button style="border: 0; background: transparent; padding: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; color: {{t.text2}};">Skip</button>
+        <button class="nk-press" style="border: 0; background: transparent; padding: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">Skip</button>
       </header>
 
       <main style="margin-top: 6px; display: flex; flex-direction: column;">
         <div style="display: flex; align-items: flex-end; gap: 6px;">
           <div class="nk-rise" style="flex-grow: 1;">
-            <p style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.crimsonText}};">STEP 1 OF 5 // YOUR GOAL</p>
+            <p style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">STEP 1 OF 5 // YOUR GOAL</p>
             <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.02; color: {{t.textStrong}};">What are you learning <span style="background: {{t.crimsonGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent;">for?</span></h1>
-            <p style="margin: 6px 0 0; font-size: 13.5px; color: {{t.text2}};">We’ll shape your daily session around it.</p>
+            <p style="margin: 6px 0 0; font-size: 13.5px; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">We’ll shape your daily session around it.</p>
           </div>
           <div class="nk-float" style="width: 96px; height: 104px; flex-shrink: 0; margin-right: -8px;">
 <!--#MASCOT happy-->
@@ -280,7 +281,7 @@
 
         <div role="radiogroup" aria-label="Goal" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
           <sc-for list="{{goals}}" as="g" hint-placeholder-count="5">
-            <button role="radio" aria-checked="{{g.checked}}" style="position: relative; border: 0; padding: 0; background: transparent; text-align: left; filter: {{g.glow}};">
+            <div class="{{g.enter}}" style="display: flex; flex-direction: column;"><button role="radio" aria-checked="{{g.checked}}" class="nk-lift" style="position: relative; border: 0; padding: 0; background: transparent; text-align: left; filter: {{g.glow}};">
               <span style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{g.rim}};"></span>
               <span style="position: relative; margin: {{g.inset}}; display: block; clip-path: {{t.chamferSm}}; background: {{g.bg}}; padding: 10px 12px 10px 10px;">
                 <span style="display: flex; align-items: center; gap: 12px;">
@@ -295,7 +296,7 @@
                   </span>
                 </sc-if>
               </span>
-            </button>
+            </button></div>
           </sc-for>
         </div>
       </main>
@@ -305,7 +306,7 @@
           <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / 0.4);"></span>
           <span style="position: relative;">CONTINUE</span>
         </button>
-        <div style="margin-top: 8px; font-size: 12px; color: {{t.text3}};">Takes about 60 seconds · you can change this later</div>
+        <div style="margin-top: 8px; font-size: 12px; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">Takes about 60 seconds · you can change this later</div>
         <div aria-hidden="true" style="margin: 12px auto 0; width: 134px; height: 5px; border-radius: 3px; background: {{t.lineStrong}};"></div>
       </footer>
     </div>
@@ -371,7 +372,7 @@
   <sc-if value="{{showTabs}}" hint-placeholder-val="{{true}}">
   <nav aria-label="Main" style="position: relative; z-index: 6; height: 78px; flex-shrink: 0; padding: 8px 16px 20px; box-sizing: border-box; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: {{tabBarBg}}; box-shadow: inset 0 1px 0 {{t.panelEdge}};">
     <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="4">
-      <a href="#" aria-current="{{tb.current}}" style="transform: skewX(-14deg); background: {{tb.bg}}; box-shadow: {{tb.glow}}; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+      <a href="#" aria-current="{{tb.current}}" class="sf-ease" style="transform: skewX(-14deg); background: {{tb.bg}}; box-shadow: {{tb.glow}}; display: flex; align-items: center; justify-content: center; text-decoration: none;">
         <span style="transform: skewX(14deg); display: flex; flex-direction: column; align-items: center; gap: 2px; color: {{tb.color}};">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{tb.icon}}"></path></svg>
           <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 10.5px; letter-spacing: 0.06em;">{{tb.label}}</span>
@@ -390,6 +391,7 @@ class Component extends DCLogic {
     const t = nkTokens(dark);
     const screen = this.props.screen ?? 'review';
     const learn = t.tier.learning;
+    const slide = (i) => ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4'][Math.min(i, 3)];
     const tabDefs = [
       { label: 'TODAY', icon: 'M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z' },
       { label: 'GOALS', icon: 'M4 4h16v16H4zM8 9h8M8 13h8M8 17h5' },
@@ -427,7 +429,7 @@ class Component extends DCLogic {
       ].map(([name, desc, icon, color], i) => {
         const locked = i === 4;
         return {
-          name, desc, icon, locked, open: !locked, disabled: locked ? 'true' : 'false',
+          name, desc, icon, locked, open: !locked, disabled: locked ? 'true' : 'false', enter: slide(i), cls: locked ? '' : 'nk-lift',
           iconBg: locked ? t.track : (dark ? 'rgb(255 255 255 / 0.08)' : 'rgb(13 40 80 / 0.08)'),
           iconFg: dark ? color : ['#0a7d99', '#b3265a', '#8a5a00', '#c40f35', t.text3][i],
           bg: i === 0 ? (dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.18), rgb(94 242 255 / 0.04))' : 'linear-gradient(90deg, rgb(26 167 201 / 0.18), rgb(226 244 255 / 0.9))') : (locked ? 'transparent' : t.chip),
@@ -442,8 +444,8 @@ class Component extends DCLogic {
         ['M10.5 13.5 3 11l2-2 7 1 4-4a2 2 0 0 1 3 3l-4 4 1 7-2 2-2.5-7.5', 'Travel', 'Get around with confidence'],
         ['M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z', 'Read & watch', 'News, books, YouTube'],
         ['M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z', 'Just curious', 'A few new words a day'],
-      ].map(([icon, label, sub, on]) => ({
-        icon, label, sub, checked: !!on,
+      ].map(([icon, label, sub, on], i) => ({
+        icon, label, sub, checked: !!on, enter: slide(i),
         rim: on ? learn.rim : t.line, inset: on ? '2px' : '1px',
         bg: on ? t.cardFront : t.panel,
         glow: on ? 'drop-shadow(0 0 14px ' + learn.soft + ')' : 'none',

@@ -5,25 +5,25 @@
 
   <main style="position: relative; z-index: 2; padding: 30px 56px 0;">
     <section style="display: flex; align-items: center; gap: 40px;">
-      <div style="position: relative; width: 150px; height: 150px; flex-shrink: 0;">
+      <div class="{{t.fx.enter}}" style="position: relative; width: 150px; height: 150px; flex-shrink: 0;">
         <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true" style="position: absolute; inset: 0; transform: rotate(-90deg);">
           <circle cx="75" cy="75" r="66" fill="none" stroke="{{t.track}}" stroke-width="8"></circle>
-          <circle cx="75" cy="75" r="66" fill="none" stroke="{{ring.stroke}}" stroke-width="8" stroke-linecap="round" stroke-dasharray="{{ring.dash}}" style="filter: {{ring.glow}};"></circle>
+          <path class="sf-draw" pathLength="1" d="{{ring.arc}}" fill="none" stroke="{{ring.stroke}}" stroke-width="8" stroke-linecap="round" style="filter: {{ring.glow}};"></path>
         </svg>
         <div style="position: absolute; inset: 20px; border-radius: 50%; border: {{ring.coreBorder}}; background: {{ring.core}}; box-shadow: {{ring.coreShadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center;">
           <span style="font-size: 10.5px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Level</span>
-          <span style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 0.95; color: {{t.textStrong}};">7</span>
+          <span class="sf-tick" style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 0.95; color: {{t.textStrong}};">7</span>
         </div>
       </div>
       <div style="flex-grow: 1;">
-        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Achievements · 6 of 12 earned</p>
-        <h1 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Word keeper, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">still climbing.</span></h1>
-        <div style="margin-top: 18px; max-width: 620px;">
+        <p class="{{t.fx.enter}}" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Achievements · 6 of 12 earned</p>
+        <h1 class="{{t.fx.title}}" style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Word keeper, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">still climbing.</span></h1>
+        <div class="{{t.fx.enter2}}" style="margin-top: 18px; max-width: 620px;">
           <div style="display: flex; justify-content: space-between; font-size: 13px; color: {{t.text2}};"><span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">2,340</span> / 3,000 XP to Level 8</span><span>≈ 4 sessions</span></div>
           <div style="margin-top: 8px; height: 8px; border-radius: 8px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 78%; height: 100%; border-radius: 8px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
         </div>
       </div>
-      <div style="display: flex; gap: 12px;">
+      <div class="{{t.fx.stagger}}" style="display: flex; gap: 12px;">
         <sc-for list="{{totals}}" as="s" hint-placeholder-count="3">
           <div style="width: 124px; padding: 14px 16px; box-sizing: border-box; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
             <div style="font-size: 12px; color: {{t.text2}};">{{s.label}}</div>
@@ -33,6 +33,7 @@
       </div>
     </section>
 
+    <div class="{{t.fx.enter3}}">
     <div style="margin-top: 30px; display: flex; align-items: baseline; justify-content: space-between;">
       <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; letter-spacing: -0.01em; color: {{t.textStrong}};">Badges</h2>
       <div style="display: flex; gap: 16px; font-size: 12.5px; color: {{t.text2}};">
@@ -42,9 +43,9 @@
       </div>
     </div>
 
-    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px;">
+    <div class="{{t.fx.stagger}}" style="margin-top: 16px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px;">
       <sc-for list="{{badges}}" as="b" hint-placeholder-count="12">
-        <div class="sf-lift" style="position: relative; height: 222px; box-sizing: border-box; padding: 18px 14px 14px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; opacity: {{b.opacity}};">
+        <div class="{{t.fx.lift}}" style="position: relative; height: 222px; box-sizing: border-box; padding: 18px 14px 14px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; opacity: {{b.opacity}};">
           <span style="position: relative; width: 70px; height: 70px; box-sizing: border-box; border-radius: 50%; border: {{b.border}}; background: {{b.bg}}; box-shadow: {{b.shadow}}; color: {{b.fg}}; display: flex; align-items: center; justify-content: center; transform: rotate({{b.rot}}deg);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.icon}}"></path></svg>
           </span>
@@ -56,7 +57,7 @@
             </sc-if>
             <sc-if value="{{b.progress}}" hint-placeholder-val="{{false}}">
               <div style="display: flex; justify-content: space-between; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};"><span>{{b.count}}</span><span>{{b.pct}}%</span></div>
-              <div style="margin-top: 5px; height: 4px; border-radius: 4px; background: {{t.track}}; overflow: hidden;"><div style="width: {{b.pct}}%; height: 100%; background: {{bar}};"></div></div>
+              <div style="margin-top: 5px; height: 4px; border-radius: 4px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: {{b.pct}}%; height: 100%; background: {{bar}};"></div></div>
             </sc-if>
             <sc-if value="{{b.locked}}" hint-placeholder-val="{{false}}">
               <div style="font-size: 11.5px; color: {{t.text3}}; display: flex; align-items: center; justify-content: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>{{b.hint}}</div>
@@ -68,6 +69,7 @@
         </div>
       </sc-for>
     </div>
+    </div>
   </main>
 </div>
 </x-dc>
@@ -77,7 +79,8 @@ class Component extends DCLogic {
 //#TOKENS
     const dark = (this.props.theme ?? 'dark') === 'dark';
     const t = sfTokens(dark);
-    const C = 2 * Math.PI * 66;
+    // 78% arc from 3 o'clock, clockwise (the svg is turned -90deg), so the stroke can draw itself (sf-draw).
+    const arc = 'M141 75 A66 66 0 1 1 ' + (75 + 66 * Math.cos(0.78 * 2 * Math.PI)).toFixed(2) + ' ' + (75 + 66 * Math.sin(0.78 * 2 * Math.PI)).toFixed(2);
     const I = {
       seed: 'M12 20v-8M12 12c0-4 3-7 7-7 0 4-3 7-7 7zM12 14c0-3-2.5-5.5-6-5.5 0 3.5 2.5 5.5 6 5.5z',
       flame: 'M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z',
@@ -126,8 +129,8 @@ class Component extends DCLogic {
       nav: sfNav(t, 3),
       toggleTheme: this.props.onToggleTheme ?? (() => {}),
       ring: dark
-        ? { stroke: '#28d3f4', dash: (C * 0.78).toFixed(1) + ' ' + C.toFixed(1), glow: 'drop-shadow(0 0 8px rgb(40 211 244 / 0.7))', core: 'radial-gradient(circle at 40% 30%, #16303c, #0a1a22 70%) padding-box, ' + t.rimLearning + ' border-box', coreBorder: '1.5px solid transparent', coreShadow: '0 0 40px -10px rgb(40 211 244 / 0.5)' }
-        : { stroke: '#b4461a', dash: (C * 0.78).toFixed(1) + ' ' + C.toFixed(1), glow: 'none', core: '#fffcf5', coreBorder: '1px solid rgb(29 26 22 / 0.1)', coreShadow: 'inset 0 0 0 5px #fbf3df, 0 10px 20px -12px rgb(60 40 20 / 0.4)' },
+        ? { stroke: '#28d3f4', arc, glow: 'drop-shadow(0 0 8px rgb(40 211 244 / 0.7))', core: 'radial-gradient(circle at 40% 30%, #16303c, #0a1a22 70%) padding-box, ' + t.rimLearning + ' border-box', coreBorder: '1.5px solid transparent', coreShadow: '0 0 40px -10px rgb(40 211 244 / 0.5)' }
+        : { stroke: '#b4461a', arc, glow: 'none', core: '#fffcf5', coreBorder: '1px solid rgb(29 26 22 / 0.1)', coreShadow: 'inset 0 0 0 5px #fbf3df, 0 10px 20px -12px rgb(60 40 20 / 0.4)' },
       bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a',
       barGlow: dark ? '0 0 14px rgb(40 211 244 / 0.6)' : 'none',
       foilBlend: dark ? 'screen' : 'multiply',

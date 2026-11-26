@@ -179,6 +179,11 @@ for (const theme of themes) {
       await expect(shell.locator('.flashcard-face')).toBeVisible();
       await expectPaintedSurface(shell.locator('.flashcard-face'));
       await expectCardPhotoReady(shell);
+      // The Crystal card names the part of speech on its front; the back's source line then leaves it out.
+      if (theme.family === 'crystal') await expect(shell.locator('.flashcard-face [data-card-metadata]').getByText('adjective', { exact: true })).toBeVisible();
+      // Same pointer race as the tier fronts below: the card opens under the pointer that clicked the row.
+      await page.mouse.move(0, 0);
+      await expect(shell).toHaveAttribute('data-card-hovered', 'false');
       await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`);
       await expectNoBlockingViolations(page);
 
@@ -191,7 +196,8 @@ for (const theme of themes) {
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
       await expectCardBackSettled(shell);
       await expectPaintedSurface(shell.locator('.flashcard-back'));
-      await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
+      if (theme.family === 'crystal') await expect(shell.locator('.flashcard-back-pos')).toBeHidden();
+      else await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
       await expect(shell.getByText('/ˈluːmɪnəs/', { exact: true })).toBeVisible();
       await expect(shell.getByText('The luminous dial remained visible at night.', { exact: true })).toBeVisible();
       await expect(shell.getByText('Mặt số phát sáng vẫn nhìn thấy được vào ban đêm.', { exact: true })).toBeVisible();
@@ -223,6 +229,10 @@ for (const tier of cardTiers) {
         await expect(shell.locator('[data-card-tier-label]')).toHaveText(tier.label[theme.family]);
         await expect(shell.getByText('New card', { exact: true })).toHaveCount(0);
         await expectCardPhotoReady(shell);
+        // The card opens under the pointer that clicked the library row, and whether the browser reports a
+        // hover before the screenshot is a race. The resting front is the subject; hover has its own tests.
+        await page.mouse.move(0, 0);
+        await expect(shell).toHaveAttribute('data-card-hovered', 'false');
         await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`);
       });
     }
@@ -280,8 +290,12 @@ for (const state of canvasCardStates) {
           await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2);
           await expect(shell).toHaveAttribute('data-card-hovered', 'true');
           await expect(shell.locator('[data-card-effect="hover-wings"]')).toHaveAttribute('data-card-effect-tier', 'mastered');
-          await expect(shell.locator('[data-card-effect="holo"]')).toHaveCSS('opacity', theme.family === 'crystal' ? '0.55' : '0.35');
-          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', '0.92');
+          // Board values: the dark card's holo foil rises to 0.5 under the pointer and the paper card has no foil;
+          // the specular layer is fully opaque on a hovered card in every look.
+          const holo = shell.locator('[data-card-effect="holo"]');
+          if (theme.family === 'classic' && theme.mode === 'light') await expect(holo).toBeHidden();
+          else await expect(holo).toHaveCSS('opacity', theme.family === 'crystal' ? '0.55' : '0.5');
+          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', '1');
         } else {
           const star = shell.locator('[data-card-effect="star-pop"]');
           await expect(shell).toHaveAttribute('data-card-tier', 'new');
@@ -289,7 +303,8 @@ for (const state of canvasCardStates) {
           await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
           await expectCardBackSettled(shell);
           await expect(star).toHaveAttribute('aria-pressed', 'true');
-          await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
+          // The pop plays when a word is starred, not when a card arrives already starred.
+          await expect(shell.locator('.flashcard-star-selected')).toHaveCount(0);
         }
 
         await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-${state}.png`);

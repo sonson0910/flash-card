@@ -6,7 +6,7 @@
   backdrop-filter: blur(5px);
 }
 
-.create-card-dialog {
+:where(html[data-theme-family=crystal]) .create-card-dialog {
   position: fixed;
   inset: 50% auto auto 50%;
   z-index: 101;
@@ -23,10 +23,50 @@
   box-shadow: inset 0 1px 0 var(--sf-surface), 0 2px 6px color-mix(in srgb, var(--sf-text) 8%, transparent), 0 50px 90px -40px color-mix(in srgb, var(--sf-text) 55%, transparent);
   outline: none;
 }
-
-:root.dark .create-card-dialog {
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog {
   border-radius: 26px;
   box-shadow: 0 50px 100px -30px rgb(0 0 0 / .85);
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog {
+  --cc-fr: 10px;
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 101;
+  display: flex;
+  width: min(620px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  overflow: hidden;
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
+  border-radius: var(--sf-dialog-radius, 18px);
+  background: var(--sf-dialog-bg, var(--sf-surface));
+  color: var(--sf-text);
+  box-shadow: var(--sf-dialog-shadow);
+  outline: none;
+}
+
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog {
+  --cc-fr: 14px;
+}
+
+@keyframes create-card-au-dialog-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 14px, 0) scale(.97); filter: blur(8px); }
+  to { opacity: 1; transform: translate(-50%, -50%); filter: none; }
+}
+@keyframes create-card-ip-dialog-k {
+  from { opacity: 0; transform: translate(-50%, -50%) translate3d(0, 22px, 0) rotate(-.8deg); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+html.dark:not([data-theme-family="crystal"]) .create-card-dialog {
+  animation: create-card-au-dialog-k 340ms cubic-bezier(.16, 1, .3, 1) both;
+}
+html:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog {
+  animation: create-card-ip-dialog-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+}
+html:not([data-theme-family="crystal"]) .create-card-dialog :is(.fx-press, .fx-press-danger):disabled:is(:hover, :active) {
+  transform: none;
+  filter: none;
 }
 
 .create-card-dialog__ornament {
@@ -51,7 +91,7 @@
 }
 
 .create-card-dialog__heading { min-width: 0; }
-.create-card-dialog__kicker {
+:where(html[data-theme-family=crystal]) .create-card-dialog__kicker {
   display: flex;
   align-items: center;
   gap: .4rem;
@@ -63,8 +103,20 @@
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__kicker {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: 0;
+  color: var(--sf-text-subtle);
+  font-size: .71875rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 .create-card-dialog__kicker span { display: none; color: var(--sf-brand-text); font-size: .55rem; }
-.create-card-dialog__title {
+:where(html[data-theme-family=crystal]) .create-card-dialog__title {
   margin: 4px 0 0;
   color: var(--sf-text);
   font-family: var(--sf-font-display);
@@ -73,9 +125,9 @@
   letter-spacing: -.02em;
   line-height: 1.12;
 }
-:root.dark .create-card-dialog__title { font-weight: 440; }
-.create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
-.create-card-dialog__close {
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__title { font-weight: 440; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__close {
   display: inline-flex;
   width: 2.75rem;
   min-height: 2.75rem;
@@ -88,7 +140,48 @@
   background: var(--sf-surface);
   color: var(--sf-text-muted);
 }
-:root.dark .create-card-dialog__close { background: var(--sf-surface-control); }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__close { background: var(--sf-surface-control); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__title {
+  margin: 6px 0 0;
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-display);
+  font-size: 1.75rem;
+  font-weight: var(--sf-display-weight, 380);
+  letter-spacing: -.02em;
+  line-height: 1.12;
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: .84375rem; line-height: 1.5; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__close {
+  display: inline-flex;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+}
+html:not([data-theme-family="crystal"]) .create-card-dialog__close {
+  position: relative;
+  isolation: isolate;
+  margin: -4px -4px 0 0;
+  border: 0;
+  background: transparent;
+}
+html:not([data-theme-family="crystal"]) .create-card-dialog__close::before {
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: var(--sf-surface-raised);
+  content: "";
+}
+html:not([data-theme-family="crystal"]) .create-card-dialog__close svg { width: 15px; height: 15px; }
+html:not([data-theme-family="crystal"]) .create-card-dialog__close:hover:not(:disabled)::before { border-color: var(--sf-brand); }
 .create-card-dialog__close:hover:not(:disabled) { border-color: var(--sf-brand); color: var(--sf-text); }
 .create-card-dialog__close:disabled { cursor: wait; opacity: .55; }
 
@@ -98,13 +191,13 @@
 .create-card-dialog__input-grid label,
 .create-card-dialog__manual-grid label,
 .create-card-dialog__save-row label { display: flex; min-width: 0; flex-direction: column; gap: .4rem; }
-.create-card-dialog__label {
+:where(html[data-theme-family=crystal]) .create-card-dialog__label {
   color: color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted));
   font-size: .8125rem;
   font-weight: 600;
 }
-.create-card-dialog__label em { color: var(--sf-text-muted); font-size: .68rem; font-style: normal; font-weight: 500; }
-.create-card-dialog__field {
+:where(html[data-theme-family=crystal]) .create-card-dialog__label em { color: var(--sf-text-muted); font-size: .68rem; font-style: normal; font-weight: 500; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__field {
   display: flex;
   min-height: 2.75rem;
   box-sizing: border-box;
@@ -116,16 +209,37 @@
   background: var(--sf-surface);
   color: var(--sf-text);
 }
-:root.dark .create-card-dialog__field { border-color: var(--sf-border); background: var(--sf-surface-control); }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__field { border-color: var(--sf-border); background: var(--sf-surface-control); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__field:focus-within { border-color: var(--sf-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-text) 12%, transparent); }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__field:focus-within { border-color: var(--sf-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 18%, transparent); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__label {
+  color: var(--sf-text-muted);
+  font-size: .75rem;
+  font-weight: 600;
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__label em { color: var(--sf-text-subtle); font-size: inherit; font-style: normal; font-weight: 400; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field {
+  display: flex;
+  min-height: 2.75rem;
+  box-sizing: border-box;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 .875rem;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--cc-fr);
+  background: var(--sf-surface-control);
+  color: var(--sf-text-strong);
+}
 /* One focus ring on the field box; the bare input inside draws none. */
-.create-card-dialog__field:focus-within { border-color: var(--sf-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-text) 12%, transparent); }
-:root.dark .create-card-dialog__field:focus-within { border-color: var(--sf-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 18%, transparent); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field:focus-within { border-color: var(--sf-brand); box-shadow: 0 0 0 4px var(--sf-accent-soft, color-mix(in srgb, var(--sf-text) 12%, transparent)); }
 .create-card-dialog input,
 .create-card-dialog textarea,
 .create-card-dialog select { box-sizing: border-box; border: 1px solid var(--sf-border); background: var(--sf-surface-control); color: var(--sf-text); font: inherit; outline: none; }
 .create-card-dialog__field input { width: 100%; border: 0; background: transparent; }
 .create-card-dialog .create-card-dialog__field input:focus-visible { outline: 0; }
-.create-card-dialog__field--active input { font-family: var(--sf-font-display); font-size: 1.1875rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__field--active input { font-family: var(--sf-font-display); font-size: 1.1875rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field--active input { color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 1.125rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field:not(.create-card-dialog__field--active) input { color: var(--sf-text-body); font-size: .8125rem; }
 .create-card-dialog input::placeholder,
 .create-card-dialog textarea::placeholder { color: var(--sf-text-muted); opacity: .85; }
 .create-card-dialog input:focus-visible,
@@ -138,8 +252,8 @@
 
 .create-card-dialog__pos { margin: 1rem 0 0; padding: 0; border: 0; }
 .create-card-dialog__pos legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.create-card-dialog__pos > div { display: flex; gap: .3rem; padding: .25rem; border: 1px solid var(--sf-border); border-radius: .8rem; background: var(--sf-surface-control); }
-.create-card-dialog__pos button {
+:where(html[data-theme-family=crystal]) .create-card-dialog__pos > div { display: flex; gap: .3rem; padding: .25rem; border: 1px solid var(--sf-border); border-radius: .8rem; background: var(--sf-surface-control); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__pos button {
   min-width: 0;
   min-height: 2.75rem;
   flex: 1;
@@ -150,12 +264,27 @@
   font-size: .78rem;
   font-weight: 700;
 }
-.create-card-dialog__pos button:hover { color: var(--sf-text); background: var(--sf-surface-raised); }
-.create-card-dialog__pos button.is-selected { background: var(--sf-text); color: var(--sf-on-brand); box-shadow: none; }
-:root.dark .create-card-dialog__pos button.is-selected { background: color-mix(in srgb, var(--sf-text) 12%, transparent); color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__pos button:hover { color: var(--sf-text); background: var(--sf-surface-raised); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__pos button.is-selected { background: var(--sf-text); color: var(--sf-on-brand); box-shadow: none; }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__pos button.is-selected { background: color-mix(in srgb, var(--sf-text) 12%, transparent); color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos > div { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--sf-border); border-radius: var(--cc-fr); background: var(--sf-surface-raised); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button {
+  min-width: 0;
+  min-height: 2.75rem;
+  flex: 1;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--sf-text-muted);
+  font-size: .8125rem;
+  font-weight: 600;
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button:hover { color: var(--sf-text-strong); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button.is-selected { background: var(--sf-primary-bg); color: var(--sf-on-primary); box-shadow: none; }
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__pos button.is-selected { background: color-mix(in srgb, var(--sf-flare) 10%, transparent); color: var(--sf-text-strong); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-flare) 8%, transparent); }
 .create-card-dialog__pos button > span { display: inline-block; }
 
-.create-card-dialog__preview {
+:where(html[data-theme-family=crystal]) .create-card-dialog__preview {
   position: relative;
   display: flex;
   gap: 1rem;
@@ -166,12 +295,7 @@
   background: var(--sf-card-bg, var(--sf-surface));
   box-shadow: 0 1px 2px color-mix(in srgb, var(--sf-text) 6%, transparent), 0 16px 30px -22px color-mix(in srgb, var(--sf-text) 40%, transparent);
 }
-:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview {
-  border: 1px solid transparent;
-  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
-  box-shadow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 45%, transparent);
-}
-.create-card-dialog__cover {
+:where(html[data-theme-family=crystal]) .create-card-dialog__cover {
   position: relative;
   display: flex;
   width: 8rem;
@@ -184,28 +308,69 @@
   border-radius: .75rem;
   background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--sf-second) 55%, transparent), transparent 60%), linear-gradient(160deg, color-mix(in srgb, var(--sf-second) 30%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 30%, var(--sf-surface)));
 }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview {
+  position: relative;
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 0;
+  border-radius: var(--cc-fr);
+  background: var(--sf-card-bg, var(--sf-surface));
+  box-shadow: inset 0 1px 0 var(--sf-flare), inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 7%, transparent), 0 14px 26px -18px color-mix(in srgb, var(--sf-shadow-tint) 45%, transparent);
+}
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview {
+  border: 1.5px solid transparent;
+  background: radial-gradient(ellipse 70% 60% at 100% 0%, rgb(150 108 215 / 0.2), transparent 70%) padding-box, var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  box-shadow: 0 20px 40px -24px rgb(0 0 0 / 0.9), 0 0 36px -16px rgb(40 211 244 / 0.5);
+}
+/* DlgCreate line 22: the cover is 128px wide and as tall as the draft beside it; line 25: the headword sits 10px under the badge row. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__cover {
+  position: relative;
+  display: flex;
+  width: 8rem;
+  flex: 0 0 8rem;
+  align-self: stretch;
+  align-items: flex-end;
+  justify-content: flex-start;
+  overflow: hidden;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 20%, rgb(126 230 250 / 0.5), transparent 60%), linear-gradient(160deg, #1b3b4a, #2a2150);
+}
 .create-card-dialog__cover img { width: 100%; height: 100%; object-fit: cover; }
-.create-card-dialog__cover span { padding: 0 .8rem .1rem; color: color-mix(in srgb, var(--sf-text) 88%, transparent); font-family: var(--sf-font-display); font-size: 6.5rem; font-style: italic; line-height: .8; }
-:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover { background: linear-gradient(160deg, color-mix(in srgb, var(--sf-reward) 18%, var(--sf-surface)), color-mix(in srgb, var(--sf-reward) 34%, var(--sf-surface))); }
-:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover span { color: var(--sf-brand); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__cover span { padding: 0 .8rem .1rem; color: color-mix(in srgb, var(--sf-text) 88%, transparent); font-family: var(--sf-font-display); font-size: 6.5rem; font-style: italic; line-height: .8; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__cover span { padding: 0 .75rem .625rem; color: rgb(229 236 241 / 0.9); font-family: var(--sf-font-display); font-size: 5.75rem; font-style: italic; line-height: .8; }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover { background: linear-gradient(160deg, #e9dcc4, #d8c6a4); }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover span { color: var(--sf-brand-text); }
 .create-card-dialog__preview-content { min-width: 0; flex: 1; }
 .create-card-dialog__preview-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-.create-card-dialog__ai-badge { display: inline-flex; align-items: center; gap: .3rem; color: var(--sf-brand-text); font-size: .7rem; font-weight: 800; }
-.create-card-dialog__edit-note { color: var(--sf-text-muted); font-size: .7rem; }
-.create-card-dialog__headword-row { display: flex; align-items: center; gap: .6rem; margin-top: .35rem; }
-.create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 2.25rem; font-weight: 380; letter-spacing: -.02em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
-.create-card-dialog__stress { color: var(--sf-brand); font-style: italic; }
-:root.dark .create-card-dialog__stress { color: var(--sf-brand); font-style: normal; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__ai-badge { display: inline-flex; align-items: center; gap: .3rem; color: var(--sf-brand-text); font-size: .7rem; font-weight: 800; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__edit-note { color: var(--sf-text-muted); font-size: .7rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__headword-row { display: flex; align-items: center; gap: .6rem; margin-top: .35rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 2.25rem; font-weight: 380; letter-spacing: -.02em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__stress { color: var(--sf-brand); font-style: italic; }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__stress { color: var(--sf-brand); font-style: normal; }
 html[data-theme-family="crystal"] .create-card-dialog__stress { font-style: inherit; }
-.create-card-dialog__audio { display: inline-grid; width: 2.75rem; height: 2.75rem; flex: none; place-items: center; border: 1px solid color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)); border-radius: 50%; background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-brand-text); }
-.create-card-dialog__meta { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__audio { display: inline-grid; width: 2.75rem; height: 2.75rem; flex: none; place-items: center; border: 1px solid color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)); border-radius: 50%; background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__meta { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__ai-badge { display: inline-flex; align-items: center; gap: .3125rem; color: var(--sf-brand-text); font-size: .6875rem; font-weight: 650; }
+html:not([data-theme-family="crystal"]) .create-card-dialog__ai-badge { height: 22px; padding: 0 8px; border-radius: 999px; background: var(--sf-accent-soft); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__edit-note { color: var(--sf-text-subtle); font-size: .75rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__headword-row { display: flex; align-items: center; gap: .625rem; margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 2.125rem; font-weight: var(--sf-display-weight, 380); letter-spacing: -.02em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stress { color: var(--sf-brand); font-style: var(--sf-em-style, italic); text-shadow: var(--sf-em-glow, none); }
+
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio { display: inline-grid; width: 2.75rem; height: 2.75rem; flex: none; place-items: center; border: 1px solid var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border))); border-radius: 50%; background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent)); color: var(--sf-brand-text); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .78125rem; }
 .create-card-dialog__meta > span::before { content: '·'; margin-right: .45rem; }
 .create-card-dialog__meta > span + label::before { content: '·'; margin-right: .45rem; }
 .create-card-dialog__meta > label { display: flex; align-items: center; }
-.create-card-dialog__meta input { width: 8.5rem; min-width: 0; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__meta input { width: 8.5rem; min-width: 0; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input { width: 8.5rem; min-width: 0; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .78125rem; }
 .create-card-dialog__meta input.create-card-dialog__cefr-input { width: 3.25rem; }
 .create-card-dialog__preview-meaning { display: block; margin-top: .45rem; }
-.create-card-dialog__preview-meaning input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 1.5rem; font-weight: 400; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__preview-meaning input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 1.5rem; font-weight: 400; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 1.375rem; font-weight: 400; }
 .create-card-dialog__preview-explanation { display: block; margin-top: .35rem; }
 .create-card-dialog__preview-explanation textarea { width: 100%; min-height: 2.75rem; resize: vertical; padding: 0; border: 0; background: transparent; color: var(--sf-text); font-size: .8rem; font-style: italic; line-height: 1.45; }
 .create-card-dialog__examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .55rem; }
@@ -221,7 +386,8 @@ html[data-theme-family="crystal"] .create-card-dialog__stress { font-style: inhe
 .create-card-dialog__family-fields label { flex: 1 1 8rem; }
 .create-card-dialog__family-fields input { width: 100%; min-height: 2.75rem; padding: .25rem .45rem; border-radius: .45rem; font-size: .74rem; }
 
-.create-card-dialog__manual { margin-top: 1rem; padding: 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__manual { margin-top: 1rem; padding: 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__manual { margin-top: 1rem; padding: 1rem; border: 1px solid var(--sf-border); border-radius: var(--cc-fr); background: var(--sf-surface-raised); }
 .create-card-dialog__section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .create-card-dialog__section-kicker { margin: 0; color: var(--sf-brand-text); font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
 .create-card-dialog__section-heading h3 { margin: .2rem 0 0; font-family: var(--sf-font-display); font-size: 1.4rem; font-weight: 400; }
@@ -229,47 +395,104 @@ html[data-theme-family="crystal"] .create-card-dialog__stress { font-style: inhe
 .create-card-dialog__manual-link { min-height: 2.75rem; border: 0; background: transparent; color: var(--sf-brand-text); font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: .16rem; }
 .create-card-dialog__manual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .9rem; }
 .create-card-dialog__manual-grid .is-wide { grid-column: 1 / -1; }
-.create-card-dialog__manual-grid input,
-.create-card-dialog__manual-grid textarea { width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border-radius: .65rem; font-size: .82rem; line-height: 1.4; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__manual-grid input,
+:where(html[data-theme-family=crystal]) .create-card-dialog__manual-grid textarea { width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border-radius: .65rem; font-size: .82rem; line-height: 1.4; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__manual-grid input,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__manual-grid textarea { width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border-radius: var(--cc-fr); font-size: .82rem; line-height: 1.4; }
 .create-card-dialog__manual-grid textarea { resize: vertical; }
 
 .create-card-dialog__regeneration { margin-top: .85rem; padding-top: .8rem; border-top: 1px solid var(--sf-border); }
 .create-card-dialog__regeneration-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; color: var(--sf-text); font-size: .78rem; font-weight: 750; }
 .create-card-dialog__regeneration-heading small { color: var(--sf-text-muted); font-size: .68rem; font-weight: 500; }
 .create-card-dialog__regeneration-options { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
-.create-card-dialog__regeneration-options button { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .3rem; padding: 0 .65rem; border: 1px solid var(--sf-border); border-radius: .6rem; background: var(--sf-surface-control); color: var(--sf-text-muted); font-size: .72rem; font-weight: 750; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__regeneration-options button { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .3rem; padding: 0 .65rem; border: 1px solid var(--sf-border); border-radius: .6rem; background: var(--sf-surface-control); color: var(--sf-text-muted); font-size: .72rem; font-weight: 750; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__regeneration-options button { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .3rem; padding: 0 .65rem; border: 1px solid var(--sf-border); border-radius: 9px; background: var(--sf-surface-control); color: var(--sf-text-muted); font-size: .72rem; font-weight: 750; }
 .create-card-dialog__regeneration-options button svg { opacity: 0; }
-.create-card-dialog__regeneration-options button.is-selected { border-color: color-mix(in srgb, var(--sf-brand) 65%, var(--sf-border)); background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface-control)); color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__regeneration-options button.is-selected { border-color: color-mix(in srgb, var(--sf-brand) 65%, var(--sf-border)); background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface-control)); color: var(--sf-brand-text); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__regeneration-options button.is-selected { border-color: var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 65%, var(--sf-border))); background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface-control))); color: var(--sf-brand-text); }
 .create-card-dialog__regeneration-options button.is-selected svg { opacity: 1; }
 .create-card-dialog__regeneration-options button:disabled { cursor: wait; opacity: .55; }
 
-.create-card-dialog__empty-preview { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .55rem; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--sf-border); border-radius: 1rem; color: var(--sf-text-muted); font-size: .8rem; text-align: center; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__empty-preview { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .55rem; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--sf-border); border-radius: 1rem; color: var(--sf-text-muted); font-size: .8rem; text-align: center; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__empty-preview { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .55rem; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--sf-border); border-radius: var(--cc-fr); color: var(--sf-text-muted); font-size: .8rem; text-align: center; }
 .create-card-dialog__empty-preview svg { flex: none; color: var(--sf-brand-text); }
 .create-card-dialog__save-row { display: flex; align-items: center; gap: .65rem; margin-top: 1rem; }
 .create-card-dialog__save-row label { align-items: center; flex-direction: row; gap: 10px; }
-.create-card-dialog__save-row select { min-width: 6.5rem; min-height: 2.75rem; padding: 0 2rem 0 .8rem; border-radius: 10px; appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 11px) 52%; background-repeat: no-repeat; background-size: 4px 4px; font-size: .8125rem; font-weight: 550; }
-.create-card-dialog__save-row p { margin: 0 0 0 auto; color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); font-size: .78rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__save-row select { min-width: 6.5rem; min-height: 2.75rem; padding: 0 2rem 0 .8rem; border-radius: 10px; appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 11px) 52%; background-repeat: no-repeat; background-size: 4px 4px; font-size: .8125rem; font-weight: 550; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__save-row p { margin: 0 0 0 auto; color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); font-size: .78rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row select { min-width: 6.5rem; min-height: 2.75rem; padding: 0 2rem 0 .8rem; border-radius: 10px; appearance: none; -webkit-appearance: none; background-color: var(--sf-surface-control); background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 11px) 52%; background-repeat: no-repeat; background-size: 4px 4px; box-shadow: var(--sf-secondary-shadow, none); font-size: .8125rem; font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row p { margin: 0 0 0 auto; color: var(--sf-text-subtle); font-size: .78125rem; }
 .create-card-dialog__save-row strong { color: var(--sf-brand-text); }
-.create-card-dialog__notice { display: flex; align-items: flex-start; gap: .5rem; margin-top: .9rem; padding: .7rem .8rem; border: 1px solid var(--sf-danger); border-radius: .65rem; background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface)); color: var(--sf-danger); font-size: .78rem; line-height: 1.45; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__notice { display: flex; align-items: flex-start; gap: .5rem; margin-top: .9rem; padding: .7rem .8rem; border: 1px solid var(--sf-danger); border-radius: .65rem; background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface)); color: var(--sf-danger); font-size: .78rem; line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__notice { display: flex; align-items: flex-start; gap: .5rem; margin-top: .9rem; padding: .7rem .8rem; border: 1px solid var(--sf-danger-line); border-radius: var(--cc-fr); background: var(--sf-danger-soft); color: var(--sf-danger); font-size: .78rem; line-height: 1.45; }
 .create-card-dialog__notice svg { flex: none; margin-top: .08rem; }
-.create-card-dialog__notice--duplicate { border-color: color-mix(in srgb, var(--sf-reward) 60%, var(--sf-border)); background: color-mix(in srgb, var(--sf-reward) 10%, var(--sf-surface)); color: var(--sf-text); }
-.create-card-dialog__notice--duplicate svg { color: var(--sf-reward); }
-.create-card-dialog__notice--quota { border-color: color-mix(in srgb, var(--sf-reward) 60%, var(--sf-border)); background: color-mix(in srgb, var(--sf-reward) 10%, var(--sf-surface)); color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__notice--duplicate { border-color: color-mix(in srgb, var(--sf-reward) 60%, var(--sf-border)); background: color-mix(in srgb, var(--sf-reward) 10%, var(--sf-surface)); color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__notice--duplicate svg { color: var(--sf-reward); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__notice--quota { border-color: color-mix(in srgb, var(--sf-reward) 60%, var(--sf-border)); background: color-mix(in srgb, var(--sf-reward) 10%, var(--sf-surface)); color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__notice--duplicate { border-color: var(--sf-warn-line); background: var(--sf-warn-bg); color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__notice--duplicate svg { color: var(--sf-warn); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__notice--quota { border-color: var(--sf-warn-line); background: var(--sf-warn-bg); color: var(--sf-text); }
 .create-card-dialog__notice button { min-height: 2.75rem; margin-left: .4rem; border: 0; background: transparent; color: var(--sf-brand-text); font-weight: 800; text-decoration: underline; text-underline-offset: .14rem; }
 
-.create-card-dialog__footer { display: flex; flex: none; align-items: center; gap: .6rem; padding: 1rem 1.4rem 1.15rem 1.65rem; border-top: 1px solid var(--sf-border); }
-.create-card-dialog__request-count { display: inline-flex; align-items: center; gap: .35rem; color: var(--sf-text-muted); font-size: .75rem; }
-.create-card-dialog__request-count svg { color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__footer { display: flex; flex: none; align-items: center; gap: .6rem; padding: 1rem 1.4rem 1.15rem 1.65rem; border-top: 1px solid var(--sf-border); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__request-count { display: inline-flex; align-items: center; gap: .35rem; color: var(--sf-text-muted); font-size: .75rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__request-count svg { color: var(--sf-brand-text); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__footer { display: flex; flex: none; align-items: center; gap: 10px; padding: 16px 22px 20px 26px; border-top: 1px solid var(--sf-border); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__request-count { display: inline-flex; align-items: center; gap: 6px; color: var(--sf-text-subtle); font-size: .78125rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__request-count svg { color: inherit; }
 .create-card-dialog__manual-link { margin-left: auto; text-decoration: none; }
-.create-card-dialog__secondary,
-.create-card-dialog__primary { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: .45rem; padding: 0 1.25rem; border-radius: 999px; font-size: .9375rem; font-weight: 600; }
-.create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); }
-:root.dark .create-card-dialog__secondary { background: var(--sf-surface-control); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__secondary,
+:where(html[data-theme-family=crystal]) .create-card-dialog__primary { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: .45rem; padding: 0 1.25rem; border-radius: 999px; font-size: .9375rem; font-weight: 600; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__secondary { background: var(--sf-surface-control); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__primary { border: 0; background: var(--sf-text); color: var(--sf-on-brand); font-weight: 650; box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-text) 80%, transparent); }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__primary { background: var(--sf-brand); box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__secondary:disabled,
+:where(html[data-theme-family=crystal]) .create-card-dialog__primary:disabled { cursor: not-allowed; opacity: .55; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__secondary,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: 8px; padding: 0 18px; border-radius: var(--sf-button-radius, 999px); font-size: .875rem; font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); }
 /* Ink & Paper's primary action is ink; Midnight Aurora's is the brand cyan. */
-.create-card-dialog__primary { border: 0; background: var(--sf-text); color: var(--sf-on-brand); font-weight: 650; box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-text) 80%, transparent); }
-:root.dark .create-card-dialog__primary { background: var(--sf-brand); box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
-.create-card-dialog__secondary:disabled,
-.create-card-dialog__primary:disabled { cursor: not-allowed; opacity: .55; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { padding: 0 20px; border: 0; background: var(--sf-primary-bg); color: var(--sf-on-primary); font-weight: 650; box-shadow: var(--sf-primary-shadow); }
+/* DlgCreate: header gap 14px (line 3); text at line-height normal (lines 5, 13, 24, 33-35, 39); labels 6px above
+   42px fields, the focused field's ring in accentLine + 4px accentSoft (line 13); 32px part-of-speech segments and a
+   30px play button, each with a 44px hit area (lines 18, 25); meta 6px under the headword in the body face with
+   only the phonetic in mono, meaning 10px under it (lines 26-27); the editable preview fields keep the board's text
+   height and take their 44px hit area from their label, drawn under the field so a click still places the caret. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__header { gap: 14px; }
+:where(html:not([data-theme-family=crystal])) :is(.create-card-dialog__kicker, .create-card-dialog__label, .create-card-dialog__ai-badge, .create-card-dialog__edit-note, .create-card-dialog__request-count, .create-card-dialog__field input, .create-card-dialog__save-row p, .create-card-dialog__secondary, .create-card-dialog__primary) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__input-grid label { gap: 6px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field { min-height: 42px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field:focus-within { border-color: var(--sf-accent-line); box-shadow: 0 0 0 4px var(--sf-accent-soft); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button { position: relative; min-height: 32px; height: 32px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button::after { position: absolute; inset: -6px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio { position: relative; width: 30px; height: 30px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio::after { position: absolute; inset: -7px; border-radius: 50%; content: ""; }
+/* DlgCreate line 25: the play button draws an 11px filled play triangle (path M8 5.5v13l11-6.5z on a 24 grid); the speaker
+   icon stays for Crystal. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio svg { display: none; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio::before { width: 11px; height: 11px; background: currentColor; clip-path: polygon(33.333% 22.917%, 33.333% 77.083%, 79.167% 50%); content: ""; }
+/* DlgCreate lines 24 and 39: the AI badge and the request count lead with a 14px filled four-point star
+   (path M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z); the sparkles icon stays for Crystal. */
+:where(html:not([data-theme-family=crystal])) :is(.create-card-dialog__ai-badge, .create-card-dialog__request-count) svg { display: none; }
+:where(html:not([data-theme-family=crystal])) :is(.create-card-dialog__ai-badge, .create-card-dialog__request-count)::before { width: 14px; height: 14px; flex: none; background: currentColor; clip-path: polygon(50% 10.417%, 59.167% 36.667%, 85.417% 45.833%, 59.167% 55%, 50% 81.25%, 40.833% 55%, 14.583% 45.833%, 40.833% 36.667%); content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta { margin-top: 6px; font-family: inherit; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta > label,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning { position: relative; isolation: isolate; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta > label::after,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning::after { position: absolute; z-index: -1; inset: -13px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning::after { inset: -8px 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input { min-height: 0; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input.create-card-dialog__cefr-input { font-family: inherit; }
+@supports (field-sizing: content) {
+  :where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input { width: auto; min-width: 2ch; field-sizing: content; }
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning input { min-height: 0; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row { gap: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row select { box-shadow: none; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__secondary:disabled,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__primary:disabled { cursor: not-allowed; opacity: .55; box-shadow: none; }
 .create-card-dialog__spinner-label { display: inline-flex; align-items: center; gap: .4rem; }
 .create-card-dialog__spinner-label svg { animation: create-card-dialog-spin .8s linear infinite; }
 @keyframes create-card-dialog-spin { to { transform: rotate(360deg); } }
@@ -283,9 +506,10 @@ html[data-theme-family="crystal"] .create-card-dialog {
 }
 html[data-theme-family="crystal"] .create-card-dialog__form { background: var(--sf-dialog-bg); clip-path: var(--nk-chamfer); }
 html[data-theme-family="crystal"] .create-card-dialog__header { border-bottom: 0; background: var(--sf-dialog-bg); padding: 1.2rem 1.25rem .9rem 1.45rem; }
-html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 58%, var(--sf-second)); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 75%, transparent); }
-html[data-theme-family="crystal"] .create-card-dialog__ornament--top { top: 0; left: 1.6rem; width: 7.5rem; }
-html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 1.6rem; bottom: 0; width: 4.5rem; background: var(--sf-second); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 80%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%); box-shadow: 0 0 12px rgb(255 42 77 / .8); }
+/* The accent bars sit just inside the 2px rim, as on the board. */
+html[data-theme-family="crystal"] .create-card-dialog__ornament--top { top: 2px; left: 28px; width: 120px; }
+html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 32px; bottom: 2px; width: 70px; background: var(--sf-second); box-shadow: 0 0 10px rgb(94 242 255 / .8); }
 html[data-theme-family="crystal"] .create-card-dialog__kicker,
 html[data-theme-family="crystal"] .create-card-dialog__title,
 html[data-theme-family="crystal"] .create-card-dialog__section-kicker { font-family: var(--sf-font-display); font-style: italic; }
@@ -293,7 +517,6 @@ html[data-theme-family="crystal"] .create-card-dialog__kicker { color: var(--sf-
 html[data-theme-family="crystal"] .create-card-dialog__kicker span { display: inline; color: var(--sf-brand-text); }
 html[data-theme-family="crystal"] .create-card-dialog__title { font-size: 2rem; font-weight: 900; letter-spacing: .01em; }
 html[data-theme-family="crystal"] .create-card-dialog__field,
-html[data-theme-family="crystal"] .create-card-dialog__pos > div,
 html[data-theme-family="crystal"] .create-card-dialog__preview,
 html[data-theme-family="crystal"] .create-card-dialog__manual,
 html[data-theme-family="crystal"] .create-card-dialog__empty-preview { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
@@ -307,7 +530,14 @@ html[data-theme-family="crystal"] .create-card-dialog__secondary,
 html[data-theme-family="crystal"] .create-card-dialog__primary { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; letter-spacing: .04em; }
 html[data-theme-family="crystal"] .create-card-dialog__pos button { transform: skewX(-12deg); }
 html[data-theme-family="crystal"] .create-card-dialog__pos button > span { transform: skewX(12deg); }
-html[data-theme-family="crystal"] .create-card-dialog__preview { border: 0; box-shadow: inset 0 0 0 1px var(--sf-brand), 0 18px 36px -28px var(--sf-shadow); }
+/* The draft card is the board's new-tier card: the tier rim and the card face are two layers, each under the large
+   chamfer and the face 2px inside the rim, so the rim also runs along the cut corners. The card itself stays
+   unclipped so a glow on it is not cut off; its transparent 2px border keeps the box size. */
+html[data-theme-family="crystal"] .create-card-dialog__preview { --cc-preview-rim: var(--sf-rim-new); isolation: isolate; border: 2px solid transparent; background: none; box-shadow: none; clip-path: none; }
+html[data-theme-family="crystal"] .create-card-dialog__preview::before,
+html[data-theme-family="crystal"] .create-card-dialog__preview::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ""; pointer-events: none; }
+html[data-theme-family="crystal"] .create-card-dialog__preview::before { inset: -2px; background: var(--cc-preview-rim); }
+html[data-theme-family="crystal"] .create-card-dialog__preview::after { inset: 0; background: var(--sf-solid-card, var(--sf-card-bg)); }
 html[data-theme-family="crystal"] .create-card-dialog__preview-heading,
 html[data-theme-family="crystal"] .create-card-dialog__regeneration-heading { font-family: var(--sf-font-display); font-style: italic; }
 html[data-theme-family="crystal"] .create-card-dialog__ai-badge { text-transform: uppercase; letter-spacing: .12em; }
@@ -316,6 +546,72 @@ html[data-theme-family="crystal"] .create-card-dialog__close,
 html[data-theme-family="crystal"] .create-card-dialog__audio { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); }
 html[data-theme-family="crystal"] .create-card-dialog__primary { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 62%, black)); color: white; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 html[data-theme-family="crystal"] .create-card-dialog__footer { border-top-color: var(--sf-border); }
+/* The part-of-speech chips sit loose on the body with no track, as on the board; the body padding absorbs the 5px
+   a skewed outer chip leans past its box. */
+html[data-theme-family="crystal"] .create-card-dialog__pos > div { gap: 6px; padding: 0; border: 0; background: none; }
+html[data-theme-family="crystal"] .create-card-dialog__save-row select { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+/* Crystal: the AnimeDlgStudy "Add a word" dialog. The rim (::before) and the fill (::after, 2px inside it) carry the
+   chamfer, so the frame's glow is not cut by a clip on the frame itself; the form cuts its own bottom corner so the
+   footer band stays inside the fill. */
+html[data-theme-family="crystal"].dark .create-card-dialog { --cc-foot: rgb(0 0 0 / .25); --cc-body: #d6dbe6; --cc-chip-on: rgb(255 42 77 / .2); --cc-secondary-bg: rgb(255 255 255 / .06); --cc-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff); --cc-fill: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%); --cc-glow: drop-shadow(0 0 36px rgb(255 42 77 / .3)) drop-shadow(0 30px 40px rgb(0 0 0 / .7)); }
+html[data-theme-family="crystal"]:not(.dark) .create-card-dialog { --cc-foot: rgb(190 222 250 / .45); --cc-body: #243553; --cc-chip-on: #fff; --cc-secondary-bg: #e6f5ff; --cc-frame: linear-gradient(155deg, #ff5470, rgb(224 23 63 / .3) 28%, rgb(26 167 201 / .35) 72%, #1aa7c9); --cc-fill: linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%); --cc-glow: drop-shadow(0 26px 40px rgb(20 70 130 / .35)); }
+/* Radius 0 also beats the dark rounded corner: the frame keeps overflow hidden, so any radius would round the two square corners of the rim. */
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer { isolation: isolate; border-radius: 0; background: none; box-shadow: none; clip-path: none; filter: var(--cc-glow); }
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer::before,
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer::after { position: absolute; z-index: -1; inset: 0; background: var(--cc-frame); clip-path: var(--nk-chamfer); content: ""; pointer-events: none; }
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer::after { inset: 2px; background: var(--cc-fill); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__header { gap: 14px; padding: 22px 24px 14px 26px; background: none; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__form { background: none; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%); }
+html[data-theme-family="crystal"] .create-card-dialog__kicker:not(.create-card-dialog__kicker--stream) { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker:not(.create-card-dialog__kicker--stream) > span[aria-hidden] { width: 7px; height: 7px; flex: none; overflow: hidden; background: currentColor; box-shadow: 0 0 8px currentColor; color: var(--sf-brand-text); font-size: 0; transform: rotate(45deg); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__title { margin-top: 6px; color: var(--sf-text-strong); font-size: 30px; font-weight: 900; line-height: 1.05; }
+html[data-theme-family="crystal"] .create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
+/* The close keeps its 44px target; the board's 38px chip is drawn inside it. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__close { position: relative; isolation: isolate; margin: -3px -3px 0 0; background: none; clip-path: none; color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .create-card-dialog__close::before { position: absolute; z-index: -1; inset: 3px; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); content: ""; }
+html[data-theme-family="crystal"] .create-card-dialog__close:hover:not(:disabled) { color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog__close svg { width: 14px; height: 14px; stroke-width: 2.6; }
+html[data-theme-family="crystal"] .create-card-dialog:not(.create-card-dialog--stream) .create-card-dialog__body { padding: 4px 26px 18px; }
+@media (min-width: 621px) {
+  html[data-theme-family="crystal"] .create-card-dialog:not(.create-card-dialog--stream) { width: min(630px, calc(100vw - 2rem)); }
+  html[data-theme-family="crystal"] .create-card-dialog__input-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; }
+}
+html[data-theme-family="crystal"] .create-card-dialog__label { color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 11.5px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+html[data-theme-family="crystal"] .create-card-dialog__label em { color: var(--sf-text-subtle); font-size: inherit; font-style: inherit; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field { height: 42px; min-height: 0; box-sizing: border-box; padding: 0 14px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); font-size: 14px; font-weight: 700; }
+/* The board's active field ring is the focus ring; the dialog opens with focus in the word field, as the board shows. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field:focus-within { box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field:has(input[aria-invalid="true"]) { box-shadow: inset 0 0 0 1.5px var(--sf-brand); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field--active input { color: var(--sf-text-strong); font-size: 18px; font-style: italic; font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__field:not(.create-card-dialog__field--active) input { color: var(--cc-body); font-size: 13px; font-weight: 500; }
+html[data-theme-family="crystal"] .create-card-dialog__pos { margin-top: 14px; }
+/* The chips keep a 44px target; the board's 32px skewed chip is drawn inside it. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__pos button { position: relative; isolation: isolate; flex: 0 0 auto; padding: 0 14px; background: none; box-shadow: none; clip-path: none; color: var(--sf-text-muted); font-size: 13px; font-weight: 800; letter-spacing: normal; }
+html[data-theme-family="crystal"] .create-card-dialog__pos button::before { position: absolute; z-index: -1; inset: 6px 0; box-shadow: inset 0 0 0 1px var(--sf-border); content: ""; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__pos button.is-selected { background: none; color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog__pos button.is-selected::before { background: var(--cc-chip-on); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+html[data-theme-family="crystal"] .create-card-dialog__pos button:hover:not(:disabled, .is-selected) { color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer { gap: 10px; padding: 14px 26px 18px; border-top: 0; background: var(--cc-foot); box-shadow: inset 0 1px 0 var(--sf-border); }
+html[data-theme-family="crystal"] .create-card-dialog__request-count { gap: 6px; color: var(--sf-text-subtle); font-size: 12px; }
+html[data-theme-family="crystal"] .create-card-dialog__request-count svg { box-sizing: content-box; width: 13px; height: 13px; padding: 2px 6px; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__secondary, .create-card-dialog__primary, .create-card-dialog__manual-link) { height: 46px; min-height: 46px; gap: 7px; border: 0; border-radius: 0; font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .05em; text-decoration: none; white-space: nowrap; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__secondary { padding: 0 20px; background: var(--cc-secondary-bg); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); }
+/* Adding a card by hand is an app feature the board lacks; it takes the board's ghost button. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-link { margin-left: auto; padding: 0 14px; background: transparent; box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-link:hover { color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer:not(.create-card-dialog__footer--stream) .create-card-dialog__primary { padding: 0 26px; background: var(--sf-primary-bg); box-shadow: none; clip-path: var(--nk-chamfer); color: #fff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer:not(.create-card-dialog__footer--stream) .create-card-dialog__primary:disabled { padding: 0 24px; background: var(--sf-border); color: var(--sf-text-subtle); filter: none; opacity: 1; }
+
+@media (max-width: 620px) {
+  /* Five part-of-speech tabs do not fit one phone row at a readable size; they wrap three to a row instead. */
+  html[data-theme-family="crystal"] .create-card-dialog__pos > div { flex-wrap: wrap; row-gap: .35rem; }
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__pos button { flex: 1 1 calc(33.333% - .3rem); }
+  /* Phone gutters, matching the streaming layout's. */
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__header { padding: 18px 16px 12px 18px; }
+  html[data-theme-family="crystal"] .create-card-dialog:not(.create-card-dialog--stream) .create-card-dialog__body { padding: 4px 16px 16px; }
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer { padding: 12px 16px 16px; }
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer:not(.create-card-dialog__footer--stream) :is(.create-card-dialog__primary, .create-card-dialog__primary:disabled) { padding: 0 16px; }
+}
 
 @media (max-width: 620px) {
   .create-card-dialog { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
@@ -349,17 +645,21 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea):focus-visible { border-color: var(--sf-border); background: var(--sf-surface); outline-offset: 1px; }
 .create-card-dialog__examples { grid-template-columns: 1fr; gap: 0; margin-top: .35rem; }
 .create-card-dialog__examples label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.create-card-dialog__examples label:first-child textarea { color: var(--sf-text); font-size: .875rem; font-style: italic; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__examples label:first-child textarea { color: var(--sf-text); font-size: .875rem; font-style: italic; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__examples label:first-child textarea { color: var(--sf-text-body); font-size: .8125rem; font-style: italic; }
 .create-card-dialog__examples label + label textarea { color: var(--sf-text-muted); font-size: .78rem; }
 .create-card-dialog__examples textarea { resize: none; field-sizing: content; min-height: 2.75rem; }
 .create-card-dialog__family { display: flex; align-items: center; flex-wrap: wrap; gap: 0 .5rem; margin-top: .2rem; }
-.create-card-dialog__family legend { float: left; margin-right: .25rem; color: var(--sf-text-muted); font-size: .8125rem; font-weight: 500; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__family legend { float: left; margin-right: .25rem; color: var(--sf-text-muted); font-size: .8125rem; font-weight: 500; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__family legend { float: left; margin-right: .25rem; color: var(--sf-text-muted); font-size: .78125rem; font-weight: 500; }
 .create-card-dialog__family legend::after { content: ':'; }
 .create-card-dialog__family-fields { margin-top: 0; gap: 0 .25rem; }
 .create-card-dialog__family-fields label { flex: 0 1 8rem; }
 .create-card-dialog__family-fields label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.create-card-dialog__family-fields input { color: var(--sf-text-muted); font-size: .8125rem; }
-.create-card-dialog__preview-explanation textarea { color: var(--sf-text-muted); font-style: normal; resize: none; field-sizing: content; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__family-fields input { color: var(--sf-text-muted); font-size: .8125rem; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__preview-explanation textarea { color: var(--sf-text-muted); font-style: normal; resize: none; field-sizing: content; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__family-fields input { color: var(--sf-text-muted); font-size: .78125rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-explanation textarea { color: var(--sf-text-body); font-style: normal; resize: none; field-sizing: content; }
 .create-card-dialog__preview-meaning { margin-top: .1rem; }
 .create-card-dialog__meta { margin-top: 0; }
 .create-card-dialog__meta input { width: 8rem; }
@@ -375,7 +675,7 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__kicker-sparkle { flex: none; }
 .create-card-dialog--stream .create-card-dialog__body { padding: 18px 26px 20px; }
 .create-card-dialog__stream { display: flex; flex-direction: column; gap: 16px; }
-.create-card-dialog__stream-word {
+:where(html[data-theme-family=crystal]) .create-card-dialog__stream-word {
   display: flex;
   min-height: 48px;
   box-sizing: border-box;
@@ -386,31 +686,61 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
   border-radius: 10px;
   background: var(--sf-surface-control);
 }
-:root.dark .create-card-dialog__stream-word { border-radius: 14px; }
-.create-card-dialog__stream-word > span:first-child { min-width: 0; flex: 1; overflow: hidden; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 1.1875rem; text-overflow: ellipsis; white-space: nowrap; }
+:root.dark:where([data-theme-family=crystal]) .create-card-dialog__stream-word { border-radius: 14px; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__stream-word > span:first-child { min-width: 0; flex: 1; overflow: hidden; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 1.1875rem; text-overflow: ellipsis; white-space: nowrap; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-word {
+  display: flex;
+  min-height: 48px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--cc-fr);
+  background: var(--sf-surface-control);
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-word > span:first-child { min-width: 0; flex: 1; overflow: hidden; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 1.1875rem; text-overflow: ellipsis; white-space: nowrap; }
 .create-card-dialog__stream-deck { display: inline-flex; height: 30px; flex: none; align-items: center; padding: 0 10px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-raised); color: var(--sf-text-muted); font-size: .75rem; white-space: nowrap; }
 .create-card-dialog__stream-grid { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 18px; align-items: start; }
 .create-card-dialog__steps { display: flex; margin: 0; padding: 0; flex-direction: column; gap: 4px; list-style: none; }
 .create-card-dialog__step { display: flex; min-height: 38px; box-sizing: border-box; align-items: center; gap: 10px; padding: 0 10px; border-radius: 10px; color: var(--sf-text-muted); font-size: .8125rem; font-weight: 500; }
-.create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-text); font-weight: 650; }
-:root:not(.dark) .create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 8%, transparent); }
-.create-card-dialog__step.is-done { color: color-mix(in srgb, var(--sf-text-muted) 60%, var(--sf-text)); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-text); font-weight: 650; }
+:root:not(.dark):where([data-theme-family=crystal]) .create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 8%, transparent); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__step.is-done { color: color-mix(in srgb, var(--sf-text-muted) 60%, var(--sf-text)); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__step.is-active { background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent)); color: var(--sf-text-strong); font-weight: 650; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__step.is-done { color: var(--sf-text-muted); }
 /* Waiting steps keep the muted token itself: a lighter mix falls below AA for 13px text in light themes. */
 .create-card-dialog__step-icon { display: inline-flex; width: 20px; height: 20px; box-sizing: border-box; flex: none; align-items: center; justify-content: center; border-radius: 50%; }
-.is-done > .create-card-dialog__step-icon { background: color-mix(in srgb, var(--sf-success) 12%, transparent); color: var(--sf-success); }
-.is-active > .create-card-dialog__step-icon { width: 16px; height: 16px; margin: 2px; border: 2px solid color-mix(in srgb, var(--sf-text) 8%, transparent); border-top-color: var(--sf-brand); animation: create-card-dialog-spin .8s linear infinite; }
-.is-waiting > .create-card-dialog__step-icon { border: 1.5px dashed color-mix(in srgb, var(--sf-text) 16%, transparent); }
-.is-stopped > .create-card-dialog__step-icon { border: 1.5px solid color-mix(in srgb, var(--sf-text) 16%, transparent); background: linear-gradient(color-mix(in srgb, var(--sf-text) 30%, transparent), color-mix(in srgb, var(--sf-text) 30%, transparent)) center / 8px 1.5px no-repeat; }
+:where(html[data-theme-family=crystal]) .is-done > .create-card-dialog__step-icon { background: color-mix(in srgb, var(--sf-success) 12%, transparent); color: var(--sf-success); }
+:where(html[data-theme-family=crystal]) .is-active > .create-card-dialog__step-icon { width: 16px; height: 16px; margin: 2px; border: 2px solid color-mix(in srgb, var(--sf-text) 8%, transparent); border-top-color: var(--sf-brand); animation: create-card-dialog-spin .8s linear infinite; }
+:where(html[data-theme-family=crystal]) .is-waiting > .create-card-dialog__step-icon { border: 1.5px dashed color-mix(in srgb, var(--sf-text) 16%, transparent); }
+:where(html[data-theme-family=crystal]) .is-stopped > .create-card-dialog__step-icon { border: 1.5px solid color-mix(in srgb, var(--sf-text) 16%, transparent); background: linear-gradient(color-mix(in srgb, var(--sf-text) 30%, transparent), color-mix(in srgb, var(--sf-text) 30%, transparent)) center / 8px 1.5px no-repeat; }
+:where(html:not([data-theme-family=crystal])) .is-done > .create-card-dialog__step-icon { background: var(--sf-success-soft); color: var(--sf-success-text); }
+:where(html:not([data-theme-family=crystal])) .is-active > .create-card-dialog__step-icon { width: 16px; height: 16px; margin: 2px; border: 2px solid var(--sf-track, color-mix(in srgb, var(--sf-text) 8%, transparent)); border-top-color: var(--sf-brand); animation: sf-spin-k 900ms linear infinite; }
+:where(html:not([data-theme-family=crystal])) .is-waiting > .create-card-dialog__step-icon { border: 1.5px dashed var(--sf-edge-highlight); }
+:where(html:not([data-theme-family=crystal])) .is-stopped > .create-card-dialog__step-icon { border: 1.5px solid var(--sf-edge-highlight); background: linear-gradient(color-mix(in srgb, var(--sf-text) 30%, transparent), color-mix(in srgb, var(--sf-text) 30%, transparent)) center / 8px 1.5px no-repeat; }
 
 .create-card-dialog__preview--stream { margin-top: 0; gap: 16px; padding: 16px 18px; }
-:root:not(.dark) .create-card-dialog__preview--stream { background: var(--sf-surface-raised); }
-:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview--stream { border-width: 1.5px; border-radius: 20px; }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__preview--stream {
+  border: var(--sf-dialog-border); /* AiStreaming line 74: 1px solid rgb(29 26 22 / .08) */
+  border-radius: 14px;
+  background: var(--sf-surface-raised);
+  box-shadow: inset 0 1px 0 var(--sf-flare), 0 10px 20px -16px color-mix(in srgb, var(--sf-shadow-tint) 40%, transparent);
+}
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview--stream {
+  border: 1.5px solid transparent;
+  border-radius: 20px;
+  background: radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.2), transparent 70%) padding-box, var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.9), 0 0 36px -16px rgb(40 211 244 / 0.5);
+}
+:root:not(.dark):where([data-theme-family=crystal]) .create-card-dialog__preview--stream { background: var(--sf-surface-raised); }
 .create-card-dialog__preview--stream .create-card-dialog__headword-row { margin-top: 0; }
 .create-card-dialog__preview--stream .create-card-dialog__headword-row h3 { font-size: 2.375rem; }
 .create-card-dialog__preview--stream .create-card-dialog__meta { margin-top: 4px; color: var(--sf-text-muted); font-size: .78125rem; }
 .create-card-dialog__preview--stream .create-card-dialog__preview-meaning { margin-top: 4px; }
 .create-card-dialog__preview--stream .create-card-dialog__preview-meaning input { font-size: 1.375rem; }
-.create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { color: var(--sf-text); font-size: .8125rem; line-height: 1.5; opacity: .86; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { color: var(--sf-text); font-size: .8125rem; line-height: 1.5; opacity: .86; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { color: var(--sf-text-body); font-size: .8125rem; line-height: 1.5; }
 .create-card-dialog__example-label { margin: 10px 0 0; color: var(--sf-text-muted); font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .create-card-dialog__preview--stream .create-card-dialog__meta > span:not(.create-card-dialog__skeleton) { font-family: inherit; }
 .create-card-dialog__preview--stream .create-card-dialog__meta { font-family: inherit; }
@@ -431,7 +761,8 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__preview--stream .create-card-dialog__preview-heading { justify-content: flex-start; margin-bottom: 6px; }
 .create-card-dialog__not-checked { display: inline-flex; align-items: center; padding: 2px 8px; border: 1px dashed color-mix(in srgb, var(--sf-text) 30%, transparent); border-radius: 999px; color: var(--sf-text-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .02em; }
 
-.create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background-color: var(--sf-track); }
 .create-card-dialog__skeleton--meta { width: 9rem; margin: 6px 0; }
 .create-card-dialog__skeleton--short { width: 2rem; margin: 6px 0; }
 .create-card-dialog__skeleton--meaning { width: 62%; height: 16px; margin: 14px 0 6px; border-radius: 6px; }
@@ -442,17 +773,50 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__skeleton-lines { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .create-card-dialog__meta > .create-card-dialog__skeleton + .create-card-dialog__skeleton,
 .create-card-dialog__meta > span + .create-card-dialog__skeleton { margin-left: .45rem; }
+/* AiStreaming: word and deck chip at line-height normal, the chip 30px inside its 1px border (line 14); waiting step
+   in text3, AA subtle here (line 20); card body spacing meta 8px, meaning 14px, definition 4px with its two lines,
+   "Example" 14px, the sentence 5px below in strong ink and flush with the column (lines 31-36); image note and
+   progress label at line-height normal (lines 40-41, 47). */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-word > span:first-child { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-deck { box-sizing: content-box; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__step.is-waiting { color: var(--sf-text-subtle); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__meta { margin-top: 8px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-meaning { margin-top: 14px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation { position: relative; isolation: isolate; margin-top: 4px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation::after { position: absolute; z-index: -1; inset: -3px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { display: block; min-height: 0; }
+/* AiStreaming lines 31-36: the meta row sits at line-height normal and the explanation and examples are plain blocks; a textarea left
+   inline-block adds a descender gap under it inside its label. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__meta { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples textarea { display: block; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__example-label { margin-top: 14px; color: var(--sf-text-subtle); line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples { margin-top: 5px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples textarea { margin-left: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples label:first-child textarea { color: var(--sf-text-strong); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image p,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__progress-label { line-height: normal; }
 
 .create-card-dialog__stream-image { width: 130px; flex: none; }
-.create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
-.create-card-dialog__stream-image-slot.is-loading { background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__stream-image-slot.is-loading { background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: var(--sf-text-subtle); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image-slot.is-loading { background-color: var(--sf-track); background-image: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) :is(.create-card-dialog__skeleton, .create-card-dialog__stream-image-slot.is-loading).sf-shimmer {
+    background-image: linear-gradient(90deg, transparent 0 50%, rgb(255 255 255 / 0.2) 75%, transparent 100%);
+    background-size: 200% 100%;
+    animation: sf-shimmer-k 1.6s linear infinite;
+  }
+}
 .create-card-dialog__stream-image-slot img { width: 100%; height: 100%; object-fit: cover; }
-.create-card-dialog__stream-image p { margin: 8px 0 0; color: var(--sf-text-muted); font-size: .71875rem; text-align: center; }
+:where(html[data-theme-family=crystal]) .create-card-dialog__stream-image p { margin: 8px 0 0; color: var(--sf-text-muted); font-size: .71875rem; text-align: center; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image p { margin: 8px 0 0; color: var(--sf-text-subtle); font-size: .71875rem; text-align: center; }
 
 .create-card-dialog__stream-status { display: flex; align-items: center; gap: 8px; margin: -4px 0 0; color: var(--sf-text-muted); font-size: .78125rem; }
 .create-card-dialog__stream-status svg { flex: none; animation: create-card-dialog-spin .8s linear infinite; }
-.create-card-dialog__stream-note { display: flex; align-items: center; gap: 10px; margin: 0; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--sf-brand) 30%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--sf-brand) 10%, transparent); color: var(--sf-text); font-size: .78125rem; line-height: 1.5; }
-:root:not(.dark) .create-card-dialog__stream-note { border-color: color-mix(in srgb, var(--sf-text) 14%, transparent); background: color-mix(in srgb, var(--sf-text) 5%, transparent); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__stream-note { display: flex; align-items: center; gap: 10px; margin: 0; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--sf-brand) 30%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--sf-brand) 10%, transparent); color: var(--sf-text); font-size: .78125rem; line-height: 1.5; }
+:root:not(.dark):where([data-theme-family=crystal]) .create-card-dialog__stream-note { border-color: color-mix(in srgb, var(--sf-text) 14%, transparent); background: color-mix(in srgb, var(--sf-text) 5%, transparent); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-note { display: flex; align-items: center; gap: 10px; margin: 0; padding: 11px 14px; border: 1px solid var(--sf-info-line); border-radius: 12px; background: var(--sf-info-bg); color: var(--sf-text); font-size: .78125rem; line-height: 1.5; }
 .create-card-dialog__stream-note svg { flex: none; }
 .create-card-dialog__notice--stopped { border-color: var(--sf-border); background: var(--sf-surface-raised); color: var(--sf-text); }
 .create-card-dialog__notice--stopped svg { color: var(--sf-text-muted); }
@@ -461,14 +825,14 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__progress { min-width: 0; max-width: 200px; flex: 1 1 auto; }
 .create-card-dialog__progress-label { display: block; color: var(--sf-text-muted); font-size: .75rem; }
 .create-card-dialog__progress-label strong { font-weight: inherit; }
-.create-card-dialog__progress-track { display: flex; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--sf-text) 8%, transparent); }
+:where(html[data-theme-family=crystal]) .create-card-dialog__progress-track { display: flex; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--sf-text) 8%, transparent); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__progress-track { display: flex; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 4px; background: var(--sf-track, color-mix(in srgb, var(--sf-text) 8%, transparent)); }
 .create-card-dialog__progress-fill { display: block; height: 100%; background: var(--sf-brand); transition: width .3s ease; }
 .create-card-dialog__footer--stream .create-card-dialog__secondary { margin-left: auto; padding: 0 18px; font-size: .875rem; }
 .create-card-dialog__footer--stream .create-card-dialog__primary { padding: 0 20px; font-size: .875rem; }
 .create-card-dialog__footer--stream .create-card-dialog__primary:disabled { opacity: .4; }
 .create-card-dialog__footer--stream .create-card-dialog__manual-link { margin-left: auto; }
 .create-card-dialog__footer--stream .create-card-dialog__manual-link + .create-card-dialog__secondary { margin-left: 0; }
-:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__footer--stream :is(.create-card-dialog__secondary, .create-card-dialog__primary) { border-radius: 16px; }
 
 @keyframes create-card-dialog-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @keyframes create-card-dialog-rise { from { opacity: 0; transform: translateY(4px); } }
@@ -511,9 +875,10 @@ html[data-theme-family="crystal"] .create-card-dialog__preview--stream {
   box-sizing: border-box;
   gap: 12px;
   padding: 14px 16px;
+  --cc-preview-rim: var(--sf-rim-learning);
   border: 2px solid transparent;
-  clip-path: var(--nk-chamfer);
-  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
+  clip-path: none;
+  background: none;
   box-shadow: none;
   filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 28%, transparent));
 }
@@ -572,7 +937,43 @@ html[data-theme-family="crystal"] .create-card-dialog__footer--stream .create-ca
   .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
   .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
   .create-card-dialog__skeleton { animation: none !important; transition: none !important; }
+  html:is(.dark, :not(.dark)):not([data-theme-family="crystal"]) .create-card-dialog { animation: none; }
 }
 html[data-motion="reduced"] .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
 html[data-motion="reduced"] .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
 html[data-motion="reduced"] .create-card-dialog__skeleton { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-family="crystal"] :is(.create-card-dialog__skeleton, .create-card-dialog__stream-image-slot.is-loading) { background-image: none; }
+}
+html[data-theme-family="crystal"][data-motion="reduced"] :is(.create-card-dialog__skeleton, .create-card-dialog__stream-image-slot.is-loading) { background-image: none; }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .create-card-dialog { animation: none; }
+/* Crystal manual card: the details panel is an inner tile with the board's 1px line, and its inputs, like the deck
+   select, take the board's field recipe (42px, chamfered, strong 1px inset line) in place of rounded bordered boxes,
+   so no radius sits under a cut and the chamfer clips the line on the diagonal. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual { padding: 14px 16px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__manual-grid textarea, .create-card-dialog__save-row select) { border: 0; border-radius: 0; background-color: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__save-row select) { height: 42px; min-height: 0; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-grid input { padding: 0 14px; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-grid textarea { padding: 9px 14px; line-height: 1.4; }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__manual-grid textarea, .create-card-dialog__save-row select):focus-visible { outline: 0; box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge); }
+
+/* DlgCreate lines 26-28 and AiStreaming line 32: the meta line joins its parts with " · " and the phonetic is as wide as
+   its text. In the draft preview the meta sits 6px under the headword at line-height normal, the meaning 10px under the
+   meta, and the example is a 13px italic line at 1.5, 6px under the meaning; the app's definition (no board line) keeps
+   the same 6px rhythm. These fields keep their text height and take their hit area from the gap above them, so a
+   neighbour never covers their text. The deck select is padded 12px like the board's chip (line 33). */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta { column-gap: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta > span::before,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta > span + label::before { margin-right: 0; content: "\a0·\a0"; }
+@supports (field-sizing: content) {
+  :where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta input { width: auto; }
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__meta { margin-top: 6px; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-meaning { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-explanation { position: relative; isolation: isolate; margin-top: 6px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-explanation::after { position: absolute; z-index: -1; inset: -3px 0 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-explanation textarea { display: block; min-height: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__examples { margin-top: calc(6px - .2rem - 1px); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__examples textarea { display: block; min-height: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__examples label:first-child textarea { line-height: 1.5; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row select { padding-left: 12px; }

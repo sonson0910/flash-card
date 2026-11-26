@@ -1,7 +1,7 @@
 const EMBEDDED_DESCRIPTOR = /* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null;
 
 const SHELL_CACHE_PREFIX = 'sonflash-app-shell-v1-';
-const MAX_SHELL_BYTES = 6 * 1024 * 1024;
+const MAX_SHELL_BYTES = 7 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 10_000;
 const ACTIVE_MARKER_PATH = '/__sonflash_app_shell_active__';
 const SHELL_ASSET_PATTERN = /\.(?:css|eot|html?|js|otf|ttf|woff2?)$/i;
@@ -62,7 +62,7 @@ const assertDescriptor = descriptor => {
     totalBytes += asset.bytes;
   }
   if (!urls.has('/index.html')) throw fail('invalid-descriptor', 'index.html is required');
-  if (totalBytes > MAX_SHELL_BYTES) throw fail('invalid-descriptor', 'shell exceeds 6 MiB');
+  if (totalBytes > MAX_SHELL_BYTES) throw fail('invalid-descriptor', 'shell exceeds 7 MiB');
   return descriptor;
 };
 

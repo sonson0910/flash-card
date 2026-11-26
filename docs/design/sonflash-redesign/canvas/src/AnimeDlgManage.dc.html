@@ -4,7 +4,7 @@
   <div aria-hidden="true" style="position: absolute; inset: 0; background: {{scrim}};"></div>
 
   <div style="position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 24px;">
-    <div class="nk-unfold" style="position: relative; width: {{dw}}px; filter: {{m.glow}};">
+    <div class="{{dlgEnter}}" style="position: relative; width: {{dw}}px; filter: {{m.glow}};">
       <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{m.frame}};"></div>
       <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" style="position: relative; margin: 2px; clip-path: {{t.chamfer}}; background: {{m.body}}; display: flex; flex-direction: column; overflow: hidden;">
         <span aria-hidden="true" style="position: absolute; left: 26px; top: 0; width: 120px; height: 3px; background: {{t.crimsonGrad}}; box-shadow: 0 0 12px rgb(255 42 77 / 0.8);"></span>
@@ -31,23 +31,23 @@
               <p style="margin: 6px 0 0; font-size: 13.5px; color: {{t.text2}};"><span style="font-family: {{t.fMono}}; color: {{t.textStrong}};">vocab-ielts-week-6.xlsx</span> · 120 rows</p>
             </sc-if>
           </div>
-          <button aria-label="Close" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+          <button aria-label="Close" class="{{press}}" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
         </header>
 
         <!-- New deck -->
         <sc-if value="{{isNew}}" hint-placeholder-val="{{true}}">
           <div style="padding: 4px 26px 20px; display: flex; flex-direction: column; gap: 16px;">
             <label style="display: flex; flex-direction: column; gap: 6px;"><span style="{{cap}}">Deck name</span>
-              <span style="height: 48px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{errBg}}; box-shadow: inset 0 0 0 1.5px {{t.crimson}}; display: flex; align-items: center; gap: 8px;"><input aria-invalid="true" aria-describedby="deck-err" value="IELTS" placeholder="IELTS, Travel…" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 19px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.crimsonText}}" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"></path></svg></span>
+              <span class="sf-shake" style="height: 48px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{errBg}}; box-shadow: inset 0 0 0 1.5px {{t.crimson}}; display: flex; align-items: center; gap: 8px;"><input aria-invalid="true" aria-describedby="deck-err" value="IELTS" placeholder="IELTS, Travel…" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 19px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.crimsonText}}" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"></path></svg></span>
               <span id="deck-err" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: {{t.crimsonText}};"><span style="width: 6px; height: 6px; transform: rotate(45deg); background: {{t.crimson}};"></span>A deck with this name already exists</span>
             </label>
             <div style="display: flex; align-items: center; gap: 8px;"><span style="{{cap}} margin-right: 4px;">Try</span>
-              <sc-for list="{{suggest}}" as="s" hint-placeholder-count="3"><button style="height: 32px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-block; transform: skewX(12deg);">{{s}}</span></button></sc-for>
+              <sc-for list="{{suggest}}" as="s" hint-placeholder-count="3"><button class="nk-press" style="height: 32px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-block; transform: skewX(12deg);">{{s}}</span></button></sc-for>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;"><span style="{{cap}}">Cover</span>
               <div role="radiogroup" aria-label="Deck cover" style="display: flex; gap: 12px;">
                 <sc-for list="{{covers}}" as="c" hint-placeholder-count="5">
-                  <button role="radio" aria-checked="{{c.on}}" aria-label="{{c.name}}" style="padding: 3px; border: 0; clip-path: {{t.chamferSm}}; background: {{c.ring}}; cursor: pointer; filter: {{c.glow}};"><span style="width: 62px; height: 80px; clip-path: {{t.chamferSm}}; background: {{c.bg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{c.text}};">I</span></button>
+                  <span class="{{c.enter}}" style="display: flex;"><button role="radio" aria-checked="{{c.on}}" aria-label="{{c.name}}" class="nk-lift" style="padding: 3px; border: 0; clip-path: {{t.chamferSm}}; background: {{c.ring}}; cursor: pointer; filter: {{c.glow}};"><span style="width: 62px; height: 80px; clip-path: {{t.chamferSm}}; background: {{c.bg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{c.text}};">I</span></button></span>
                 </sc-for>
               </div>
             </div>
@@ -87,7 +87,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 14px; clip-path: {{t.chamferSm}}; background: {{holoBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
               <span style="flex-grow: 1; font-size: 13px; font-weight: 700; color: {{t.body}};">Keep a copy first — export everything as CSV.</span>
-              <button style="height: 36px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{holoBtn}}; color: {{holoBtnText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Export CSV</button>
+              <button class="{{press}}" style="height: 36px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{holoBtn}}; color: {{holoBtnText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Export CSV</button>
             </div>
             <label style="display: flex; flex-direction: column; gap: 6px;"><span style="{{cap}}">Type <span style="font-family: {{t.fMono}}; font-style: normal; letter-spacing: 0; color: {{t.crimsonText}};">DELETE</span> to confirm</span>
               <span style="height: 48px; box-sizing: border-box; padding: 0 8px 0 14px; clip-path: {{t.chamferSm}}; background: {{errBg}}; box-shadow: inset 0 0 0 1.5px {{t.crimson}}; display: flex; align-items: center; gap: 8px;"><input value="DELETE" aria-label="Type DELETE to confirm" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.crimsonText}}; font-family: {{t.fMono}}; font-size: 17px; letter-spacing: 0.12em;"><span style="width: 28px; height: 28px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.crimson}}; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span></span>
@@ -110,7 +110,7 @@
             <div style="display: flex; align-items: center; gap: 10px;"><span style="height: 22px; padding: 0 8px; transform: skewX(-12deg); background: {{goldBg}}; box-shadow: inset 0 0 0 1px {{goldLine}}; color: {{t.goldText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.1em; display: flex; align-items: center;">PARTIAL</span><span style="font-size: 12.5px; color: {{t.text2}};">When it finishes</span><span style="margin-left: auto; {{cap}}">Result preview</span></div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
               <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
-                <div style="height: 40px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{r.bg}}; box-shadow: inset 0 0 0 1px {{r.line}}; display: flex; align-items: center; gap: 10px;">
+                <div class="{{r.enter}}" style="height: 40px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{r.bg}}; box-shadow: inset 0 0 0 1px {{r.line}}; display: flex; align-items: center; gap: 10px;">
                   <span style="width: 8px; height: 8px; transform: rotate(45deg); background: {{r.dot}};"></span>
                   <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; color: {{r.color}};">{{r.label}}</span><span style="font-size: 12.5px; color: {{t.text3}};">{{r.hint}}</span>
                   <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{r.color}};">{{r.n}}</span>
@@ -127,11 +127,11 @@
 
         <footer style="position: relative; padding: 14px 26px 18px; background: {{m.foot}}; box-shadow: inset 0 1px 0 {{t.line}}; display: flex; align-items: center; gap: 10px;">
           <sc-for list="{{lefts}}" as="b" hint-placeholder-count="0">
-            <button class="nk-lift" style="{{b.css}}">{{b.icon}}{{b.label}}</button>
+            <button class="{{b.cls}}" style="{{b.css}}">{{b.icon}}{{b.label}}</button>
           </sc-for>
           <span style="flex-grow: 1;"></span>
           <sc-for list="{{rights}}" as="b" hint-placeholder-count="2">
-            <button class="nk-lift" aria-disabled="{{b.dis}}" style="{{b.css}}">{{b.label}}</button>
+            <button class="{{b.cls}}" aria-disabled="{{b.dis}}" style="{{b.css}}">{{b.label}}</button>
           </sc-for>
         </footer>
       </div>
@@ -162,22 +162,26 @@ class Component extends DCLogic {
         : (dark ? 'drop-shadow(0 0 36px rgb(255 42 77 / 0.3)) drop-shadow(0 30px 40px rgb(0 0 0 / 0.7))' : 'drop-shadow(0 26px 40px rgb(20 70 130 / 0.35))'),
     };
     const cap = 'font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: ' + t.text2 + ';';
+    // Destructive confirmations stay still: the dialog rises without the unfold twist and buttons press without overshoot.
+    const press = danger ? 'sf-press' : 'nk-press';
+    const lift = danger ? 'sf-press' : 'nk-lift';
+    const slide = (i) => ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4'][Math.min(i, 3)];
     const btnBase = 'height: 46px; border: 0; cursor: pointer; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 7px;';
     const B = {
-      p: (label) => ({ label, icon: '', dis: 'false', css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: ' + t.primaryBg + '; color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));' }),
-      d: (label) => ({ label, icon: '', dis: 'false', css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: linear-gradient(180deg, #d1123a 0%, #8a0a26 100%); box-shadow: inset 0 0 0 1px rgb(255 143 163 / 0.6); color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.75));' }),
-      s: (label, icon) => ({ label, icon: icon || '', dis: 'false', css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + t.secondaryBg + '; box-shadow: inset 0 0 0 1px ' + t.lineStrong + '; color: ' + t.secondaryText + ';' }),
-      off: (label) => ({ label, icon: '', dis: 'true', css: btnBase + ' padding: 0 24px; clip-path: ' + t.chamfer + '; background: ' + t.track + '; color: ' + t.text3 + '; cursor: not-allowed;' }),
+      p: (label) => ({ label, icon: '', dis: 'false', cls: lift, css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: ' + t.primaryBg + '; color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));' }),
+      d: (label) => ({ label, icon: '', dis: 'false', cls: lift, css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: linear-gradient(180deg, #d1123a 0%, #8a0a26 100%); box-shadow: inset 0 0 0 1px rgb(255 143 163 / 0.6); color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.75));' }),
+      s: (label, icon) => ({ label, icon: icon || '', dis: 'false', cls: lift, css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + t.secondaryBg + '; box-shadow: inset 0 0 0 1px ' + t.lineStrong + '; color: ' + t.secondaryText + ';' }),
+      off: (label) => ({ label, icon: '', dis: 'true', cls: '', css: btnBase + ' padding: 0 24px; clip-path: ' + t.chamfer + '; background: ' + t.track + '; color: ' + t.text3 + '; cursor: not-allowed;' }),
     };
     const C = dark
       ? [['Crimson', 'linear-gradient(160deg, #ff5470, #b30f33 60%, #7a0820)', '#ffffff'], ['Holo', 'linear-gradient(160deg, #9ff9ff, #1aa7c9 60%, #0b3a4f)', '#031820'], ['Gold', 'linear-gradient(160deg, #fff0b8, #ffd166 50%, #8a5a00)', '#4a2a00'], ['Night', 'linear-gradient(160deg, #1d2a4a, #0b1020)', '#cfe0ff'], ['Sakura', 'linear-gradient(160deg, #ffe3f1, #ff8fb6 60%, #b3265a)', '#4a0a20']]
       : [['Crimson', 'linear-gradient(160deg, #ff5470, #e0173f 60%, #a30c2d)', '#ffffff'], ['Holo', 'linear-gradient(160deg, #bff6ff, #2bc4e0 60%, #0a8fb0)', '#ffffff'], ['Gold', 'linear-gradient(160deg, #fff4cc, #ffd166 60%, #c98a00)', '#4a2a00'], ['Night', 'linear-gradient(160deg, #3a4f7a, #0d1a33)', '#ffffff'], ['Sakura', 'linear-gradient(160deg, #fff0f6, #ffb3cf 60%, #e0578a)', '#5a0a28']];
-    const covers = C.map(([name, bg, text], i) => ({ name, bg, text, on: String(i === 0),
+    const covers = C.map(([name, bg, text], i) => ({ name, bg, text, on: String(i === 0), enter: slide(i),
       ring: i === 0 ? 'linear-gradient(160deg, #ffffff, ' + t.holo + ')' : 'transparent', glow: i === 0 ? 'drop-shadow(0 0 10px rgb(94 242 255 / 0.8))' : 'none' }));
     const rows = [
       ['Created', 'new cards', 96, t.good, t.textStrong], ['Reused', 'already in library', 18, t.easy, t.textStrong],
       ['Skipped', 'duplicate rows', 4, t.text3, t.text2], ['Failed', 'see below', 2, t.crimson, t.crimsonText],
-    ].map(([label, hint, n, dot, color]) => ({ label, hint, n, dot, color, bg: label === 'Failed' ? (dark ? 'rgb(255 42 77 / 0.12)' : 'rgb(255 84 112 / 0.12)') : m.inner, line: label === 'Failed' ? t.panelEdge : t.line }));
+    ].map(([label, hint, n, dot, color], i) => ({ label, hint, n, dot, color, enter: slide(i + 1), bg: label === 'Failed' ? (dark ? 'rgb(255 42 77 / 0.12)' : 'rgb(255 84 112 / 0.12)') : m.inner, line: label === 'Failed' ? t.panelEdge : t.line }));
     const K = {
       decknew: { kicker: 'DECK STUDIO', title: 'New deck', sub: 'Group words by exam, trip, book — anything you like.', dw: 560, lefts: [], rights: [B.s('Cancel'), B.off('Create deck')] },
       deckdelete: { kicker: 'DELETE DECK', title: 'Delete “TACN”?', dw: 580, icon: 'M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3', lefts: [], rights: [B.s('Keep deck'), B.d('Delete deck')] },
@@ -185,7 +189,7 @@ class Component extends DCLogic {
       import: { kicker: 'IMPORT', title: 'Import from spreadsheet', dw: 620, lefts: [B.s('Download error report', '↓ ')], rights: [B.p('Done')] },
     }[kind];
     return {
-      t, m, cap, bg: { wings: true }, danger,
+      t, m, cap, bg: { wings: true }, danger, press, dlgEnter: danger ? 'nk-rise' : 'nk-unfold',
       scrim: danger ? (dark ? 'rgb(20 2 8 / 0.78)' : 'rgb(60 10 30 / 0.3)') : t.scrim,
       dw: K.dw, kicker: K.kicker, title: K.title, sub: K.sub || '', hasSub: !!K.sub, hasIcon: !!K.icon, icon: K.icon || '',
       lefts: K.lefts, rights: K.rights,

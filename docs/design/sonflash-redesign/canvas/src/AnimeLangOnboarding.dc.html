@@ -15,7 +15,7 @@
       <sc-for list="{{steps}}" as="st" hint-placeholder-count="6">
         <span style="width: 48px; height: 10px; transform: skewX(-30deg); background: {{st.bg}}; box-shadow: {{st.glow}};"></span>
       </sc-for>
-      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">{{stepNo}}<span style="font-size: 14px; color: {{t.text3}};"> / 6</span></span>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">{{stepNo}}<span style="font-size: 14px; color: {{t.text3}};"> / 6</span></span>
     </div>
     <span style="height: 38px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.06em; color: {{t.text}};">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>TIẾNG VIỆT
@@ -37,14 +37,14 @@
   <sc-if value="{{isLearn}}" hint-placeholder-val="{{true}}">
     <main style="position: relative; z-index: 3; flex-grow: 1; margin-left: 380px; margin-right: 60px; display: flex; flex-direction: column;">
       <div class="nk-rise" style="margin-top: 6px;">
-        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">STEP 2 // CHỌN NGÔN NGỮ</div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">STEP 2 // CHỌN NGÔN NGỮ</div>
         <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 62px; line-height: 1; letter-spacing: 0.01em; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.55));">WHAT SHALL WE LEARN?</h1>
-        <p style="margin: 8px 0 0; max-width: 680px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">Mỗi ngôn ngữ là một khu vườn riêng với thẻ, streak và nhóm bạn riêng. Trồng thêm ngôn ngữ khác bất cứ lúc nào.</p>
+        <p style="margin: 8px 0 0; max-width: 680px; font-size: 15.5px; line-height: 1.55; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">Mỗi ngôn ngữ là một khu vườn riêng với thẻ, streak và nhóm bạn riêng. Trồng thêm ngôn ngữ khác bất cứ lúc nào.</p>
       </div>
 
       <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(4, 230px); gap: 18px 22px;">
-        <sc-for list="{{realms}}" as="r" hint-placeholder-count="8">
-          <button class="{{r.cls}}" aria-pressed="{{r.selected}}" style="position: relative; width: 230px; height: 236px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit; opacity: {{r.op}};">
+        <sc-for list="{{languages}}" as="r" hint-placeholder-count="8">
+          <div class="{{r.enter}}" style="display: flex;"><button class="nk-lift" aria-pressed="{{r.selected}}" style="position: relative; width: 230px; height: 236px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit; opacity: {{r.op}};">
             <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{r.rim}}; filter: drop-shadow({{r.glow}});"></div>
             <div style="position: absolute; inset: 2px; box-sizing: border-box; clip-path: {{t.chamfer}}; background: {{r.bg}}; padding: 18px 20px 16px; display: flex; flex-direction: column;">
               <div style="display: flex; align-items: flex-start; justify-content: space-between;">
@@ -59,17 +59,17 @@
                 <span style="width: 26px; height: 26px; clip-path: {{t.chamferSm}}; background: {{r.checkBg}}; color: {{r.checkFg}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.checkIcon}}"></path></svg></span>
               </div>
             </div>
-          </button>
+          </button></div>
         </sc-for>
       </div>
 
-      <div style="margin-top: auto; margin-bottom: 36px; display: flex; align-items: center; gap: 18px;">
+      <div class="nk-rise-3" style="margin-top: auto; margin-bottom: 36px; display: flex; align-items: center; gap: 18px;">
         <button class="nk-lift" style="position: relative; height: 60px; padding: 0 44px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 21px; font-weight: 900; letter-spacing: 0.08em; display: flex; align-items: center; gap: 12px; cursor: pointer;">
           <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span>
           <span style="position: relative;">LET'S GO</span>
           <svg style="position: relative;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
         </button>
-        <span style="font-size: 14px; color: {{t.text2}};">Lộ trình: <strong lang="ko" style="font-family: {{koFont}}; color: {{t.textStrong}};">한국어</strong> ← Tiếng Việt · nghĩa và giải thích bằng tiếng Việt</span>
+        <span style="font-size: 14px; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">Lộ trình: <strong lang="ko" style="font-family: {{koFont}}; color: {{t.textStrong}};">한국어</strong> ← Tiếng Việt · nghĩa và giải thích bằng tiếng Việt</span>
       </div>
     </main>
   </sc-if>
@@ -78,27 +78,27 @@
     <main style="position: relative; z-index: 3; flex-grow: 1; margin-left: 380px; margin-right: 56px; display: grid; grid-template-columns: 1fr 360px; gap: 36px;">
       <section style="display: flex; flex-direction: column;">
         <div class="nk-rise" style="margin-top: 6px;">
-          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">STEP 3 // <span lang="ko" style="font-family: {{koFont}}; font-style: normal; letter-spacing: 0;">한국어</span> LEVEL CHECK</div>
+          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">STEP 3 // <span lang="ko" style="font-family: {{koFont}}; font-style: normal; letter-spacing: 0;">한국어</span> LEVEL CHECK</div>
           <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 62px; line-height: 1; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.55));">WHERE ARE YOU NOW?</h1>
         </div>
         <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 14px;">
           <sc-for list="{{levelCards}}" as="k" hint-placeholder-count="4">
-            <button class="nk-lift" aria-pressed="{{k.on}}" style="position: relative; height: 82px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit;">
+            <div class="{{k.enter}}" style="display: flex; flex-direction: column;"><button class="nk-lift" aria-pressed="{{k.on}}" style="position: relative; height: 82px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit;">
               <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{k.rim}};"></div>
               <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{k.bg}}; padding: 0 18px; display: flex; align-items: center; gap: 16px;">
                 <span lang="{{k.lang}}" style="width: 146px; flex-shrink: 0; font-family: {{k.gradeFont}}; font-style: {{k.gradeStyle}}; font-weight: 900; font-size: 24px; color: {{k.gradeColor}}; text-shadow: {{k.gradeShadow}};">{{k.grade}}</span>
                 <span style="flex-grow: 1;"><span style="display: block; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 19px; color: {{k.fg}};">{{k.name}}</span><span style="display: block; margin-top: 1px; font-size: 13px; color: {{k.sub}};">{{k.desc}}</span></span>
               </div>
-            </button>
+            </button></div>
           </sc-for>
         </div>
-        <div style="margin-top: 20px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}};">KỲ THI MỤC TIÊU</div>
-        <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <div style="margin-top: 20px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">KỲ THI MỤC TIÊU</div>
+        <div class="nk-rise-3" style="margin-top: 8px; display: flex; gap: 8px;">
           <sc-for list="{{exams}}" as="e" hint-placeholder-count="4">
-            <button class="nk-lift" aria-pressed="{{e.on}}" style="height: 44px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{e.bg}}; box-shadow: {{e.shadow}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.04em; color: {{e.fg}};">{{e.name}}</span></button>
+            <span class="nk-press" style="display: flex;"><button aria-pressed="{{e.on}}" style="height: 44px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{e.bg}}; box-shadow: {{e.shadow}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.04em; color: {{e.fg}};">{{e.name}}</span></button></span>
           </sc-for>
         </div>
-        <p style="margin: 14px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.text3}};">Vùng đất khác dùng kỳ thi riêng: JLPT N5–N1 · HSK 1–6 · DELF/DALF · Goethe · DELE · IELTS/TOEIC</p>
+        <p style="margin: 14px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">Ngôn ngữ khác dùng kỳ thi riêng: JLPT N5–N1 · HSK 1–6 · DELF/DALF · Goethe · DELE · IELTS/TOEIC</p>
       </section>
 
       <section class="nk-rise-3" style="align-self: start; margin-top: 30px; position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 24px 24px 22px;">
@@ -148,25 +148,26 @@ class Component extends DCLogic {
     const check = 'M5 12.5l4.5 4.5L19 7.5';
     const lock = 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z';
     const idleRim = dark ? 'linear-gradient(150deg, rgb(94 242 255 / 0.55), rgb(255 255 255 / 0.08) 50%, rgb(255 143 182 / 0.4))' : 'linear-gradient(150deg, rgb(26 167 201 / 0.6), rgb(28 16 48 / 0.08) 50%, rgb(255 143 182 / 0.45))';
-    const realms = R.map(([glyph, endo, vi, greet, exam, meta, code], i) => {
+    const slide = (i) => ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4'][Math.min(i, 3)];
+    const languages = R.map(([glyph, endo, vi, greet, exam, meta, code], i) => {
       const font = cjk[code];
       const base = { glyph, endo, vi, greet, exam, meta, code, op: 1, checkIcon: check,
         glyphFont: font || t.fDisplay, glyphStyle: font ? 'normal' : 'italic',
         nameFont: font || t.fDisplay, nameStyle: font ? 'normal' : 'italic', greetFont: font || t.fBody };
       return code === 'ko' ? {
-        ...base, selected: 'true', cls: 'nk-lift nk-pop',
+        ...base, selected: 'true', enter: 'nk-pop',
         rim: t.tier.mastered.rim, glow: '0 0 26px rgb(255 42 77 / 0.75)', bg: 'linear-gradient(180deg, #ff5470 0%, #e0173f 45%, #7a0820 100%)',
         emblemBg: '#ffffff', emblemFg: '#b30f33', fg: '#ffffff', sub: 'rgb(255 255 255 / 0.85)', tagBg: '#ffd166', tagFg: '#4a2a00', checkBg: '#ffd166', checkFg: '#4a2a00',
       } : {
-        ...base, selected: 'false', cls: 'nk-lift ' + ['nk-rise', 'nk-rise-2', 'nk-rise-3'][i % 3],
+        ...base, selected: 'false', enter: slide(i % 4),
         rim: idleRim, glow: '0 0 0 transparent', bg: t.cardFront,
         emblemBg: dark ? 'rgb(94 242 255 / 0.14)' : 'rgb(26 167 201 / 0.12)', emblemFg: t.holoText, fg: t.textStrong, sub: t.text2,
         tagBg: t.chip, tagFg: t.holoText, checkBg: t.chip, checkFg: t.text3,
       };
     });
     // The locked card stays opaque (muted by colour, not opacity) so background flares never show through its title.
-    realms.push({ glyph: '?', endo: 'Italiano', vi: 'SẮP MỞ KHOÁ', greet: 'Ciao!', exam: 'VOTE', meta: 'Bình chọn ngôn ngữ mới', code: 'it', op: 1,
-      selected: 'false', cls: 'nk-lift nk-rise-3', checkIcon: lock, glyphFont: t.fDisplay, glyphStyle: 'italic', nameFont: t.fDisplay, nameStyle: 'italic', greetFont: t.fBody,
+    languages.push({ glyph: '?', endo: 'Italiano', vi: 'SẮP MỞ KHOÁ', greet: 'Ciao!', exam: 'VOTE', meta: 'Bình chọn ngôn ngữ mới', code: 'it', op: 1,
+      selected: 'false', enter: slide(3), checkIcon: lock, glyphFont: t.fDisplay, glyphStyle: 'italic', nameFont: t.fDisplay, nameStyle: 'italic', greetFont: t.fBody,
       rim: 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')', glow: '0 0 0 transparent', bg: t.cardFront, emblemBg: t.chip, emblemFg: t.text3, fg: t.text2, sub: t.text3, tagBg: t.chip, tagFg: t.text3, checkBg: t.chip, checkFg: t.text3 });
     // Placement uses the three levels Foundation / Core / Advanced, plus a start-from-the-alphabet option for a new script.
     const K = [
@@ -178,7 +179,7 @@ class Component extends DCLogic {
     const tiers = [t.tier.new, t.tier.new, t.tier.learning, t.tier.mastered];
     const gradeType = (i) => i === 0 ? { lang: 'ko', gradeFont: cjk.ko, gradeStyle: 'normal' } : { lang: 'en', gradeFont: t.fDisplay, gradeStyle: 'italic' };
     return {
-      t, bg: { wings: true }, koFont: cjk.ko,
+      t, bg: { wings: true, flares: true }, koFont: cjk.ko,
       isLearn, isLevel: !isLearn, stepNo,
       pillarOpacity: dark ? 0.2 : 0.7,
       titleGrad: dark ? t.metal : 'linear-gradient(180deg, #2a1040 0%, #150a28 45%, #b30f33 60%, #ff2a4d 100%)',
@@ -186,15 +187,16 @@ class Component extends DCLogic {
         bg: i < stepNo - 1 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === stepNo - 1 ? '#ff2a4d' : t.track,
         glow: i === stepNo - 1 ? '0 0 14px rgb(255 42 77 / 0.9)' : i < stepNo ? '0 0 8px rgb(94 242 255 / 0.5)' : 'none',
       })),
-      lumiSrc: t.lumi[isLearn ? 'happy' : 'hint'],
+      // The app's onboarding waves on the language step and gives a hint on the level step.
+      lumiSrc: t.lumi[isLearn ? 'wave' : 'hint'],
       mascotLine: isLearn ? 'Mình học gì tiếp đây, bạn ơi?' : 'Chưa đọc được Hangul?',
       mascotSub: isLearn ? 'Chọn một ngôn ngữ nhé. Mình sẽ giải nghĩa mọi thẻ bằng tiếng Việt cho bạn.' : 'Không sao! Mình dạy bạn 24 chữ cái trong 20 phút trước khi bắt đầu.',
-      realms,
+      languages,
       levelCards: K.map(([grade, name, desc, on], i) => on ? {
-        grade, name, desc, ...gradeType(i), on: 'true', rim: t.tier.mastered.rim, bg: 'linear-gradient(90deg, #ff5470 0%, #e0173f 50%, #7a0820 100%)',
+        grade, name, desc, ...gradeType(i), enter: slide(i), on: 'true', rim: t.tier.mastered.rim, bg: 'linear-gradient(90deg, #ff5470 0%, #e0173f 50%, #7a0820 100%)',
         fg: '#ffffff', sub: 'rgb(255 255 255 / 0.85)', gradeColor: '#ffffff', gradeShadow: '0 3px 0 #7a0820',
       } : {
-        grade, name, desc, ...gradeType(i), on: 'false', rim: tiers[i].rim, bg: t.cardFront,
+        grade, name, desc, ...gradeType(i), enter: slide(i), on: 'false', rim: tiers[i].rim, bg: t.cardFront,
         fg: t.textStrong, sub: t.text2, gradeColor: dark ? tiers[i].color : t.crimsonText, gradeShadow: 'none',
       }),
       exams: ['TOPIK I', 'TOPIK II', 'EPS-TOPIK', 'CHƯA THI'].map((name, i) => i === 0

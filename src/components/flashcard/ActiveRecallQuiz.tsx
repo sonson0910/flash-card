@@ -78,7 +78,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
 
   return (
     <div
-      className={`mt-3.5 w-full rounded-[24px] border border-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-card-bg,var(--sf-surface)))] p-4 text-left text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] backdrop-blur-2xl [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${className}`}
+      className={`mt-3.5 w-full rounded-[var(--sf-panel-radius,18px)] border border-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-card-bg,var(--sf-surface)))] p-4 text-left text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] backdrop-blur-2xl [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${className}`}
       data-card-control
     >
       <div className="flex items-center justify-between gap-2 border-b border-[var(--sf-border)] pb-2.5 mb-3">
@@ -115,7 +115,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
               disabled={isAnswered}
               onPointerDown={e => e.stopPropagation()}
               onClick={e => handleSelect(e, option)}
-              className={`flex min-h-11 items-center justify-between rounded-full border px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${buttonStyle}`}
+              className={`flex min-h-11 items-center justify-between rounded-[var(--sf-button-radius,999px)] border px-4 py-2.5 text-xs font-bold transition-[background-color,border-color,transform] duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm ${buttonStyle}`}
             >
               <span lang={translationLanguage} className="first-letter:uppercase">{option}</span>
               {isAnswered && isCorrect && <CheckCircle2 size={14} className="text-[var(--sf-success)] shrink-0 ml-2" aria-hidden="true" />}
@@ -139,7 +139,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
               e.stopPropagation();
               onRevealMeaning();
             }}
-            className="flex min-h-11 shrink-0 items-center rounded-full bg-[var(--sf-brand)] px-4 text-[11px] font-black uppercase tracking-wider text-[var(--sf-on-brand)] hover:bg-[var(--sf-brand-hover)] active:scale-95 transition-[background-color,transform] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+            className="flex min-h-11 shrink-0 items-center rounded-[var(--sf-button-radius,999px)] bg-[var(--sf-brand)] px-4 text-[11px] font-black uppercase tracking-wider text-[var(--sf-on-brand)] hover:bg-[var(--sf-brand-hover)] active:scale-95 transition-[background-color,transform] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
           >
             <Trans {...msg({ context: 'flashcard.quiz.flip-now', message: 'Flip card now' })} />
           </button>

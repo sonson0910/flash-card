@@ -12,6 +12,7 @@ interface ReviewControlsProps {
   saving?: boolean;
   error?: string | null;
   lastRating?: ReviewRating;
+  cardKind?: 'standard' | 'language';
   onRate: (rating: ReviewRating) => void;
 }
 
@@ -55,6 +56,7 @@ export function ReviewControls({
   saving = false,
   error = null,
   lastRating,
+  cardKind,
   onRate,
 }: ReviewControlsProps) {
   const { _ } = useLingui();
@@ -70,13 +72,14 @@ export function ReviewControls({
     <section
       data-review-state={revealed ? 'ready' : 'locked'}
       data-card-look={look}
+      data-card-kind={cardKind}
       className="review-grades relative mb-6 flex w-full max-w-xl flex-col items-center gap-3"
       aria-label={_(msg({ id: 'review.strength', message: 'Rate memory strength' }))}
     >
       <p className="review-grades-message text-center text-balance" aria-live="polite" role={error && !saving && !reviewed ? 'alert' : undefined}>
         {message}
       </p>
-      <div className="review-grades-row grid w-full grid-cols-4 gap-2">
+      <div className={`review-grades-row${cardKind === 'language' && revealed ? ' fx-stagger' : ''} grid w-full grid-cols-4 gap-2`}>
         {controls.map(control => (
           <button
             key={control.rating}
@@ -90,7 +93,7 @@ export function ReviewControls({
             aria-keyshortcuts={control.shortcut}
             aria-pressed={lastRating === control.rating}
             style={{ '--rating-color': ratingTokens[control.rating] } as CSSProperties}
-            className="review-grade group relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 px-2 py-2 transition-[transform,box-shadow,border-color,background-color] duration-200 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rating-color)] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 motion-reduce:transition-none"
+            className={`review-grade${cardKind === 'language' ? ' fx-press' : ''} group relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rating-color)] disabled:cursor-not-allowed disabled:opacity-40`}
           >
             <span className="review-grade-face flex flex-col items-center gap-1">
               <span className="review-grade-label flex items-center gap-[7px]">

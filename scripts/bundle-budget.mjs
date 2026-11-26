@@ -16,8 +16,18 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialJavaScriptGzip: 71_200,
   // Refreshed learning UI baseline: 196,193 B raw / 28,008 B gzip. Keep
   // about 5% reviewed headroom.
-  initialCssRaw: 206_000,
-  initialCssGzip: 29_500,
+  // Classic surfaces ported from the design boards: Linux measured
+  // 180,623 B raw / 29,494 B gzip. The default family's tokens, its error,
+  // loading and course-error screens and its per-family utilities have to
+  // be in the first stylesheet; motion classes nothing used were removed
+  // first. Raw stays under its cap; gzip keeps about 5% headroom.
+  // Board motion and the per-language card forms, with the Crystal motion
+  // layer moved out of the first stylesheet into a sheet only a Crystal
+  // visit loads: measured 177,537 B raw / 28,605 B gzip. The Classic motion
+  // roles stay because the default family's first screen animates. Keep
+  // about 5% headroom.
+  initialCssRaw: 186_500,
+  initialCssGzip: 30_000,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
   // code. The M0 app bundle is 2,759,607 B raw / 875,057 B gzip; M1 allows
   // the generated offline shell worker within the reviewed 20 KiB gzip delta.
@@ -40,8 +50,17 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // capture failure copy, streak ended state, export of every course,
   // lazily started App Check): Linux measured 3,422,002 B raw /
   // 1,083,544 B gzip, again in lazily loaded chunks.
-  totalJavaScriptRaw: 3_460_000,
-  totalJavaScriptGzip: 1_095_000,
+  // Crystal surfaces ported from the design boards (study card front and its
+  // turn, recall prompt, weekly recap, lesson, onboarding and landing markup
+  // the boards need): Linux measured 3,474,105 B raw / 1,098,524 B gzip. The
+  // growth is in lazily loaded chunks; initial JavaScript is unchanged at
+  // 221,454 B raw.
+  // Classic surfaces ported from the design boards (the same markup work
+  // for the default family): Linux measured 3,522,265 B raw / 1,109,924 B
+  // gzip, about 19.5 KiB raw over the Crystal port and spread across
+  // lazily loaded chunks. Initial JavaScript is still 221,454 B raw.
+  totalJavaScriptRaw: 3_560_000,
+  totalJavaScriptGzip: 1_122_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.

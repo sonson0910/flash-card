@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { useEffect, useRef, useState, type MouseEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type RefObject } from 'react';
 import { getSpotlightPosition } from '../../lib/motion';
 
 export interface CardAura {
@@ -24,9 +24,14 @@ interface UseCardEffectsOptions {
   reduceMotion: boolean;
   isFlipAnimating: boolean;
   spotlightBackground: string;
+  /** Tilt toward the pointer; defaults to 4deg over 280 ms. */
+  tilt?: { maxDegrees: number; durationSeconds: number; ease: (progress: number) => number };
 }
 
-export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, isFlipAnimating, spotlightBackground }: UseCardEffectsOptions) {
+export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, isFlipAnimating, spotlightBackground, tilt }: UseCardEffectsOptions) {
+  const tiltDegrees = tilt?.maxDegrees ?? 4;
+  const tiltDuration = tilt?.durationSeconds ?? 0.28;
+  const tiltEase = tilt?.ease ?? 'power2.out';
   const [isHovered, setIsHovered] = useState(false);
   const rafTiltRef = useRef<number | null>(null);
   const spotlightBoundsRef = useRef<DOMRect | null>(null);
@@ -69,10 +74,16 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
         target?.style.setProperty('--spotlight-x', `${position.x}%`);
         target?.style.setProperty('--spotlight-y', `${position.y}%`);
       }
+      // The front art drifts against the pointer, up to 6px each way (the board's (50 - pointer%) * 0.12).
+      faceRef.current?.style.setProperty('--card-art-shift-x', `${((50 - position.x) * 0.12).toFixed(2)}px`);
+      faceRef.current?.style.setProperty('--card-art-shift-y', `${((50 - position.y) * 0.12).toFixed(2)}px`);
+      // Unitless pointer position for the Classic light-angle formulas (the board's 150deg + (x - 50) * 0.8deg).
+      faceRef.current?.style.setProperty('--card-pointer-x', position.x.toFixed(2));
+      faceRef.current?.style.setProperty('--card-pointer-y', position.y.toFixed(2));
       if (faceRef.current) {
         const px = ((clientX - bounds.left) / bounds.width - 0.5) * 2;
         const py = ((clientY - bounds.top) / bounds.height - 0.5) * 2;
-        gsap.to(faceRef.current, { rotationX: -py * 4, rotationY: px * 4, duration: 0.28, ease: 'power2.out', overwrite: 'auto' });
+        gsap.to(faceRef.current, { rotationX: -py * tiltDegrees, rotationY: px * tiltDegrees, duration: tiltDuration, ease: tiltEase, overwrite: 'auto' });
       }
     });
   };
@@ -90,7 +101,11 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
       target?.style.setProperty('--spotlight-x', '50%');
       target?.style.setProperty('--spotlight-y', '50%');
     }
-    if (!isFlipAnimatingRef.current && faceRef.current) gsap.to(faceRef.current, { rotationX: 0, rotationY: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
+    faceRef.current?.style.setProperty('--card-art-shift-x', '0px');
+    faceRef.current?.style.setProperty('--card-art-shift-y', '0px');
+    faceRef.current?.style.setProperty('--card-pointer-x', '50');
+    faceRef.current?.style.setProperty('--card-pointer-y', '50');
+    if (!isFlipAnimatingRef.current && faceRef.current) gsap.to(faceRef.current, { rotationX: 0, rotationY: 0, duration: tilt ? tiltDuration : 0.35, ease: tiltEase, overwrite: 'auto' });
   };
 
   const handleMouseEnter = (event: MouseEvent<HTMLDivElement>) => {
@@ -129,7 +144,7 @@ export function CardEffectsLayer({
         <div
           data-card-effect="aura"
           className="flashcard-canvas-aura pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-opacity duration-300 ease-out will-change-[opacity] group-hover:opacity-35 group-focus-within:opacity-35"
-          style={{ background: `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)` }}
+          style={{ '--flashcard-aura': `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)` } as CSSProperties}
           aria-hidden="true"
         />
       )}
@@ -141,8 +156,8 @@ export function CardEffectsLayer({
           className="flashcard-hover-wings absolute -inset-6 z-[1] pointer-events-none"
           aria-hidden="true"
         >
-          <span className="flashcard-wing flashcard-wing-left crystal-wing" />
-          <span className="flashcard-wing flashcard-wing-right crystal-wing" />
+          <span className="flashcard-wing flashcard-wing-left crystal-wing-art" />
+          <span className="flashcard-wing flashcard-wing-right crystal-wing-art" />
         </div>
       )}
       {spotlightRef && (

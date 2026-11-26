@@ -49,7 +49,7 @@ export function FloatingMobileNav({ activeView, onSelectView }: FloatingMobileNa
   return <nav data-shell-layer="mobile" className="claude-mobile-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 items-stretch lg:hidden" aria-label={_(msg({ id: 'shell.navigation.mobile', message: 'Mobile navigation' }))}>
     {items.map(({ view, label }) => {
       const active = highlighted === view;
-      return <button key={view} type="button" onClick={() => { triggerHaptic('light'); onSelectView(view); }} data-shell-active={active ? 'true' : undefined} aria-current={active ? 'page' : undefined} className="claude-mobile-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+      return <button key={view} type="button" onClick={() => { triggerHaptic('light'); onSelectView(view); }} data-shell-active={active ? 'true' : undefined} aria-current={active ? 'page' : undefined} className={`claude-mobile-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none${crystal ? '' : ' sf-ease'}`}>
         <span className="claude-mobile-nav-icon" aria-hidden="true"><TabIcon path={TAB_ICON_PATHS[crystal ? 'crystal' : 'classic'][view]} crystal={crystal} /></span>
         <span className="claude-mobile-nav-label">{label}</span>
       </button>;

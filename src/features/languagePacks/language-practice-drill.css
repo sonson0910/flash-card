@@ -1,77 +1,793 @@
-.language-practice-drill { margin: 0 auto; color: var(--sf-text); }
-.language-practice-drill__toolbar, .language-practice-drill__actions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.language-practice-drill__exit, .language-practice-drill__primary-action, .language-practice-drill__tone-option { min-height: 2.75rem; border-radius: .75rem; font-weight: 700; cursor: pointer; }
-.language-practice-drill__exit { display: inline-flex; align-items: center; gap: .5rem; border: 0; padding: .5rem; background: transparent; color: var(--sf-text-muted); }
+/* Shared structural layout for the language drill; Classic and Crystal dress the same slots below. */
+:where(html[data-theme-family=crystal]) .language-practice-drill { margin: 0 auto; color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill {
+  display: flex;
+  flex-direction: column;
+  min-height: min(48rem, 100dvh);
+  max-width: 45rem;
+  margin: 0 auto;
+  padding: 0;
+  overflow: hidden;
+  color: var(--sf-text);
+}
+.language-practice-drill__toolbar,
+.language-practice-drill__actions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__exit,
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action,
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option { min-height: 2.75rem; border-radius: .75rem; font-weight: 700; cursor: pointer; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__exit { display: inline-flex; align-items: center; gap: .5rem; border: 0; padding: .5rem; background: transparent; color: var(--sf-text-muted); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__exit,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__primary-action,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__tone-option { min-height: 2.75rem; font-weight: 700; cursor: pointer; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .5rem;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-muted);
+}
 .language-practice-drill__exit:hover { background: var(--sf-surface-raised); color: var(--sf-text); }
-.language-practice-drill__pack { border: 1px solid var(--sf-brand); border-radius: .35rem; padding: .18rem .4rem; background: var(--sf-brand-soft); color: var(--sf-brand-text); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-.language-practice-drill__instruction { margin: 0; color: var(--sf-text-muted); font-weight: 700; }.language-practice-drill__prompt { line-height: 1.15; font-weight: 900; }.language-practice-drill__reading { margin: .75rem 0 0; border-radius: .75rem; padding: .5rem .75rem; background: var(--sf-surface-raised); font-size: 1.125rem; font-weight: 700; }
-.language-practice-drill__tone-grid { display: grid; gap: 1rem; }.language-practice-drill__tone-card { border: 1px solid var(--sf-border); border-radius: 1rem; padding: .75rem; background: var(--sf-surface-raised); }.language-practice-drill__syllable { margin: 0; text-align: center; font-size: 1.5rem; font-weight: 900; }.language-practice-drill__tone-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem; margin-top: .75rem; }.language-practice-drill__tone-option { border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); }.language-practice-drill__tone-option:hover, .language-practice-drill__tone-option[aria-pressed='true'] { border-color: var(--sf-brand); }.language-practice-drill__tone-option[aria-pressed='true'], .language-practice-drill__primary-action { background: var(--sf-brand); color: var(--sf-on-brand); }
-.language-practice-drill__answer { box-sizing: border-box; min-height: 3rem; width: 100%; border: 1px solid var(--sf-border); border-radius: .75rem; padding: 0 1rem; background: var(--sf-surface); color: var(--sf-text); font-size: 1.125rem; font-weight: 700; }.language-practice-drill__feedback { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; font-weight: 700; }.language-practice-drill__feedback--correct { color: var(--sf-success); }.language-practice-drill__feedback--incorrect { color: var(--sf-danger); }.language-practice-drill__actions { justify-content: flex-end; margin-top: 1.5rem; }.language-practice-drill__primary-action { display: inline-flex; align-items: center; gap: .5rem; border: 0; padding: .75rem 1.25rem; }.language-practice-drill__primary-action:hover { background: var(--sf-brand-hover); }.language-practice-drill__primary-action:disabled { cursor: not-allowed; opacity: .5; }.language-practice-drill :focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }.language-practice-drill__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-.language-practice-drill__status { margin: 0; padding: .875rem 1rem; border: 1px solid var(--sf-border); border-radius: .75rem; background: var(--sf-surface-raised); color: var(--sf-text-muted); font-weight: 700; }
-.language-practice-drill__hangul { border: 0; padding: 0; margin: 0; }.language-practice-drill__hangul-blocks { display: flex; justify-content: center; gap: .75rem; }.language-practice-drill__hangul-blocks span { display: grid; width: 4rem; height: 4rem; place-items: center; border: 1px solid var(--sf-border); border-radius: .75rem; background: var(--sf-surface-raised); font-size: 2.25rem; font-weight: 900; }.language-practice-drill__hangul-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; margin-top: 1rem; }.language-practice-drill__hangul-key, .language-practice-drill__hint { min-height: 2.5rem; border: 1px solid var(--sf-border); border-radius: .5rem; padding: .375rem .625rem; background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; cursor: pointer; }.language-practice-drill__hangul-key { min-width: 2.5rem; font-size: 1.125rem; }.language-practice-drill__segments { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: 1rem; }.language-practice-drill__segments span { padding: .375rem .625rem; border-radius: .5rem; background: var(--sf-surface-raised); font-weight: 700; }
-.language-practice-drill__results { text-align: center; }.language-practice-drill__results > svg { color: var(--sf-success); }
-@media (prefers-reduced-motion: reduce) { .language-practice-drill *, .language-practice-drill *::before, .language-practice-drill *::after { transition: none !important; animation: none !important; } }
-
-/* The drill uses the shell's tokens but follows the compact practice-board composition. */
-.language-practice-drill { max-width: 45rem; min-height: min(48rem, 100dvh); padding: 0; display: flex; flex-direction: column; background: var(--sf-surface); border: 1px solid var(--sf-border); border-radius: 1.5rem; overflow: hidden; }
-.language-practice-drill__toolbar { min-height: 4.75rem; margin: 0; padding: .75rem 1.25rem; justify-content: flex-start; border-bottom: 1px solid var(--sf-border); background: color-mix(in srgb, var(--sf-surface-raised) 80%, transparent); }.language-practice-drill__exit { width: 2.5rem; height: 2.5rem; justify-content: center; border: 1px solid var(--sf-border); border-radius: 50%; }.language-practice-drill__identity { min-width: 0; margin-left: .5rem; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: .5rem; color: var(--sf-text-muted); font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }.language-practice-drill__identity h2 { grid-column: 1 / -1; margin: .2rem 0 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 1.4rem; letter-spacing: -.03em; text-transform: none; }.language-practice-drill__progress { margin-left: auto; display: flex; align-items: center; gap: .65rem; white-space: nowrap; }.language-practice-drill__progress > span { display: flex; gap: .2rem; }.language-practice-drill__progress i { width: 1rem; height: .25rem; border-radius: 999px; background: var(--sf-border); }.language-practice-drill__progress .language-practice-drill__progress-done { background: var(--sf-brand); }.language-practice-drill__progress b { padding: .35rem .55rem; border-radius: 999px; border: 1px solid var(--sf-border); color: var(--sf-text-muted); font-size: .75rem; }
-.language-practice-drill__panel { flex: 1; padding: clamp(1.25rem, 4vw, 2.4rem); }.language-practice-drill__prompt-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .85rem; }.language-practice-drill__listen { display: grid; width: 3.25rem; height: 3.25rem; place-items: center; border: 0; border-radius: 1rem; background: var(--sf-brand); color: var(--sf-on-brand); cursor: pointer; box-shadow: 0 .5rem 1.5rem color-mix(in srgb, var(--sf-brand) 25%, transparent); }.language-practice-drill__listen:disabled { opacity: .45; cursor: not-allowed; }.language-practice-drill__instruction { text-transform: uppercase; letter-spacing: .07em; font-size: .68rem; }.language-practice-drill__prompt { margin: .15rem 0 0; font-family: var(--sf-font-display); font-size: clamp(1.25rem, 4vw, 1.7rem); }.language-practice-drill__speed { align-self: start; display: inline-flex; align-items: center; gap: .25rem; border: 1px solid var(--sf-border); border-radius: 999px; padding: .35rem .55rem; background: var(--sf-surface-raised); color: var(--sf-text-muted); font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }.language-practice-drill__speed[aria-pressed='true'] { border-color: var(--sf-brand); color: var(--sf-brand-text); }.language-practice-drill__form { margin-top: 1.25rem; }.language-practice-drill__ruby { margin: 1.2rem 0 .25rem 4.1rem; color: var(--sf-text); font-size: clamp(2.8rem, 12vw, 5rem); line-height: 1.1; font-weight: 800; }.language-practice-drill__ruby ruby { ruby-align: center; ruby-position: over; }.language-practice-drill__ruby rt { color: var(--sf-brand-text); font-size: .25em; font-weight: 700; letter-spacing: normal; text-align: center; }.language-practice-drill__reading { margin-left: 4.1rem; }.language-practice-drill__japanese-reading { margin-left: 4.1rem; }.language-practice-drill__japanese-reading .language-practice-drill__ruby { margin-left: 0; }.language-practice-drill__reading, .language-practice-drill__japanese-reading { color: var(--sf-brand-text); }.language-practice-drill__reading .japanese-pitch-contour, .language-practice-drill__japanese-reading .japanese-pitch-contour { display: block; width: min(13rem, 100%); height: 2rem; margin-top: .4rem; }
-.language-practice-drill__hangul-blocks { gap: 1.2rem; margin: 1.5rem 0 .5rem; }.language-practice-drill__hangul-blocks span { width: clamp(4.5rem, 16vw, 7rem); height: clamp(4.5rem, 16vw, 7rem); border-radius: 1rem; font-size: clamp(2.8rem, 11vw, 4.6rem); box-shadow: var(--sf-panel-shadow); }.language-practice-drill__hangul-blocks .language-practice-drill__hangul-filled { color: var(--sf-text); }.language-practice-drill__hangul-diagnostic { display: flex; justify-content: center; gap: .5rem; margin: .5rem 0 1.2rem; color: var(--sf-text-muted); font-size: .9rem; }.language-practice-drill__hangul-diagnostic b { color: var(--sf-brand-text); }.language-practice-drill__hangul-keys { max-width: 36rem; margin: 1.2rem auto 0; }.language-practice-drill__hangul-key { position: relative; min-width: 2.7rem; min-height: 2.7rem; padding-bottom: .65rem; }.language-practice-drill__hangul-key small { position: absolute; right: .25rem; bottom: .1rem; color: var(--sf-text-muted); font-size: .55rem; font-weight: 500; }
-.language-practice-drill__tone-grid { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }.language-practice-drill__tone-card { position: relative; overflow: hidden; padding: 1.25rem; }.language-practice-drill__tone-card::before { content: ''; position: absolute; top: .65rem; right: .75rem; width: 3rem; height: 1.2rem; border-top: 2px solid var(--sf-brand); border-radius: 50%; transform: rotate(-10deg); opacity: .75; }.language-practice-drill__syllable { font-size: 2.5rem; }.language-practice-drill__tone-option { display: grid; place-items: center; min-height: 2.75rem; border-radius: .5rem; line-height: 1; }.language-practice-drill__tone-option span { font-size: 1.35rem; }.language-practice-drill__tone-option small { font-size: .6rem; }.language-practice-drill__tone-option--1 span { transform: translateY(-.05rem) scaleX(1.2); }.language-practice-drill__tone-option--2 span { transform: rotate(-22deg); }.language-practice-drill__tone-option--3 span { transform: translateY(.1rem); }.language-practice-drill__tone-option--4 span { transform: rotate(22deg); }.language-practice-drill__tone-option--5 span { transform: scale(.7); }.language-practice-drill__segments { margin-top: 1.2rem; }.language-practice-drill__segments button { border: 1px solid var(--sf-border); border-radius: .5rem; padding: .45rem .65rem; background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; cursor: pointer; }.language-practice-drill__segments button[aria-pressed='true'] { border-color: var(--sf-brand); background: var(--sf-brand-soft); color: var(--sf-brand-text); }.language-practice-drill__actions { margin-top: auto; padding-top: 1.5rem; }.language-practice-drill__hint { border-radius: 999px; }.language-practice-drill__primary-action { border-radius: 999px; padding: .8rem 1.4rem; }
-.language-practice-drill__sentence { margin-top: 1rem; }.language-practice-drill__sentence-tokens { margin: 0; font-family: ui-rounded, "Hiragino Sans", sans-serif; font-size: clamp(1.35rem, 5vw, 2rem); line-height: 2.25; }.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank { display: inline-flex; min-width: 2.1rem; margin-inline: .05rem; padding: .5rem .4rem; border: 1px solid var(--sf-border); border-radius: .75rem; background: var(--sf-surface-raised); align-items: center; justify-content: center; font-weight: 800; line-height: 1.25; text-align: center; }.language-practice-drill__sentence-blank { position: relative; border-color: var(--sf-brand); background: var(--sf-brand-soft); color: var(--sf-brand-text); }.language-practice-drill__sentence-gloss { position: absolute; bottom: calc(100% + .4rem); left: 50%; z-index: 1; width: max-content; max-width: min(15rem, 80vw); transform: translateX(-50%); border-radius: .5rem; padding: .3rem .5rem; background: var(--sf-text); color: var(--sf-surface); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .7rem; font-weight: 700; line-height: 1.25; white-space: normal; }.language-practice-drill__sentence .language-practice-drill__segments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: 1rem; }.language-practice-drill__segments button { display: grid; min-height: 4.35rem; place-content: center; gap: .1rem; text-align: center; }.language-practice-drill__segments button small { color: var(--sf-text-muted); font-size: .72rem; font-weight: 500; }.language-practice-drill__sentence-explanation { margin-top: 1rem; padding: .875rem 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); }.language-practice-drill__sentence-explanation p { margin: 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
-@media (max-width: 480px) { .language-practice-drill { min-height: 100dvh; border-right: 0; border-left: 0; border-radius: 0; }.language-practice-drill__toolbar { padding: .65rem .8rem; }.language-practice-drill__identity { font-size: .6rem; }.language-practice-drill__identity h2 { font-size: 1.15rem; }.language-practice-drill__progress i { width: .65rem; }.language-practice-drill__progress b { display: none; }.language-practice-drill__panel { padding: 1.25rem 1rem; }.language-practice-drill__hangul-keys { gap: .25rem; }.language-practice-drill__hangul-key { min-width: 2.3rem; min-height: 2.4rem; }.language-practice-drill__ruby { margin-left: 0; }.language-practice-drill__prompt-row { gap: .55rem; }.language-practice-drill__sentence .language-practice-drill__segments { grid-template-columns: repeat(2, minmax(0, 1fr)); }.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank { min-width: 1.8rem; padding: .4rem .5rem; } }
-
-.language-practice-drill__panel, .language-practice-drill__form { display: flex; flex-direction: column; }
-.language-practice-drill__form { flex: 1; }
-.language-practice-drill__hanzi { margin: .25rem 0 0; text-align: center; font-size: 3rem; line-height: 1.15; font-weight: 900; }
-.language-practice-drill__hangul-blocks > div { display: grid; justify-items: center; gap: .2rem; }
-.language-practice-drill__hangul-blocks > div small, .language-practice-drill__physical-help { color: var(--sf-text-muted); font-size: .72rem; }
-.language-practice-drill__physical-help { margin: .75rem 0 0; text-align: center; }
-
-/* Crystal uses the angular neon board language from the Anime LangPractice boards. */
-html[data-theme-family='crystal'] .language-practice-drill { position: relative; isolation: isolate; border: 1px solid color-mix(in srgb, var(--sf-brand) 32%, var(--sf-border)); border-radius: 0; clip-path: polygon(0 1rem, 1rem 0, calc(100% - 1rem) 0, 100% 1rem, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, 1rem 100%, 0 calc(100% - 1rem)); background: linear-gradient(135deg, color-mix(in srgb, var(--sf-surface) 92%, var(--sf-second)), var(--sf-surface)); box-shadow: 0 1rem 3.5rem color-mix(in srgb, var(--sf-brand) 18%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill::before { content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none; opacity: .65; background: radial-gradient(circle at 13% 17%, var(--sf-brand) 0 .1rem, transparent .16rem), radial-gradient(circle at 55% 8%, var(--sf-brand-text) 0 .12rem, transparent .2rem), radial-gradient(circle at 91% 65%, var(--sf-brand) 0 .1rem, transparent .18rem), radial-gradient(ellipse at 80% 0%, color-mix(in srgb, var(--sf-brand) 24%, transparent), transparent 35%), radial-gradient(ellipse at 18% 30%, color-mix(in srgb, var(--sf-brand) 14%, transparent), transparent 38%); }
-html[data-theme-family='crystal'] .language-practice-drill__toolbar { min-height: 4.9rem; border-bottom-color: color-mix(in srgb, var(--sf-brand) 26%, var(--sf-border)); background: linear-gradient(90deg, color-mix(in srgb, var(--sf-surface-raised) 92%, transparent), transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__exit, html[data-theme-family='crystal'] .language-practice-drill__pack, html[data-theme-family='crystal'] .language-practice-drill__speed, html[data-theme-family='crystal'] .language-practice-drill__progress b { border-radius: 0; clip-path: polygon(.4rem 0, 100% 0, 100% calc(100% - .4rem), calc(100% - .4rem) 100%, 0 100%, 0 .4rem); }
-html[data-theme-family='crystal'] .language-practice-drill__identity h2 { font-style: italic; font-weight: 950; letter-spacing: .025em; text-transform: uppercase; }
-html[data-theme-family='crystal'] .language-practice-drill__pack { color: var(--sf-brand-text); background: color-mix(in srgb, var(--sf-brand) 18%, var(--sf-surface)); border-color: var(--sf-brand); }
-html[data-theme-family='crystal'] .language-practice-drill__progress i { border-radius: 0; transform: skewX(-24deg); } html[data-theme-family='crystal'] .language-practice-drill__progress .language-practice-drill__progress-done { background: linear-gradient(90deg, var(--sf-brand), var(--sf-brand-text)); }
-html[data-theme-family='crystal'] .language-practice-drill__panel { position: relative; } html[data-theme-family='crystal'] .language-practice-drill__listen { border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); box-shadow: 0 0 1.35rem color-mix(in srgb, var(--sf-brand) 52%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__instruction { color: var(--sf-brand-text); } html[data-theme-family='crystal'] .language-practice-drill__speed { background: color-mix(in srgb, var(--sf-surface) 86%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks span { border-radius: 0; clip-path: polygon(.85rem 0, 100% 0, 100% calc(100% - .85rem), calc(100% - .85rem) 100%, 0 100%, 0 .85rem); background: color-mix(in srgb, var(--sf-surface-raised) 88%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-brand) 22%, var(--sf-border)), 0 .5rem 1.6rem color-mix(in srgb, var(--sf-brand) 10%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks .language-practice-drill__hangul-filled { border-color: var(--lpd-cyan); color: var(--sf-text); box-shadow: inset 0 0 0 2px var(--lpd-cyan), 0 0 1.2rem color-mix(in srgb, var(--sf-second) 40%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks span[data-hangul-mismatch] { background: color-mix(in srgb, var(--sf-brand) 14%, var(--sf-surface)); color: var(--sf-brand-text); box-shadow: inset 0 0 0 2px var(--sf-brand), 0 0 1.2rem color-mix(in srgb, var(--sf-brand) 40%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-label[data-hangul-fix] { color: var(--sf-brand-text); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-diagnostic { padding: .7rem 1rem; border: 1px solid color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)); background: color-mix(in srgb, var(--sf-brand) 8%, var(--sf-surface)); clip-path: polygon(.55rem 0, 100% 0, 100% calc(100% - .55rem), calc(100% - .55rem) 100%, 0 100%, 0 .55rem); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-key, html[data-theme-family='crystal'] .language-practice-drill__tone-option, html[data-theme-family='crystal'] .language-practice-drill__segments button { border-radius: 0; clip-path: polygon(.3rem 0, 100% 0, 100% calc(100% - .3rem), calc(100% - .3rem) 100%, 0 100%, 0 .3rem); background: color-mix(in srgb, var(--sf-surface-raised) 82%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__sentence-token, html[data-theme-family='crystal'] .language-practice-drill__sentence-blank, html[data-theme-family='crystal'] .language-practice-drill__sentence-explanation { border-radius: 0; clip-path: polygon(.45rem 0, 100% 0, 100% calc(100% - .45rem), calc(100% - .45rem) 100%, 0 100%, 0 .45rem); background: color-mix(in srgb, var(--sf-surface-raised) 82%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-key:hover, html[data-theme-family='crystal'] .language-practice-drill__segments button[aria-pressed='true'], html[data-theme-family='crystal'] .language-practice-drill__tone-option[aria-pressed='true'] { border-color: var(--sf-brand); background: color-mix(in srgb, var(--sf-brand) 18%, var(--sf-surface)); box-shadow: 0 0 .8rem color-mix(in srgb, var(--sf-brand) 30%, transparent); }
-html[data-theme-family='crystal'] .language-practice-drill__primary-action { border-radius: 0; clip-path: polygon(.6rem 0, 100% 0, calc(100% - .6rem) 100%, 0 100%); background: linear-gradient(100deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 80%, var(--sf-brand-text))); box-shadow: 0 .5rem 1.2rem color-mix(in srgb, var(--sf-brand) 38%, transparent); } html[data-theme-family='crystal'] .language-practice-drill__hint { border-radius: 0; clip-path: polygon(.4rem 0, 100% 0, 100% calc(100% - .4rem), calc(100% - .4rem) 100%, 0 100%, 0 .4rem); }
-html[data-theme-family='crystal'] .language-practice-drill { --lpd-cyan: var(--sf-success); color: var(--sf-text); } html[data-theme-family='crystal']:not(.dark) .language-practice-drill { --lpd-cyan: color-mix(in srgb, var(--sf-success) 65%, var(--sf-text)); }
-html[data-theme-family='crystal'].dark .language-practice-drill { background: linear-gradient(135deg, color-mix(in srgb, var(--sf-second) 6%, var(--sf-surface)), var(--sf-surface) 72%); } html[data-theme-family='crystal'] .language-practice-drill__identity h2, html[data-theme-family='crystal'] .language-practice-drill__prompt, html[data-theme-family='crystal'] .language-practice-drill__ruby { color: var(--sf-text); } html[data-theme-family='crystal'] .language-practice-drill__instruction, html[data-theme-family='crystal'] .language-practice-drill__pack { color: var(--lpd-cyan); }
-html[data-theme-family='crystal']:not(.dark) .language-practice-drill { background: linear-gradient(135deg, color-mix(in srgb, var(--sf-second) 22%, var(--sf-surface)), var(--sf-surface) 66%); box-shadow: 0 1rem 3.5rem color-mix(in srgb, var(--sf-success) 18%, transparent); } html[data-theme-family='crystal']:not(.dark) .language-practice-drill::before { opacity: .35; }
-html[data-theme-family='crystal'] .language-practice-drill__primary-action:disabled { background: color-mix(in srgb, var(--sf-brand) 45%, var(--sf-surface)); color: var(--sf-text); opacity: .85; }
-@media (max-width: 480px) { html[data-theme-family='crystal'] .language-practice-drill { clip-path: none; } html[data-theme-family='crystal'] .language-practice-drill__toolbar { min-height: 4.35rem; } html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks { gap: .7rem; } html[data-theme-family='crystal'] .language-practice-drill__hangul-key { min-width: 2.2rem; } }
-
-/* Block builder detail: the reading of each typed block, its jamo, the block formula and the keyboard hints. */
-.language-practice-drill__hangul-blocks > div { position: relative; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__pack { border: 1px solid var(--sf-brand); border-radius: .35rem; padding: .18rem .4rem; background: var(--sf-brand-soft); color: var(--sf-brand-text); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__instruction { margin: 0; color: var(--sf-text-muted); font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__prompt { line-height: 1.15; font-weight: 900; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__reading { margin: .75rem 0 0; border-radius: .75rem; padding: .5rem .75rem; background: var(--sf-surface-raised); font-size: 1.125rem; font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-grid { display: grid; gap: 1rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-card { border: 1px solid var(--sf-border); border-radius: 1rem; padding: .75rem; background: var(--sf-surface-raised); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__syllable { margin: 0; text-align: center; font-size: 1.5rem; font-weight: 900; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem; margin-top: .75rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option { border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option:hover,
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option[aria-pressed='true'] { border-color: var(--sf-brand); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option[aria-pressed='true'],
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action { background: var(--sf-brand); color: var(--sf-on-brand); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__answer { box-sizing: border-box; min-height: 3rem; width: 100%; border: 1px solid var(--sf-border); border-radius: .75rem; padding: 0 1rem; background: var(--sf-surface); color: var(--sf-text); font-size: 1.125rem; font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__feedback { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__feedback--correct { color: var(--sf-success); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__feedback--incorrect { color: var(--sf-danger); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__actions { justify-content: flex-end; margin-top: 1.5rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action { display: inline-flex; align-items: center; gap: .5rem; border: 0; padding: .75rem 1.25rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action:hover { background: var(--sf-brand-hover); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action:disabled { cursor: not-allowed; opacity: .5; }
+:where(html[data-theme-family=crystal]) .language-practice-drill :focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__status { margin: 0; padding: .875rem 1rem; border: 1px solid var(--sf-border); border-radius: .75rem; background: var(--sf-surface-raised); color: var(--sf-text-muted); font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul { border: 0; padding: 0; margin: 0; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks { display: flex; justify-content: center; gap: .75rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks span { display: grid; width: 4rem; height: 4rem; place-items: center; border: 1px solid var(--sf-border); border-radius: .75rem; background: var(--sf-surface-raised); font-size: 2.25rem; font-weight: 900; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; margin-top: 1rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-key,
+:where(html[data-theme-family=crystal]) .language-practice-drill__hint { min-height: 2.5rem; border: 1px solid var(--sf-border); border-radius: .5rem; padding: .375rem .625rem; background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; cursor: pointer; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-key { min-width: 2.5rem; font-size: 1.125rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: 1rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments span { padding: .375rem .625rem; border-radius: .5rem; background: var(--sf-surface-raised); font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__results { text-align: center; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__results > svg { color: var(--sf-success); }
+@media (prefers-reduced-motion: reduce) {
+:where(html[data-theme-family=crystal]) .language-practice-drill *,
+:where(html[data-theme-family=crystal]) .language-practice-drill *::before,
+:where(html[data-theme-family=crystal]) .language-practice-drill *::after { transition: none !important; animation: none !important; }
+}
+html[data-theme-family='crystal'][data-motion='reduced'] .language-practice-drill *,
+html[data-theme-family='crystal'][data-motion='reduced'] .language-practice-drill *::before,
+html[data-theme-family='crystal'][data-motion='reduced'] .language-practice-drill *::after { transition: none !important; animation: none !important; }
+:where(html[data-theme-family=crystal]) .language-practice-drill { max-width: 45rem; min-height: min(48rem, 100dvh); padding: 0; display: flex; flex-direction: column; background: var(--sf-surface); border: 1px solid var(--sf-border); border-radius: 1.5rem; overflow: hidden; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__toolbar { min-height: 4.75rem; margin: 0; padding: .75rem 1.25rem; justify-content: flex-start; border-bottom: 1px solid var(--sf-border); background: color-mix(in srgb, var(--sf-surface-raised) 80%, transparent); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__exit { width: 2.5rem; height: 2.5rem; justify-content: center; border: 1px solid var(--sf-border); border-radius: 50%; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__identity { min-width: 0; margin-left: .5rem; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: .5rem; color: var(--sf-text-muted); font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__toolbar { justify-content: flex-start; min-height: 4.75rem; margin: 0; padding: .75rem 1.25rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__identity {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: .5rem;
+  min-width: 0;
+  color: var(--sf-text-muted);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.language-practice-drill__identity h2 { grid-column: 1 / -1; margin: .2rem 0 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 1.4rem; letter-spacing: -.03em; text-transform: none; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__progress { margin-left: auto; display: flex; align-items: center; gap: .65rem; white-space: nowrap; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__pack {
+  padding: .18rem .4rem;
+  border: 1px solid var(--sf-accent-line, var(--sf-brand));
+  border-radius: 5px;
+  background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent));
+  color: var(--sf-brand-text);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__progress { display: flex; align-items: center; gap: .65rem; margin-left: auto; white-space: nowrap; }
+.language-practice-drill__progress > span { display: flex; gap: .2rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__progress i { width: 1rem; height: .25rem; border-radius: 999px; background: var(--sf-border); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__progress i { width: 1rem; height: 4px; border-radius: 4px; background: var(--sf-border); }
+.language-practice-drill__progress .language-practice-drill__progress-done { background: var(--sf-brand); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__progress b { padding: .35rem .55rem; border-radius: 999px; border: 1px solid var(--sf-border); color: var(--sf-text-muted); font-size: .75rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__progress b { padding: .35rem .55rem; border: 1px solid var(--sf-border); border-radius: 999px; color: var(--sf-text-muted); font-size: .75rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__panel,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__form { display: flex; flex-direction: column; }
+.language-practice-drill__panel { flex: 1; padding: clamp(1.25rem, 4vw, 2.4rem); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__form { flex: 1; margin-top: 1.25rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__form > fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.language-practice-drill__prompt-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .85rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__listen { display: grid; width: 3.25rem; height: 3.25rem; place-items: center; border: 0; border-radius: 1rem; background: var(--sf-brand); color: var(--sf-on-brand); cursor: pointer; box-shadow: 0 .5rem 1.5rem color-mix(in srgb, var(--sf-brand) 25%, transparent); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__listen { display: grid; width: 3.25rem; height: 3.25rem; place-items: center; border: 0; border-radius: 50%; background: var(--sf-brand); color: var(--sf-on-brand); cursor: pointer; }
+.language-practice-drill__listen:disabled { opacity: .45; cursor: not-allowed; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__instruction { text-transform: uppercase; letter-spacing: .07em; font-size: .68rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__prompt { margin: .15rem 0 0; font-family: var(--sf-font-display); font-size: clamp(1.25rem, 4vw, 1.7rem); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__speed { align-self: start; display: inline-flex; align-items: center; gap: .25rem; border: 1px solid var(--sf-border); border-radius: 999px; padding: .35rem .55rem; background: var(--sf-surface-raised); color: var(--sf-text-muted); font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__instruction { margin: 0; color: var(--sf-text-muted); font-size: .68rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__prompt { margin: .15rem 0 0; font-family: var(--sf-font-display); font-size: clamp(1.25rem, 4vw, 1.7rem); font-weight: 900; line-height: 1.15; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__speed { display: inline-flex; align-self: start; align-items: center; gap: .25rem; padding: .35rem .55rem; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-raised); color: var(--sf-text-muted); font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }
+.language-practice-drill__speed[aria-pressed='true'] { border-color: var(--sf-brand); color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__form { margin-top: 1.25rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__ruby { margin: 1.2rem 0 .25rem 4.1rem; color: var(--sf-text); font-size: clamp(2.8rem, 12vw, 5rem); line-height: 1.1; font-weight: 800; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__status { margin: 0; padding: .875rem 1rem; border: 1px solid var(--sf-border); background: var(--sf-surface-raised); color: var(--sf-text-muted); font-weight: 700; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__ruby { margin: 1.2rem 0 .25rem 4.1rem; color: var(--sf-text); font-size: clamp(2.8rem, 12vw, 5rem); font-weight: 800; line-height: 1.1; }
+.language-practice-drill__ruby ruby { ruby-align: center; ruby-position: over; }
+.language-practice-drill__ruby rt { color: var(--sf-brand-text); font-size: .25em; font-weight: 700; letter-spacing: normal; text-align: center; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__reading { margin-left: 4.1rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__reading { margin: .75rem 0 0 4.1rem; padding: .5rem .75rem; background: var(--sf-surface-raised); font-size: 1.125rem; font-weight: 700; }
+.language-practice-drill__japanese-reading { margin-left: 4.1rem; }
+.language-practice-drill__japanese-reading .language-practice-drill__ruby { margin-left: 0; }
+.language-practice-drill__reading,
+.language-practice-drill__japanese-reading { color: var(--sf-brand-text); }
+.language-practice-drill__reading .japanese-pitch-contour,
+.language-practice-drill__japanese-reading .japanese-pitch-contour { display: block; width: min(13rem, 100%); height: 2rem; margin-top: .4rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks { gap: 1.2rem; margin: 1.5rem 0 .5rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks span { width: clamp(4.5rem, 16vw, 7rem); height: clamp(4.5rem, 16vw, 7rem); border-radius: 1rem; font-size: clamp(2.8rem, 11vw, 4.6rem); box-shadow: var(--sf-panel-shadow); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__tone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__tone-card { position: relative; padding: 1.25rem; border: 1px solid var(--sf-border); background: var(--sf-surface-raised); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__syllable { margin: 0; text-align: center; font-size: 2.5rem; font-weight: 900; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hanzi { margin: .25rem 0 0; text-align: center; font-size: 3rem; font-weight: 900; line-height: 1.15; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__tone-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem; margin-top: .75rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__tone-option { display: grid; min-height: 2.75rem; place-items: center; border: 1px solid var(--sf-border); border-radius: 10px; background: var(--sf-surface); color: var(--sf-text); line-height: 1; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__tone-option small { font-size: .65rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__answer { box-sizing: border-box; width: 100%; min-height: 3rem; padding: 0 1rem; border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); font-size: 1.125rem; font-weight: 700; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__feedback { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; font-weight: 700; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__feedback--correct { color: var(--sf-success); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__feedback--incorrect { color: var(--sf-danger); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__actions { justify-content: flex-end; margin-top: auto; padding-top: 1.5rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__footnote { margin: 0 auto 0 0; color: var(--sf-text-muted); font-size: .8rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__primary-action { display: inline-flex; align-items: center; gap: .5rem; padding: .8rem 1.4rem; border: 0; border-radius: var(--sf-button-radius, 999px); background: var(--sf-brand); color: var(--sf-on-brand); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__primary-action:disabled { cursor: not-allowed; opacity: .5; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__primary-action kbd { padding: .1rem .35rem; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: 5px; font-family: var(--font-mono, ui-monospace, monospace); font-size: .68rem; font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill :focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul { margin: 0; padding: 0; border: 0; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-blocks { display: flex; justify-content: center; gap: 1.2rem; margin: 1.5rem 0 .5rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-blocks > div { position: relative; display: grid; justify-items: center; gap: .2rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-blocks > div > span { display: grid; width: clamp(4.5rem, 16vw, 7rem); height: clamp(4.5rem, 16vw, 7rem); place-items: center; border: 1px solid var(--sf-border); background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); font-size: clamp(2.8rem, 11vw, 4.6rem); font-weight: 900; }
+.language-practice-drill__hangul-blocks .language-practice-drill__hangul-filled { color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-diagnostic { display: flex; justify-content: center; gap: .5rem; margin: .5rem 0 1.2rem; color: var(--sf-text-muted); font-size: .9rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-diagnostic b { color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-keys { max-width: 36rem; margin: 1.2rem auto 0; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-key { position: relative; min-width: 2.7rem; min-height: 2.7rem; padding-bottom: .65rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-key small { position: absolute; right: .25rem; bottom: .1rem; color: var(--sf-text-muted); font-size: .55rem; font-weight: 500; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-grid { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-card { position: relative; overflow: hidden; padding: 1.25rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-card::before { content: ''; position: absolute; top: .65rem; right: .75rem; width: 3rem; height: 1.2rem; border-top: 2px solid var(--sf-brand); border-radius: 50%; transform: rotate(-10deg); opacity: .75; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__syllable { font-size: 2.5rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option { display: grid; place-items: center; min-height: 2.75rem; border-radius: .5rem; line-height: 1; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option span { font-size: 1.35rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option small { font-size: .6rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option--1 span { transform: translateY(-.05rem) scaleX(1.2); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option--2 span { transform: rotate(-22deg); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option--3 span { transform: translateY(.1rem); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option--4 span { transform: rotate(22deg); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__tone-option--5 span { transform: scale(.7); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments { margin-top: 1.2rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments button { border: 1px solid var(--sf-border); border-radius: .5rem; padding: .45rem .65rem; background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; cursor: pointer; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments button[aria-pressed='true'] { border-color: var(--sf-brand); background: var(--sf-brand-soft); color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__actions { margin-top: auto; padding-top: 1.5rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hint { border-radius: 999px; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action { border-radius: 999px; padding: .8rem 1.4rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence { margin-top: 1rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-tokens { margin: 0; font-family: ui-rounded, "Hiragino Sans", sans-serif; font-size: clamp(1.35rem, 5vw, 2rem); line-height: 2.25; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-token,
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-blank { display: inline-flex; min-width: 2.1rem; margin-inline: .05rem; padding: .5rem .4rem; border: 1px solid var(--sf-border); border-radius: .75rem; background: var(--sf-surface-raised); align-items: center; justify-content: center; font-weight: 800; line-height: 1.25; text-align: center; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-blank { position: relative; border-color: var(--sf-brand); background: var(--sf-brand-soft); color: var(--sf-brand-text); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-gloss { position: absolute; bottom: calc(100% + .4rem); left: 50%; z-index: 1; width: max-content; max-width: min(15rem, 80vw); transform: translateX(-50%); border-radius: .5rem; padding: .3rem .5rem; background: var(--sf-text); color: var(--sf-surface); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .7rem; font-weight: 700; line-height: 1.25; white-space: normal; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence .language-practice-drill__segments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: 1rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments button { display: grid; min-height: 4.35rem; place-content: center; gap: .1rem; text-align: center; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__segments button small { color: var(--sf-text-muted); font-size: .72rem; font-weight: 500; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-explanation { margin-top: 1rem; padding: .875rem 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); }
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-explanation p { margin: 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill { min-height: 100dvh; border-right: 0; border-left: 0; border-radius: 0; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__toolbar { padding: .65rem .8rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__identity { font-size: .6rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__identity h2 { font-size: 1.15rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__progress i { width: .65rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__progress b { display: none; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__panel { padding: 1.25rem 1rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-keys { gap: .25rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-key { min-width: 2.3rem; min-height: 2.4rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__ruby { margin-left: 0; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__prompt-row { gap: .55rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence .language-practice-drill__segments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-token,
+:where(html[data-theme-family=crystal]) .language-practice-drill__sentence-blank { min-width: 1.8rem; padding: .4rem .5rem; }
+}
+:where(html[data-theme-family=crystal]) .language-practice-drill__panel,
+:where(html[data-theme-family=crystal]) .language-practice-drill__form { display: flex; flex-direction: column; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__form { flex: 1; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hanzi { margin: .25rem 0 0; text-align: center; font-size: 3rem; line-height: 1.15; font-weight: 900; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks > div { display: grid; justify-items: center; gap: .2rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks > div small,
+:where(html[data-theme-family=crystal]) .language-practice-drill__physical-help { color: var(--sf-text-muted); font-size: .72rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__physical-help { margin: .75rem 0 0; text-align: center; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks > div { position: relative; }
 .language-practice-drill__hangul-label { min-height: 1.2rem; color: var(--sf-text-muted); font-size: .8rem; font-style: normal; font-weight: 700; letter-spacing: .02em; }
 .language-practice-drill__hangul-label[data-hangul-fix] { color: var(--sf-success); }
 .language-practice-drill__hangul-blocks span[data-hangul-mismatch] { border-color: var(--sf-danger); background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface)); color: var(--sf-danger); }
-.language-practice-drill__hangul-blocks .language-practice-drill__hangul-parts { display: flex; gap: .25rem; margin-top: .35rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-blocks .language-practice-drill__hangul-parts { display: flex; gap: .25rem; margin-top: .35rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-blocks .language-practice-drill__hangul-parts { display: flex; gap: .25rem; margin-top: .35rem; color: var(--sf-text-muted); font-size: .72rem; }
 .language-practice-drill__hangul-blocks .language-practice-drill__hangul-parts span { display: contents; }
 .language-practice-drill__hangul-blocks .language-practice-drill__hangul-plus { font-size: 0; }
-.language-practice-drill__hangul-parts b { display: grid; min-width: 1.9rem; height: 1.9rem; place-items: center; border: 1px solid var(--sf-border); border-radius: .4rem; background: var(--sf-surface-raised); color: var(--sf-text); font-size: .85rem; font-weight: 700; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-parts b { display: grid; min-width: 1.9rem; height: 1.9rem; place-items: center; border: 1px solid var(--sf-border); border-radius: .4rem; background: var(--sf-surface-raised); color: var(--sf-text); font-size: .85rem; font-weight: 700; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-parts b { display: grid; min-width: 1.9rem; height: 1.9rem; place-items: center; border: 1px solid var(--sf-border); border-radius: 8px; background: var(--sf-surface-raised); color: var(--sf-text); font-size: .85rem; font-weight: 700; }
 .language-practice-drill__hangul-parts b[data-hangul-wrong] { border-color: var(--sf-danger); color: var(--sf-danger); }
 .language-practice-drill__hangul-caption { margin: .4rem 0 0; color: var(--sf-text-muted); font-size: .75rem; text-align: center; }
-.language-practice-drill__hangul-fix { align-items: center; gap: 1rem; margin-inline: 0; padding: .8rem 1.1rem; border: 1px solid color-mix(in srgb, var(--sf-danger) 45%, var(--sf-border)); border-radius: 1rem; background: color-mix(in srgb, var(--sf-danger) 7%, var(--sf-surface)); color: var(--sf-text); text-align: left; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-fix { align-items: center; gap: 1rem; margin-inline: 0; padding: .8rem 1.1rem; border: 1px solid color-mix(in srgb, var(--sf-danger) 45%, var(--sf-border)); border-radius: 1rem; background: color-mix(in srgb, var(--sf-danger) 7%, var(--sf-surface)); color: var(--sf-text); text-align: left; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-diagnostic { display: flex; justify-content: center; gap: .5rem; margin: .5rem 0 1.2rem; color: var(--sf-text-muted); font-size: .9rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-diagnostic b { color: var(--sf-brand-text); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-fix { align-items: center; gap: 1rem; margin-inline: 0; padding: .8rem 1.1rem; border: 1px solid var(--sf-danger-line); background: var(--sf-danger-soft); color: var(--sf-text); text-align: left; }
 .language-practice-drill__hangul-fix b { flex: none; color: var(--sf-text); font-size: 1.3rem; font-weight: 800; white-space: nowrap; }
 .language-practice-drill__hangul-fix p { margin: 0; font-size: .85rem; line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; max-width: 36rem; margin: 1.2rem auto 0; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-row { display: flex; gap: 6px; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-key,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hint { min-height: 2.5rem; padding: .375rem .625rem; border: 1px solid var(--sf-border); background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; cursor: pointer; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-key { position: relative; min-width: 2.7rem; min-height: 2.7rem; padding-bottom: .65rem; font-size: 1.125rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__hangul-key small { position: absolute; right: .25rem; bottom: .1rem; color: var(--sf-text-muted); font-size: .55rem; font-weight: 500; }
 .language-practice-drill__hangul-key[data-hangul-key='expected'] { border-color: var(--sf-success); color: var(--sf-success); }
 .language-practice-drill__hangul-key[data-hangul-key='typed'] { border-color: var(--sf-danger); color: var(--sf-danger); }
-.language-practice-drill__footnote { margin: 0 auto 0 0; color: var(--sf-text-muted); font-size: .8rem; }
-.language-practice-drill__primary-action kbd { padding: .1rem .35rem; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: .3rem; font-family: var(--font-mono, ui-monospace, monospace); font-size: .68rem; font-weight: 600; }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-parts b { border-radius: 0; }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-fix { border-width: 1px 1px 1px 3px; border-color: color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)) color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)) color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)) var(--sf-brand); border-radius: 0; }
-html[data-theme-family='crystal'] .language-practice-drill__hangul-key[data-hangul-key='expected'] { border-color: var(--lpd-cyan); color: var(--lpd-cyan); }
-@media (max-width: 480px) { .language-practice-drill__hangul-fix { flex-direction: column; align-items: flex-start; gap: .4rem; } .language-practice-drill__footnote { flex-basis: 100%; } .language-practice-drill__actions { flex-wrap: wrap; } }
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-row { display: contents; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__footnote { margin: 0 auto 0 0; color: var(--sf-text-muted); font-size: .8rem; }
+:where(html[data-theme-family=crystal]) .language-practice-drill__primary-action kbd { padding: .1rem .35rem; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: .3rem; font-family: var(--font-mono, ui-monospace, monospace); font-size: .68rem; font-weight: 600; }
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__hangul-fix { flex-direction: column; align-items: flex-start; gap: .4rem; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__footnote { flex-basis: 100%; }
+}
+@media (max-width: 480px) {
+:where(html[data-theme-family=crystal]) .language-practice-drill__actions { flex-wrap: wrap; }
+}
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__physical-help { margin: .75rem 0 0; color: var(--sf-text-muted); font-size: .72rem; text-align: center; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence { margin-top: 1rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-tokens { margin: 0; font-family: ui-rounded, "Hiragino Sans", sans-serif; font-size: clamp(1.35rem, 5vw, 2rem); line-height: 2.25; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-token,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-blank { display: inline-flex; align-items: center; justify-content: center; min-width: 2.1rem; margin-inline: .05rem; padding: .5rem .4rem; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--sf-surface-raised); font-weight: 800; line-height: 1.25; text-align: center; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-blank { position: relative; border-color: var(--sf-accent-line, var(--sf-brand)); background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent)); color: var(--sf-brand-text); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-gloss { position: absolute; bottom: calc(100% + .4rem); left: 50%; z-index: 1; width: max-content; max-width: min(15rem, 80vw); transform: translateX(-50%); border-radius: 8px; padding: .3rem .5rem; background: var(--sf-text); color: var(--sf-surface); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .7rem; font-weight: 700; line-height: 1.25; white-space: normal; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence .language-practice-drill__segments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: 1rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__segments { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: 1.2rem; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__segments button { display: grid; min-height: 4.35rem; place-content: center; gap: .1rem; padding: .45rem .65rem; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; text-align: center; cursor: pointer; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-explanation { margin-top: 1rem; padding: .875rem 1rem; border: 1px solid var(--sf-border); background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-explanation p { margin: 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__results { text-align: center; }
+:where(html:not([data-theme-family=crystal])) .language-practice-drill__results > svg { margin-inline: auto; color: var(--sf-success); }
+@media (prefers-reduced-motion: reduce) { :where(html:not([data-theme-family=crystal])) .language-practice-drill *,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill *::before,
+:where(html:not([data-theme-family=crystal])) .language-practice-drill *::after { transition: none !important; animation: none !important; } }
+
+/* Classic Ink & Paper and Midnight Aurora styling, matching the LangPractice board. */
+html:not([data-theme-family='crystal']) .language-practice-drill {
+  --lpd-text3: var(--sf-text-subtle);
+  --lpd-track: var(--sf-track);
+  --lpd-panel-r: 16px;
+  --lpd-tile-r: 18px;
+  --lpd-field-r: 16px;
+  --lpd-key-r: 10px;
+  --lpd-tag-r: 6px;
+  --lpd-chip-r: 12px;
+  --lpd-swatch-r: 3px;
+  --lpd-input-bg: rgb(255 255 255 / .04);
+  --lpd-key-bg: rgb(255 255 255 / .025);
+  --lpd-font-jp: 'Noto Sans JP', sans-serif;
+  --lpd-font-kr: 'Noto Sans KR', sans-serif;
+  --lpd-font-sc: 'Noto Sans SC', sans-serif;
+  /* LangPractice.dc.html line 266: tones 1-4 are the board's danger, warn, good and accent-text inks, the neutral tone its
+     muted ink. In light, tone 3 is the ok text ink and tone 4 the shared blue tone token (#1f5fb8 against the board's
+     #1f5fa8); tone 2 keeps --sf-warn (#8a5a0c), the AA-safe form of the board's #a86a12. */
+  --lpd-tone-1: var(--sf-danger);
+  --lpd-tone-2: var(--sf-warn);
+  --lpd-tone-3: var(--sf-success);
+  --lpd-tone-4: var(--sf-brand-text);
+  --lpd-tone-5: var(--sf-text-muted);
+  --sf-pulse: rgb(40 211 244 / .45);
+  width: 100%;
+  max-width: 720px;
+  border: var(--sf-dialog-border);
+  border-radius: var(--sf-dialog-radius, 26px);
+  background: var(--sf-dialog-bg);
+  box-shadow: var(--sf-dialog-shadow);
+  backdrop-filter: var(--sf-panel-blur);
+}
+html:not(.dark):not([data-theme-family='crystal']) .language-practice-drill {
+  --lpd-panel-r: 12px;
+  --lpd-tile-r: 12px;
+  --lpd-field-r: 999px;
+  --lpd-key-bg: var(--sf-surface-raised);
+  --lpd-input-bg: var(--sf-surface);
+  --lpd-tone-3: var(--sf-success-text);
+  --lpd-tone-4: var(--sf-tone-1);
+  --lpd-font-jp: 'Noto Serif JP', 'Noto Sans JP', serif;
+  --lpd-font-kr: 'Noto Serif KR', 'Noto Sans KR', serif;
+  --lpd-font-sc: 'Noto Serif SC', 'Noto Sans SC', serif;
+  --sf-pulse: rgb(29 26 22 / .25);
+}
+html:not([data-theme-family='crystal']) .language-practice-drill__toolbar {
+  min-height: 76px;
+  padding: 0 28px;
+  gap: 14px;
+  border-bottom: 1px solid var(--sf-nav-line);
+}
+html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit {
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow);
+  color: var(--sf-text-muted);
+}
+html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit:hover { color: var(--sf-text-strong); }
+html:not([data-theme-family='crystal']) .language-practice-drill__identity { column-gap: 8px; color: var(--lpd-text3); font-size: 12px; font-weight: 600; letter-spacing: .08em; }
+html:not([data-theme-family='crystal']) .language-practice-drill__identity h2 { margin: 4px 0 0; color: var(--sf-text-strong); font-size: 23px; font-weight: var(--sf-display-weight); letter-spacing: -.015em; line-height: 1.1; }
+/* LangPractice.dc.html line 9: the code tag is a 20px content-box mono span (22px with its border). */
+html:not([data-theme-family='crystal']) .language-practice-drill__pack { display: inline-flex; align-items: center; height: 22px; box-sizing: border-box; padding: 0 7px; font-family: var(--sf-font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .04em; line-height: normal; border-radius: var(--lpd-tag-r); }
+html:not([data-theme-family='crystal']) .language-practice-drill__progress i { width: 16px; background: var(--lpd-track); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__progress .language-practice-drill__progress-done { box-shadow: 0 0 8px rgb(40 211 244 / .55); }
+html:not([data-theme-family='crystal']) .language-practice-drill__progress b { padding: 3px 8px; background: var(--sf-surface-control); color: var(--sf-text-muted); font-family: var(--sf-font-mono); font-size: 12px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__listen { width: 54px; height: 54px; background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: var(--sf-on-primary); }
+html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars { display: flex; align-items: center; gap: 3px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars i { display: block; width: 3px; height: 11px; border-radius: 3px; background: currentColor; }
+html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars i:nth-child(2) { height: 20px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars i:nth-child(3) { height: 26px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars i:nth-child(4) { height: 18px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__instruction { color: var(--lpd-text3); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; }
+html:not([data-theme-family='crystal']) .language-practice-drill__prompt { margin-top: 3px; color: var(--sf-text-strong); font-size: 24px; font-weight: var(--sf-display-weight); line-height: 1.2; }
+/* LangPractice.dc.html lines 33, 77 and 118: beside a Korean, Japanese or Chinese word the meaning is plain 22px Fraunces at
+   the regular weight on a normal line box; the sentence stage keeps the 24px prompt above. */
+html:not([data-theme-family='crystal']) .language-practice-drill:is(.language-practice-drill--hangul-blocks, .language-practice-drill--kana-reading, .language-practice-drill--tone-melody):not(:has(.language-practice-drill__sentence)) .language-practice-drill__prompt { font-size: 22px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__speed {
+  align-self: center;
+  height: 32px;
+  padding: 0 11px;
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow);
+  font-size: 12px;
+  font-weight: 650;
+}
+html:not([data-theme-family='crystal']) .language-practice-drill__speed[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); box-shadow: none; color: var(--sf-brand-text); }
+html:not([data-theme-family='crystal']) :is(.language-practice-drill__status, .language-practice-drill__reading, .language-practice-drill__tone-card, .language-practice-drill__sentence-explanation) {
+  border-radius: var(--lpd-panel-r);
+  background: var(--sf-surface-glass);
+  box-shadow: var(--sf-panel-shadow);
+}
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading :is(.language-practice-drill__ruby, .language-practice-drill__answer) { font-family: var(--lpd-font-jp); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks { gap: 20px; margin: 20px 0 8px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks > div > span {
+  width: clamp(76px, 16vw, 112px);
+  height: clamp(76px, 16vw, 112px);
+  border-radius: var(--lpd-tile-r);
+  background: var(--sf-surface-glass);
+  box-shadow: var(--sf-panel-shadow);
+  color: var(--lpd-text3);
+  font-family: var(--lpd-font-kr);
+  font-size: clamp(44px, 11vw, 66px);
+  font-weight: 700;
+  line-height: 1;
+}
+/* LangPractice.dc.html line 270: a filled block is the board's ok chip, a plain line border with strong text; a mismatched
+   block is the bad chip, which has no shadow. */
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks .language-practice-drill__hangul-filled { color: var(--sf-text-strong); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks span[data-hangul-mismatch] { border-color: var(--sf-rating-again); background: var(--sf-danger-soft); box-shadow: none; color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-parts b { border-radius: 8px; background: var(--sf-surface-control); color: var(--sf-text-strong); font-family: var(--lpd-font-kr); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-parts b[data-hangul-wrong] { border-color: var(--sf-danger-line); color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-fix { border-radius: 12px; color: var(--sf-text-strong); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-fix b { color: var(--sf-text-strong); font-family: var(--lpd-font-kr); }
+/* LangPractice.dc.html lines 58-65 and 268-272: 50x44 keys at 18px / 700 in rows 6px apart, keys 5px apart, the
+   second and third rows set in 28 / 84px; an idle key is a 1px line on a faint fill, the key to press is the board's
+   hint (green), the key typed by mistake its bad state (again red). The radius is the board's 10px in both modes.
+   The app's Shift and Delete keys (not on the board) sit on the third row's line, 5px outside its first and last key. */
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys { position: relative; flex-direction: column; flex-wrap: nowrap; align-items: center; gap: 6px; max-width: none; margin: 16px auto 0; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row { gap: 5px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row:nth-of-type(2) { padding-left: 28px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row:nth-of-type(3) { padding-left: 84px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  min-width: 0;
+  height: 44px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--lpd-key-r);
+  background: var(--lpd-key-bg);
+  box-shadow: none;
+  color: var(--sf-text);
+  font-family: var(--lpd-font-kr);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
+}
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key small { right: 5px; bottom: 3px; color: var(--lpd-text3); font-family: var(--sf-font-mono); font-size: 9px; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='expected'] { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-success-text); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='expected'] { box-shadow: 0 0 18px -6px var(--sf-success); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='typed'] { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); color: var(--sf-brand-text); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:first-child { position: absolute; top: 100px; left: calc(50% - 203px); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:last-child { position: absolute; top: 100px; left: calc(50% + 237px); width: auto; padding: 0 12px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > div + button:not(:last-child) { width: 160px; }
+/* Space and Delete carry a word, not a jamo: they take the board's secondary-button type (the Hint button, 14px/600). */
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:not(:first-child) { font-family: var(--sf-font-body); font-size: 14px; font-weight: 600; }
+html:not([data-theme-family='crystal']) .language-practice-drill__answer {
+  height: 58px;
+  min-height: 0;
+  padding: 0 20px;
+  border-color: var(--sf-edge-highlight);
+  border-radius: var(--lpd-field-r);
+  background: var(--sf-surface-glass);
+  color: var(--sf-text-strong);
+  font-size: 24px;
+  font-weight: 600;
+}
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__answer { border-color: var(--sf-success-line); background: var(--sf-success-soft); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='incorrect'] .language-practice-drill__answer { border-color: var(--sf-danger-line); background: var(--sf-danger-soft); }
+/* LangPractice.dc.html lines 121-133 and 323-333: two 270px syllable cards 26px apart, 20px/700 pinyin over a 76px/700
+   hanzi, and 44x52 tone keys 5px apart that take the board's chip states once checked. */
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 26px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-card { display: flex; width: 270px; box-sizing: border-box; flex-direction: column; align-items: center; padding: 14px 14px 16px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='right'] { border-color: var(--sf-success-line); }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='wrong'] { border-color: var(--sf-danger-line); }
+html:not([data-theme-family='crystal']) .language-practice-drill__syllable { height: 24px; color: var(--sf-brand-text); font-family: var(--sf-font-body); font-size: 20px; font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='right'] .language-practice-drill__syllable { color: var(--lpd-tone, var(--sf-brand-text)); }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='wrong'] .language-practice-drill__syllable { color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hanzi { margin: 0; color: var(--sf-text-strong); font-family: var(--lpd-font-sc); font-size: 76px; font-weight: 700; line-height: 1.1; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-options { display: flex; gap: 5px; margin-top: 12px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option { display: flex; width: 44px; height: 52px; min-height: 0; box-sizing: border-box; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 1px solid var(--sf-border); border-radius: var(--lpd-key-r); background: var(--lpd-key-bg); box-shadow: none; color: var(--lpd-tone); font-size: 13.5px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option small { font-family: var(--sf-font-mono); font-size: 11px; font-weight: 500; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); color: var(--sf-brand-text); }
+/* After Check the right tone (picked or missed) is the board's ok-green hint chip and a wrong pick its again-red chip. */
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option:is([data-tone-verdict='right'], [data-tone-verdict='answer']) { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-success-text); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__tone-option:is([data-tone-verdict='right'], [data-tone-verdict='answer']) { box-shadow: 0 0 18px -6px var(--sf-success); }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[data-tone-verdict='wrong'] { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--1, .language-practice-drill__tone-card[data-tone='1'], .language-practice-drill__tone-legend [data-tone='1']) { --lpd-tone: var(--lpd-tone-1); }
+html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--2, .language-practice-drill__tone-card[data-tone='2'], .language-practice-drill__tone-legend [data-tone='2']) { --lpd-tone: var(--lpd-tone-2); }
+html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--3, .language-practice-drill__tone-card[data-tone='3'], .language-practice-drill__tone-legend [data-tone='3']) { --lpd-tone: var(--lpd-tone-3); }
+html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--4, .language-practice-drill__tone-card[data-tone='4'], .language-practice-drill__tone-legend [data-tone='4']) { --lpd-tone: var(--lpd-tone-4); }
+html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--5, .language-practice-drill__tone-card[data-tone='5'], .language-practice-drill__tone-legend [data-tone='5']) { --lpd-tone: var(--lpd-tone-5); }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend { display: flex; align-items: center; justify-content: flex-start; gap: 14px; margin-top: 12px; color: var(--sf-text-muted); font-size: 12px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend span { display: flex; align-items: center; gap: 5px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend i { display: inline-block; font-style: normal; width: 10px; height: 10px; border-radius: var(--lpd-swatch-r); background: var(--lpd-tone); }
+/* LangPractice.dc.html lines 201-219 and 345-353: every chunk, punctuation included, is a 68px chip 6px apart in the
+   board's ok chip (border and fill; the board's chunks draw no shadow or glow in any state), the slot is 110px wide, accented until Check and then the board's hint
+   or bad chip; the four 70px choices show the word over one "reading · meaning" line and take the same chip states. */
+html:not([data-theme-family='crystal']) .language-practice-drill__sentence-tokens { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 16px; font-family: var(--lpd-font-jp); font-size: clamp(1.35rem, 5vw, 28px); font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) :is(.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank, :where(.language-practice-drill__sentence-tokens > span:not([class]))) { display: inline-flex; align-items: center; justify-content: center; height: 68px; min-width: 0; box-sizing: border-box; margin: 0; padding: 0 12px; border-radius: var(--lpd-chip-r); font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) :is(.language-practice-drill__sentence-token, :where(.language-practice-drill__sentence-tokens > span:not([class]))) { border: 1px solid var(--sf-border); background: var(--sf-surface-glass); box-shadow: none; color: var(--sf-text-strong); }
+html:not([data-theme-family='crystal']) .language-practice-drill__sentence-blank { min-width: 110px; }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__sentence-blank { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-success-text); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='incorrect'] .language-practice-drill__sentence-blank { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button { display: flex; height: 70px; min-height: 0; box-sizing: border-box; flex-flow: row wrap; align-content: center; justify-content: center; gap: 2px 0; padding: 0 8px; border-radius: var(--lpd-chip-r); background: var(--lpd-key-bg); box-shadow: none; color: var(--sf-text-strong); font-size: 13.5px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button > span { flex-basis: 100%; font-family: var(--lpd-font-jp); font-size: 24px; font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button small { color: var(--sf-text-muted); font-size: 11.5px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button small + small::before { content: '\00a0·\00a0'; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); color: var(--sf-brand-text); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__segments button[aria-pressed='true'] { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-text-strong); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__segments button[aria-pressed='true'] { box-shadow: 0 0 18px -6px var(--sf-success); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='incorrect'] .language-practice-drill__segments button[aria-pressed='true'] { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-text-strong); }
+/* LangPractice.dc.html lines 72-85 and 309-315: the word is 84px/700 under a 20px/500 reading spaced .2em; the 64px field
+   has a 1.5px accent line on the input fill and 30px/700 kana. A right reading moves on to the sentence stage, which
+   keeps the plain answer field (the board's segment kind has none). */
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading .language-practice-drill__ruby { color: var(--sf-text-strong); font-size: clamp(2.8rem, 12vw, 84px); font-weight: 700; line-height: 1; }
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading .language-practice-drill__ruby rt { color: var(--sf-brand-text); font-size: 20px; font-weight: 500; letter-spacing: .2em; }
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading:not(:has(.language-practice-drill__sentence)) .language-practice-drill__answer { height: 64px; padding: 0 16px 0 20px; border: 1.5px solid var(--sf-accent-line); background: var(--lpd-input-bg); font-size: 30px; font-weight: 700; letter-spacing: .06em; }
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading[data-result='correct']:not(:has(.language-practice-drill__sentence)) .language-practice-drill__answer { border-color: var(--sf-success); background: var(--lpd-input-bg); }
+/* LangPractice.dc.html lines 238-241: the footer has no rule above it; Hint and Check are 46px at 14 / 14.5px. */
+html:not([data-theme-family='crystal']) .language-practice-drill__actions { gap: 10px; padding-top: 14px; border-top: 0; }
+html:not([data-theme-family='crystal']) .language-practice-drill__footnote { color: var(--lpd-text3); font-size: 12.5px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hint { min-height: 46px; padding: 0 16px; font-size: 14px; border-radius: var(--sf-button-radius, 999px); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow); color: var(--sf-text-strong); font-weight: 600; }
+html:not([data-theme-family='crystal']) .language-practice-drill__primary-action {
+  min-height: 46px;
+  gap: 10px;
+  padding: 0 20px;
+  font-size: 14.5px;
+  border-radius: var(--sf-button-radius, 999px);
+  background: var(--sf-primary-bg);
+  box-shadow: var(--sf-primary-shadow);
+  color: var(--sf-on-primary);
+  font-weight: 650;
+}
+/* LangPractice.dc.html lines 5, 16, 68: the exit sits on the chip fill without a shadow, the dark play button is the
+   board's lit cyan sphere, and the physical-keyboard note is 12px text3 on a normal line box. */
+html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit { box-shadow: none; }
+html:not(.dark):not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit { background: var(--sf-surface-raised); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__listen { background: radial-gradient(circle at 35% 30%, #9ef0ff, #28d3f4 55%, #1a9fbd); }
+html:not([data-theme-family='crystal']) .language-practice-drill__physical-help { color: var(--lpd-text3); font-size: 12px; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__primary-action kbd { padding: 2px 6px; border: 0; background: var(--sf-primary-kbd-bg); font-family: var(--sf-font-mono); font-size: 11px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__results .language-practice-drill__exit {
+  width: auto;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-button-radius, 999px);
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow);
+  color: var(--sf-text-strong);
+}
+
+@media (max-width: 480px) {
+  html:not([data-theme-family='crystal']) .language-practice-drill { min-height: 100dvh; border-right: 0; border-left: 0; border-radius: 0; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__toolbar { padding: 0 12px; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__identity { font-size: .6rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__identity h2 { font-size: 18px; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__progress i { width: .65rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__progress b { display: none; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__panel { padding: 1.25rem 1rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__ruby { margin-left: 0; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__prompt-row { gap: .55rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row { display: contents; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key { width: auto; min-width: 2.3rem; height: auto; min-height: 2.4rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:is(:first-child, :last-child) { position: static; width: auto; padding: 0 10px; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > div + button:not(:last-child) { width: auto; padding: 0 12px; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__hangul-fix { flex-direction: column; align-items: flex-start; gap: .4rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__sentence .language-practice-drill__segments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html:not([data-theme-family='crystal']) :is(.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank, :where(.language-practice-drill__sentence-tokens > span:not([class]))) { height: 52px; min-width: 1.8rem; padding: .4rem .5rem; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__footnote { flex-basis: 100%; }
+  html:not([data-theme-family='crystal']) .language-practice-drill__actions { flex-wrap: wrap; }
+}
+
+/* Crystal follows the Anime LangPractice board: a near-opaque chamfered panel, a 76px header, the drill in the middle and a 104px footer. */
+html[data-theme-family='crystal'] .language-practice-drill {
+  --lpd-text3: #7a8397;
+  --lpd-crimson: #ff6b85;
+  --lpd-track: rgb(255 255 255 / .1);
+  --lpd-bad-bg: rgb(60 8 20);
+  --lpd-hint-bg: rgb(8 44 58);
+  --lpd-hint-edge: #5ef2ff;
+  --lpd-kanji-shadow: #7a0820;
+  --lpd-rim-ok: linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9);
+  --lpd-rim-bad: linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820);
+  --lpd-rim-idle: linear-gradient(150deg, var(--sf-edge-highlight), var(--sf-edge-highlight));
+  --lpd-tone-1: #ff5470;
+  --lpd-tone-2: #ffd166;
+  --lpd-tone-3: #5ef2ff;
+  --lpd-tone-4: #8fb8ff;
+  --lpd-tone-5: #aab3c5;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 720px;
+  min-height: min(780px, 100dvh);
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-surface);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  color: var(--sf-text);
+  line-height: normal;
+}
+html[data-theme-family='crystal']:not(.dark) .language-practice-drill {
+  --lpd-text3: var(--sf-text-muted);
+  --lpd-crimson: #c40f35;
+  --lpd-track: rgb(13 40 80 / .12);
+  --lpd-bad-bg: #ffe8ed;
+  --lpd-hint-bg: #d8f7ff;
+  --lpd-hint-edge: #0a8fb0;
+  --lpd-kanji-shadow: rgb(255 84 112 / .35);
+  --lpd-tone-1: #c40f35;
+  --lpd-tone-2: #8a5a00;
+  --lpd-tone-3: #08708a;
+  --lpd-tone-4: #2a56c6;
+  --lpd-tone-5: #3f5272;
+}
+/* Clipped controls cannot show an outside outline, so their focus ring is drawn inside. */
+html[data-theme-family='crystal'] .language-practice-drill :is(.language-practice-drill__exit, .language-practice-drill__speed, .language-practice-drill__hangul-key, .language-practice-drill__tone-option, .language-practice-drill__hint, .language-practice-drill__segments button):focus-visible { outline: 0; box-shadow: inset 0 0 0 2px var(--sf-holo-text); }
+
+/* Header */
+html[data-theme-family='crystal'] .language-practice-drill__toolbar { flex-shrink: 0; height: 76px; min-height: 0; padding: 0 26px; gap: 12px; border-bottom: 0; background: none; }
+html[data-theme-family='crystal'] .language-practice-drill__toolbar .language-practice-drill__exit { width: 40px; height: 40px; min-height: 0; flex-shrink: 0; padding: 0; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text); }
+html[data-theme-family='crystal'] .language-practice-drill__toolbar .language-practice-drill__exit:hover { background: var(--sf-surface-control); color: var(--sf-text-strong); }
+html[data-theme-family='crystal'] .language-practice-drill__identity { margin-left: 0; column-gap: 8px; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .12em; line-height: normal; color: var(--lpd-text3); }
+html[data-theme-family='crystal'] .language-practice-drill__pack { display: flex; align-items: center; height: 20px; padding: 0 8px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); color: #031820; font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+html[data-theme-family='crystal'] .language-practice-drill__identity h2 { margin: 3px 0 0; color: var(--sf-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 25px; line-height: 1.05; letter-spacing: .02em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .language-practice-drill__title-text { background: var(--sf-metal); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme-family='crystal'] .language-practice-drill__progress { gap: 12px; }
+html[data-theme-family='crystal'] .language-practice-drill__progress > span { gap: 3px; }
+html[data-theme-family='crystal'] .language-practice-drill__progress i { width: 16px; height: 8px; border-radius: 0; transform: skewX(-30deg); background: var(--lpd-track); font-style: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__progress .language-practice-drill__progress-done { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 8px rgb(94 242 255 / .5); }
+html[data-theme-family='crystal'] .language-practice-drill__progress .language-practice-drill__progress-done[data-current] { background: #ff2a4d; box-shadow: 0 0 14px rgb(255 42 77 / .9); }
+html[data-theme-family='crystal'] .language-practice-drill__progress b { display: flex; align-items: center; height: 20px; padding: 0 8px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .06em; }
+
+/* Main: the drill sits centred between the header and the footer. */
+html[data-theme-family='crystal'] .language-practice-drill__panel:not(.language-practice-drill__results) { justify-content: center; padding: 6px 30px 128px; }
+html[data-theme-family='crystal'] .language-practice-drill__form { flex: 0 0 auto; margin-top: 0; }
+html[data-theme-family='crystal'] .language-practice-drill__prompt-row { gap: 14px; }
+html[data-theme-family='crystal'] .language-practice-drill__listen { display: flex; align-items: center; justify-content: center; width: 58px; height: 58px; border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-primary-bg); box-shadow: none; color: #fff; }
+html[data-theme-family='crystal'] .language-practice-drill__listen-bars { display: flex; align-items: center; gap: 3px; }
+html[data-theme-family='crystal'] .language-practice-drill__listen-bars i { width: 3.5px; height: 12px; background: currentColor; }
+html[data-theme-family='crystal'] .language-practice-drill__listen-bars i:nth-child(2) { height: 22px; }
+html[data-theme-family='crystal'] .language-practice-drill__listen-bars i:nth-child(3) { height: 30px; }
+html[data-theme-family='crystal'] .language-practice-drill__listen-bars i:nth-child(4) { height: 20px; }
+html[data-theme-family='crystal'] .language-practice-drill__instruction { margin: 0; color: var(--sf-holo-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .12em; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__prompt { margin: 2px 0 0; color: var(--sf-text-strong); font-family: inherit; font-weight: 900; font-size: 22px; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__speed { align-self: center; height: 30px; padding: 0 10px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .06em; }
+html[data-theme-family='crystal'] .language-practice-drill__speed[aria-pressed='true'] { background: var(--lpd-hint-bg); box-shadow: inset 0 0 0 2px var(--lpd-hint-edge); color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__status { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); color: var(--sf-text-body); }
+
+/* Hangul block builder */
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks { gap: 26px; margin: 16px 0 0; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div { gap: 7px; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-label { height: 18px; min-height: 0; color: var(--lpd-text3); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .06em; line-height: normal; text-transform: uppercase; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-label[data-hangul-fix] { color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span { position: relative; isolation: isolate; width: 118px; height: 118px; border: 0; border-radius: 0; clip-path: none; background: none; box-shadow: none; color: var(--lpd-text3); font-family: 'Noto Sans KR', sans-serif; font-size: 70px; font-weight: 900; line-height: 1; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span::before,
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span::after { position: absolute; content: ''; clip-path: var(--nk-chamfer); pointer-events: none; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span::before { z-index: -2; inset: 0; background: var(--lpd-rim-idle); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span::after { z-index: -1; inset: 3px; background: var(--sf-surface); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > .language-practice-drill__hangul-filled { color: var(--sf-text-strong); box-shadow: none; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > .language-practice-drill__hangul-filled::before { background: var(--lpd-rim-ok); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span[data-hangul-mismatch] { color: var(--lpd-crimson); background: none; box-shadow: none; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span[data-hangul-mismatch]::before { background: var(--lpd-rim-bad); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks > div > span[data-hangul-mismatch]::after { background: var(--lpd-bad-bg); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks .language-practice-drill__hangul-parts { gap: 4px; margin-top: 0; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks .language-practice-drill__hangul-parts .language-practice-drill__hangul-plus { display: block; position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; border: 0; clip-path: inset(50%); background: none; box-shadow: none; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-parts b { width: 36px; min-width: 0; height: 30px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 900; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-parts b[data-hangul-wrong] { background: var(--lpd-bad-bg); box-shadow: inset 0 0 0 2px #ff2a4d; color: var(--lpd-crimson); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-caption { margin: 8px 0 0; color: var(--lpd-text3); font-size: 12px; font-weight: 700; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-diagnostic { margin: 6px 0 0; color: var(--lpd-text3); font-size: 12px; font-weight: 700; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-diagnostic b { color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-fix { position: relative; justify-content: flex-start; gap: 12px; margin: 14px 0 0; padding: 11px 16px 11px 18px; color: var(--sf-text); font-size: 16px; font-weight: 400; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-fix::before { position: absolute; top: 10px; bottom: 10px; left: 0; width: 3px; background: #ff2a4d; content: ''; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-fix b { color: var(--sf-text-strong); font-family: 'Noto Sans KR', sans-serif; font-size: 20px; font-weight: 900; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-fix-final { color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-fix p { color: var(--sf-text-body); font-size: 13px; line-height: 1.45; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-keys { position: relative; flex-direction: column; flex-wrap: nowrap; align-items: center; gap: 5px; max-width: none; margin: 14px 0 0; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-row { display: flex; gap: 5px; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-row:nth-of-type(2) { padding-left: 28px; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-row:nth-of-type(3) { padding-left: 84px; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-key { display: flex; align-items: center; justify-content: center; width: 50px; min-width: 0; height: 42px; min-height: 0; padding: 0; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text); font-family: 'Noto Sans KR', sans-serif; font-size: 18px; font-weight: 900; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-key:hover { border-color: transparent; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-key small { right: 6px; bottom: 3px; color: var(--sf-text-muted); font-family: var(--sf-font-mono); font-size: 9px; font-weight: 500; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-key:is([data-hangul-key='expected'], [aria-pressed='true']) { background: var(--lpd-hint-bg); box-shadow: inset 0 0 0 2px var(--lpd-hint-edge); color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-key[data-hangul-key='typed'] { background: var(--lpd-bad-bg); box-shadow: inset 0 0 0 2px #ff2a4d; color: var(--lpd-crimson); }
+/* Shift and Delete sit in the empty ends of the third row; Space becomes a bar under it. */
+html[data-theme-family='crystal'] .language-practice-drill__hangul-keys > button { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .06em; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-keys > button:first-child { position: absolute; top: 94px; left: calc(50% - 203px); font-size: 18px; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-keys > button:last-child { position: absolute; top: 94px; left: calc(50% + 237px); width: auto; padding: 0 12px; }
+html[data-theme-family='crystal'] .language-practice-drill__hangul-keys > div + button:not(:last-child) { width: 160px; }
+html[data-theme-family='crystal'] .language-practice-drill__physical-help { margin: 8px 0 0; color: var(--lpd-text3); font-size: 12px; font-weight: 700; line-height: normal; }
+
+/* Typed answer: a chamfered field with a 2px rim that turns cyan or crimson once checked. */
+html[data-theme-family='crystal'] .language-practice-drill__answer-label { position: relative; isolation: isolate; display: block; height: 66px; margin-top: 18px; }
+html[data-theme-family='crystal'] .language-practice-drill__answer-label::before,
+html[data-theme-family='crystal'] .language-practice-drill__answer-label::after { position: absolute; content: ''; clip-path: var(--nk-chamfer); pointer-events: none; }
+html[data-theme-family='crystal'] .language-practice-drill__answer-label::before { z-index: -2; inset: 0; background: var(--lpd-rim-idle); }
+html[data-theme-family='crystal'] .language-practice-drill__answer-label::after { z-index: -1; inset: 2px; background: var(--sf-surface); }
+html[data-theme-family='crystal'] .language-practice-drill__answer-label:focus-within::before { background: var(--lpd-hint-edge); }
+html[data-theme-family='crystal'] .language-practice-drill[data-result='correct'] .language-practice-drill__answer-label::before { background: var(--lpd-rim-ok); }
+html[data-theme-family='crystal'] .language-practice-drill[data-result='incorrect'] .language-practice-drill__answer-label::before { background: var(--lpd-rim-bad); }
+html[data-theme-family='crystal'] .language-practice-drill__answer { height: 66px; min-height: 0; padding: 0 16px 0 22px; border: 0; border-radius: 0; background: transparent; color: var(--sf-text-strong); font-size: 30px; font-weight: 900; letter-spacing: .06em; }
+html[data-theme-family='crystal'] .language-practice-drill__answer:focus-visible { outline: 0; }
+html[data-theme-family='crystal'] .language-practice-drill__answer:disabled { opacity: 1; color: var(--sf-text-strong); -webkit-text-fill-color: currentColor; }
+html[data-theme-family='crystal'] .language-practice-drill__answer::placeholder { color: var(--lpd-text3); opacity: 1; }
+html[data-theme-family='crystal'] .language-practice-drill--kana-reading .language-practice-drill__answer { font-family: 'Noto Sans JP', sans-serif; }
+
+/* Japanese reading */
+html[data-theme-family='crystal'] .language-practice-drill__ruby { margin: 16px 0 0; color: var(--sf-text-strong); font-family: 'Noto Sans JP', sans-serif; font-size: 88px; font-weight: 900; line-height: 1; filter: drop-shadow(0 4px 0 var(--lpd-kanji-shadow)); }
+html[data-theme-family='crystal'] .language-practice-drill__ruby rt { color: var(--sf-holo-text); font-size: 20px; font-weight: 700; letter-spacing: .2em; }
+html[data-theme-family='crystal'] :is(.language-practice-drill__japanese-reading, .language-practice-drill__reading) { margin-left: 0; color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__reading { align-self: flex-start; margin-top: 10px; padding: 7px 12px; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); font-size: 12.5px; }
+
+/* Tone melody */
+html[data-theme-family='crystal'] .language-practice-drill__tone-grid { display: flex; justify-content: center; gap: 22px; margin-top: 16px; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; width: 280px; height: 244px; padding: 14px 16px 16px; border: 0; border-radius: 0; background: none; overflow: visible; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card::before,
+html[data-theme-family='crystal'] .language-practice-drill__tone-card::after { position: absolute; content: ''; clip-path: var(--nk-chamfer); pointer-events: none; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card::before { z-index: -2; inset: 0; width: auto; height: auto; border: 0; border-radius: 0; transform: none; opacity: 1; background: var(--lpd-rim-ok); }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card::after { z-index: -1; inset: 2px; background: var(--sf-surface); }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card[data-tone-verdict='wrong']::before { background: var(--lpd-rim-bad); }
+html[data-theme-family='crystal'] .language-practice-drill__syllable { height: 26px; margin: 0; color: var(--sf-holo-text); font-family: var(--sf-font-display); font-style: italic; font-size: 21px; font-weight: 900; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card[data-tone-verdict='wrong'] .language-practice-drill__syllable { color: var(--lpd-crimson); }
+html[data-theme-family='crystal'] .language-practice-drill__tone-card[data-tone-verdict='right'] .language-practice-drill__syllable { color: var(--lpd-tone, var(--sf-holo-text)); }
+html[data-theme-family='crystal'] .language-practice-drill__hanzi { margin: 0; color: var(--sf-text-strong); font-family: 'Noto Sans SC', sans-serif; font-size: 76px; font-weight: 900; line-height: 1.1; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-options { display: flex; gap: 5px; margin-top: 10px; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-option { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 46px; height: 52px; min-height: 0; padding: 0; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--lpd-tone); }
+html[data-theme-family='crystal'] .language-practice-drill__tone-option:hover { border-color: transparent; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-option small { font-family: var(--sf-font-display); font-style: italic; font-size: 12px; font-weight: 900; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-option:is([aria-pressed='true'], [data-tone-verdict='answer']) { background: var(--lpd-hint-bg); box-shadow: inset 0 0 0 2px var(--lpd-hint-edge); color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .language-practice-drill__tone-option[data-tone-verdict='wrong'] { background: var(--lpd-bad-bg); box-shadow: inset 0 0 0 2px #ff2a4d; color: var(--lpd-crimson); }
+html[data-theme-family='crystal'] .language-practice-drill :is(.language-practice-drill__tone-option--1, .language-practice-drill__tone-card[data-tone='1'], .language-practice-drill__tone-legend [data-tone='1']) { --lpd-tone: var(--lpd-tone-1); }
+html[data-theme-family='crystal'] .language-practice-drill :is(.language-practice-drill__tone-option--2, .language-practice-drill__tone-card[data-tone='2'], .language-practice-drill__tone-legend [data-tone='2']) { --lpd-tone: var(--lpd-tone-2); }
+html[data-theme-family='crystal'] .language-practice-drill :is(.language-practice-drill__tone-option--3, .language-practice-drill__tone-card[data-tone='3'], .language-practice-drill__tone-legend [data-tone='3']) { --lpd-tone: var(--lpd-tone-3); }
+html[data-theme-family='crystal'] .language-practice-drill :is(.language-practice-drill__tone-option--4, .language-practice-drill__tone-card[data-tone='4'], .language-practice-drill__tone-legend [data-tone='4']) { --lpd-tone: var(--lpd-tone-4); }
+html[data-theme-family='crystal'] .language-practice-drill :is(.language-practice-drill__tone-option--5, .language-practice-drill__tone-card[data-tone='5'], .language-practice-drill__tone-legend [data-tone='5']) { --lpd-tone: var(--lpd-tone-5); }
+html[data-theme-family='crystal'] .language-practice-drill__tone-legend { display: flex; align-items: center; gap: 12px; margin-top: 10px; color: var(--sf-text-muted); font-size: 12px; font-weight: 700; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-legend span { display: flex; align-items: center; gap: 5px; }
+html[data-theme-family='crystal'] .language-practice-drill__tone-legend i { width: 12px; height: 6px; transform: skewX(-24deg); background: var(--lpd-tone); }
+
+/* Sentence completion */
+html[data-theme-family='crystal'] .language-practice-drill__segments button { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family='crystal'] .language-practice-drill__segments button[aria-pressed='true'] { background: var(--lpd-hint-bg); box-shadow: inset 0 0 0 2px var(--lpd-hint-edge); color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] :is(.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank, .language-practice-drill__sentence-explanation) { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family='crystal'] .language-practice-drill__sentence-blank { clip-path: none; background: var(--lpd-hint-bg); box-shadow: inset 0 0 0 2px var(--lpd-hint-edge); color: var(--sf-holo-text); }
+
+/* Verdict */
+html[data-theme-family='crystal'] .language-practice-drill__feedback { align-self: flex-start; min-height: 30px; margin: 12px 0 0; padding: 0 12px; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-size: 14px; font-weight: 900; letter-spacing: .06em; }
+html[data-theme-family='crystal'] .language-practice-drill__feedback svg { width: 16px; height: 16px; }
+html[data-theme-family='crystal'] .language-practice-drill__feedback--correct { background: linear-gradient(90deg, #5ef2ff, #1aa7c9); color: #031820; }
+html[data-theme-family='crystal'] .language-practice-drill__feedback--incorrect { background: var(--lpd-bad-bg); box-shadow: inset 0 0 0 2px #ff2a4d; color: var(--lpd-crimson); }
+
+/* Footer */
+html[data-theme-family='crystal'] .language-practice-drill__form > .language-practice-drill__actions { position: absolute; z-index: 4; right: 0; bottom: 0; left: 0; height: 120px; margin: 0; padding: 0 26px 16px 14px; align-items: flex-end; gap: 10px; }
+html[data-theme-family='crystal'] .language-practice-drill__footnote { margin: 0 auto 20px 12px; color: var(--sf-text-muted); font-size: 12px; font-weight: 700; line-height: normal; }
+html[data-theme-family='crystal'] .language-practice-drill__hint { height: 52px; margin-bottom: 4px; padding: 0 18px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-body); font-family: var(--sf-font-display); font-style: italic; font-size: 14px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .language-practice-drill__primary-action { gap: 8px; height: 52px; min-height: 0; padding: 0 24px; border: 0; border-radius: 0; clip-path: none; transform: skewX(-14deg); background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: #fff; }
+html[data-theme-family='crystal'] .language-practice-drill__form > .language-practice-drill__actions .language-practice-drill__primary-action { margin-bottom: 4px; }
+html[data-theme-family='crystal'] .language-practice-drill__primary-action:hover { background: var(--sf-primary-bg); }
+html[data-theme-family='crystal'] .language-practice-drill__primary-action > * { transform: skewX(14deg); }
+html[data-theme-family='crystal'] .language-practice-drill__primary-label { font-family: var(--sf-font-display); font-style: italic; font-size: 17px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .language-practice-drill__primary-action kbd { border-radius: 0; }
+html[data-theme-family='crystal'] .language-practice-drill__results .language-practice-drill__exit { border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+
+@media (max-width: 480px) {
+  html[data-theme-family='crystal'] .language-practice-drill { min-height: 100dvh; clip-path: none; box-shadow: none; }
+  html[data-theme-family='crystal'] .language-practice-drill__toolbar { padding: 0 12px; }
+  html[data-theme-family='crystal'] .language-practice-drill__identity h2 { font-size: 18px; }
+  html[data-theme-family='crystal'] .language-practice-drill__panel:not(.language-practice-drill__results) { padding: 6px 16px 0; }
+  html[data-theme-family='crystal'] .language-practice-drill__hangul-blocks { gap: 16px; }
+  html[data-theme-family='crystal'] .language-practice-drill__hangul-keys { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px; }
+  html[data-theme-family='crystal'] .language-practice-drill__hangul-row { display: contents; }
+  html[data-theme-family='crystal'] .language-practice-drill__hangul-key { width: auto; min-width: 2.3rem; }
+  html[data-theme-family='crystal'] .language-practice-drill__hangul-keys > button:is(:first-child, :last-child) { position: static; }
+  html[data-theme-family='crystal'] .language-practice-drill__tone-grid { flex-wrap: wrap; }
+  html[data-theme-family='crystal'] .language-practice-drill__form > .language-practice-drill__actions { position: static; height: auto; margin-top: 16px; padding: 0 0 16px; }
+}
+
+html:is(.dark, :not(.dark)):not([data-theme-family='crystal']) .language-practice-drill :is(button:disabled, [aria-disabled='true']).fx-press {
+  transform: none;
+  filter: none;
+  transition: none;
+}

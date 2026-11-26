@@ -58,7 +58,7 @@ describe('SessionRecapModal', () => {
     expect(html).toMatch(/words, <em>locked in\.<\/em>/);
     expect(html).toContain('You remembered 10 of 12, and 2 words moved up a level.');
     expect(html).toContain('aria-label="Words that moved up a level"');
-    expect(html.match(/class="practice-recap-card"/g)).toHaveLength(2);
+    expect(html.match(/class="practice-recap-card sf-deal-\d"/g)).toHaveLength(2);
     expect(html).toContain('Moved from Learning to Mastered');
     expect(html).toContain('+1 level');
     expect(html).toContain('aria-label="10 remembered, 2 to revisit"');
@@ -144,9 +144,15 @@ describe('SessionRecapModal', () => {
     expect(html).toMatch(/data-recap-next="match"[^>]*>.*Play Word Match · 60 s.*6 words from this session/);
     expect(html).toContain('data-recap-next="reminder"');
     expect(html).toMatch(/data-recap-next="share"[^>]*>.*Share your week.*13-day streak card/);
+    // The top block follows RecapNext: a session line instead of the pill, and stat tiles led by the warm XP tile.
+    expect(html).toContain('class="practice-recap-overline fx-enter"');
+    expect(html).not.toContain('practice-recap-pill');
+    expect(html).toMatch(/<div class="practice-recap-stat" data-tone="warm"><dt>XP earned<\/dt>/);
+    expect(html).toMatch(/<dt>Streak<\/dt><dd class="practice-recap-stat-value">13<\/dd>/);
+    expect(html).toContain('class="sr-only">You remembered');
     // The weekly share moves into the row; the plain link and the next-review tile give way to it.
     expect(html).not.toContain('practice-recap-link');
-    expect(html).toContain('class="practice-recap-secondary"');
+    expect(html).toContain('class="practice-recap-secondary fx-press"');
     expect(html).not.toMatch(/AI Story|Pro\b|league|friends|percentile/i);
   });
 
@@ -156,7 +162,7 @@ describe('SessionRecapModal', () => {
     for (const props of [{ wordMatchCount: 6 }, { onPlayWordMatch: () => undefined, wordMatchCount: 0 }]) {
       const html = render({ variant: 'next', reminder, ...props });
       expect(html).not.toContain('data-recap-next="match"');
-      expect(html).toContain('class="practice-recap-primary"');
+      expect(html).toContain('class="practice-recap-primary fx-press"');
     }
   });
 

@@ -94,7 +94,7 @@ describe('CreateCardDialog', () => {
     expect(html).toContain('Everyday English');
     expect(html).toContain('Locked deck · Plan limit');
     expect(html).toContain('aria-describedby="create-card-dialog-description"');
-    expect(html).not.toMatch(/class="create-card-dialog__primary"[^>]*disabled/);
+    expect(html).not.toMatch(/class="create-card-dialog__primary[^"]*"[^>]*disabled/);
     expect(html).not.toContain('type="file"');
     expect(html).not.toContain('aria-label="Headword"');
   });
@@ -159,7 +159,7 @@ describe('CreateCardDialog', () => {
       duplicate: card,
     }));
     expect(duplicate).toContain('already exists in your library');
-    expect(duplicate).toMatch(/class="create-card-dialog__primary"[^>]*disabled/);
+    expect(duplicate).toMatch(/class="create-card-dialog__primary[^"]*"[^>]*disabled/);
   });
 
   it('shows the current AI operation stage in the existing status region while regenerating', () => {
@@ -213,12 +213,12 @@ describe('CreateCardDialog', () => {
     expect(html).not.toContain('aria-label="Meaning"');
     expect(html).not.toContain('aria-label="Definition"');
     expect(html).not.toContain('aria-label="Example sentence"');
-    expect(html).toMatch(/class="create-card-dialog__skeleton create-card-dialog__skeleton--meaning" aria-hidden="true"/);
+    expect(html).toMatch(/class="create-card-dialog__skeleton create-card-dialog__skeleton--meaning[^"]*" aria-hidden="true"/);
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('Finding an image…');
     expect(html).toContain('You can edit any field as soon as it appears');
-    expect(html).toMatch(/<button type="button" class="create-card-dialog__secondary">Cancel<\/button>/);
-    expect(html).toMatch(/<button type="button" class="create-card-dialog__primary" disabled="">Save card<\/button>/);
+    expect(html).toMatch(/<button type="button" class="create-card-dialog__secondary[^"]*">Cancel<\/button>/);
+    expect(html).toMatch(/<button type="button" class="create-card-dialog__primary[^"]*" disabled="">Save card<\/button>/);
     expect(html).toContain('role="status" aria-live="polite"');
     // No typewriter caret, no time estimate, and the input-layout controls are gone.
     expect(html).not.toMatch(/~\s?\d+\s?s\b/);
@@ -383,7 +383,7 @@ describe('CreateCardDialog', () => {
     }));
 
     expect(html).toContain('AI draft');
-    expect(html).toMatch(/class="create-card-dialog__primary"[^>]*disabled/);
+    expect(html).toMatch(/class="create-card-dialog__primary[^"]*"[^>]*disabled/);
   });
 
   it('offers a real manual card path without exposing unsupported upload controls', () => {

@@ -21,7 +21,7 @@
               <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{sub}}</p>
             </sc-if>
           </div>
-          <button aria-label="Close" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+          <button aria-label="Close" class="nk-press" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
         </header>
 
         <!-- Scan text -->
@@ -31,11 +31,11 @@
             <div style="display: flex; align-items: baseline; gap: 10px;">
               <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.04em; color: {{t.crimsonText}};">FOUND 9 WORDS</span>
               <span style="font-size: 12.5px; color: {{t.text3}};">2 already in your library</span>
-              <button style="margin-left: auto; border: 0; background: transparent; padding: 0; color: {{t.holoText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;">Clear selection</button>
+              <button class="nk-press" style="margin-left: auto; border: 0; background: transparent; padding: 0; color: {{t.holoText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;">Clear selection</button>
             </div>
             <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px;">
               <sc-for list="{{words}}" as="w" hint-placeholder-count="9">
-                <li style="height: 40px; box-sizing: border-box; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{w.bg}}; box-shadow: inset 0 0 0 1px {{w.line}}; opacity: {{w.opacity}}; display: flex; align-items: center; gap: 10px;">
+                <li class="{{w.enter}}" style="height: 40px; box-sizing: border-box; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{w.bg}}; box-shadow: inset 0 0 0 1px {{w.line}}; opacity: {{w.opacity}}; display: flex; align-items: center; gap: 10px;">
                   <span role="checkbox" aria-checked="{{w.on}}" aria-disabled="{{w.disabled}}" style="flex-shrink: 0; width: 20px; height: 20px; box-sizing: border-box; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); background: {{w.boxBg}}; box-shadow: inset 0 0 0 1.5px {{w.boxLine}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900;">{{w.tick}}</span>
                   <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; color: {{t.textStrong}};">{{w.word}}</span>
                   <span style="flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: {{t.text2}};">{{w.vi}}</span>
@@ -62,11 +62,11 @@
             </div>
             <label style="display: flex; flex-direction: column; gap: 6px;"><span style="{{cap}}">Share link</span>
               <span style="height: 48px; box-sizing: border-box; padding: 0 5px 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}}; display: flex; align-items: center; gap: 10px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{t.holoText}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"></path></svg><span style="flex-grow: 1; font-family: {{t.fMono}}; font-size: 13.5px; color: {{t.textStrong}};">sonflash.app/s/ielts-core-7Qm2x</span>
-                <button aria-live="polite" style="height: 38px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{holoBtn}}; color: {{holoBtnText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Copied</button></span>
+                <button aria-live="polite" class="nk-press" style="height: 38px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{holoBtn}}; color: {{holoBtnText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg class="nk-pop-3" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Copied</button></span>
             </label>
             <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px;">
               <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
-                <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; line-height: 1.45; color: {{t.body}};"><span style="flex-shrink: 0; margin-top: 3px; width: 8px; height: 8px; transform: rotate(45deg); background: {{t.holo}}; box-shadow: 0 0 8px rgb(94 242 255 / 0.8);"></span>{{f}}</li>
+                <li class="{{f.enter}}" style="display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; line-height: 1.45; color: {{t.body}};"><span style="flex-shrink: 0; margin-top: 3px; width: 8px; height: 8px; transform: rotate(45deg); background: {{t.holo}}; box-shadow: 0 0 8px rgb(94 242 255 / 0.8);"></span>{{f.text}}</li>
               </sc-for>
             </ul>
             <div role="alert" style="display: flex; gap: 10px; padding: 12px 14px; clip-path: {{t.chamferSm}}; background: {{goldBg}}; box-shadow: inset 0 0 0 1px {{goldLine}}; font-size: 13px; line-height: 1.5; color: {{t.body}};"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.goldText}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3 2 20h20zM12 10v4M12 17h.01"></path></svg><span>Your memory hooks and personal notes are included in shared cards. Remove anything private before sending the link.</span></div>
@@ -84,6 +84,7 @@
             <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="{{cap}}">A few words inside</span><span style="font-size: 12.5px; color: {{t.text3}};">+ 43 more</span></div>
             <div style="display: flex; gap: 8px; padding: 6px 0 4px;">
               <sc-for list="{{samples}}" as="s" hint-placeholder-count="5">
+                <div class="{{s.enter}}" style="flex-shrink: 0;">
                 <div style="position: relative; width: 86px; height: 112px; flex-shrink: 0; transform: rotate({{s.rot}}deg); filter: drop-shadow(0 0 10px {{tierA.soft}});">
                   <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{tierA.rim}};"></div>
                   <div style="position: absolute; inset: 1.5px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 10px 8px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;">
@@ -91,8 +92,9 @@
                     <span style="font-size: 11px; line-height: 1.3; color: {{t.text2}};">{{s.vi}}</span>
                   </div>
                 </div>
+                </div>
               </sc-for>
-              <div style="width: 86px; height: 112px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.text2}};">+43</div>
+              <div class="nk-slide-4" style="width: 86px; height: 112px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.text2}};">+43</div>
             </div>
             <p style="margin: 0; font-size: 13px; line-height: 1.5; color: {{t.text2}};">Cards go into a new deck with the same name. Your existing cards and progress stay untouched.</p>
           </div>
@@ -103,7 +105,7 @@
           <div style="padding: 4px 26px 18px; display: flex; flex-direction: column; gap: 12px;">
             <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
               <sc-for list="{{tiles}}" as="s" hint-placeholder-count="4">
-                <div style="position: relative; padding: 10px 14px 12px; clip-path: {{t.chamferSm}}; background: {{s.bg}}; box-shadow: inset 0 0 0 1px {{s.line}};"><div style="{{cap}}">{{s.label}}</div><div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1.1; color: {{s.color}};">{{s.n}}</div></div>
+                <div class="{{s.enter}}" style="position: relative; padding: 10px 14px 12px; clip-path: {{t.chamferSm}}; background: {{s.bg}}; box-shadow: inset 0 0 0 1px {{s.line}};"><div style="{{cap}}">{{s.label}}</div><div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1.1; color: {{s.color}};">{{s.n}}</div></div>
               </sc-for>
             </div>
             <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px;">
@@ -133,7 +135,7 @@
               <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="{{cap}}">XP · last 14 days</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; color: {{t.goldText}};">+1,340 XP</span></div>
               <svg width="100%" height="60" viewBox="0 0 560 90" preserveAspectRatio="none" role="img" aria-label="Daily XP over the last 14 days" style="display: block; margin-top: 6px;">
                 <path d="{{spark.area}}" fill="{{sparkFill}}"></path>
-                <path d="{{spark.line}}" fill="none" stroke="{{t.crimson}}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+                <path class="sf-draw" pathLength="1" d="{{spark.line}}" fill="none" stroke="{{t.crimson}}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
                 <circle cx="{{spark.lx}}" cy="{{spark.ly}}" r="5" fill="{{t.gold}}"></circle>
               </svg>
               <div style="margin-top: 4px; display: flex; justify-content: space-between; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};"><span>10 Sep</span><span>Today</span></div>
@@ -143,7 +145,7 @@
 
         <footer style="position: relative; padding: 14px 26px 18px; background: {{m.foot}}; box-shadow: inset 0 1px 0 {{t.line}}; display: flex; align-items: center; gap: 10px;">
           <sc-if value="{{hasLink}}" hint-placeholder-val="{{false}}">
-            <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.holoText}}; text-decoration: none;">Open full Progress →</a>
+            <a href="#" class="nk-press" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.holoText}}; text-decoration: none;">Open full Progress →</a>
           </sc-if>
           <sc-for list="{{lefts}}" as="b" hint-placeholder-count="1">
             <button class="nk-lift" style="{{b.css}}">{{b.label}}</button>
@@ -172,6 +174,8 @@ class Component extends DCLogic {
       inner: dark ? 'rgb(255 255 255 / 0.04)' : 'rgb(255 255 255 / 0.7)',
       glow: dark ? 'drop-shadow(0 0 36px rgb(255 42 77 / 0.3)) drop-shadow(0 30px 40px rgb(0 0 0 / 0.7))' : 'drop-shadow(0 26px 40px rgb(20 70 130 / 0.35))',
     };
+    // Items of the dialog's one list enter in order once the dialog has unfolded.
+    const slide = (i) => ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4'][Math.min(i, 3)];
     const cap = 'font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: ' + t.text2 + ';';
     const btnBase = 'height: 46px; border: 0; cursor: pointer; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 7px;';
     const B = {
@@ -193,17 +197,17 @@ class Component extends DCLogic {
       ['vindicated', 'được minh oan', 'C2', false], ['immediate', 'ngay lập tức', 'In library', true], ['embankments', 'đê, bờ kè', 'C1', false],
       ['provisional', 'tạm thời', 'C1', false], ['resilient', 'kiên cường', 'In library', true], ['comprehensive', 'toàn diện', 'B2', false],
     ];
-    const words = W.map(([word, vi, tag, owned]) => ({
-      word, vi, tag, on: String(!owned), disabled: String(owned), tick: owned ? '' : '✓',
+    const words = W.map(([word, vi, tag, owned], i) => ({
+      enter: slide(Math.floor(i / 2)), word, vi, tag, on: String(!owned), disabled: String(owned), tick: owned ? '' : '✓',
       bg: owned ? 'transparent' : (dark ? 'rgb(255 42 77 / 0.07)' : 'rgb(255 255 255 / 0.8)'), line: owned ? t.line : t.panelEdge, opacity: owned ? 0.55 : 1,
       boxBg: owned ? 'transparent' : t.primaryBg, boxLine: owned ? t.lineStrong : 'transparent', tagColor: owned ? t.text3 : t.holoText,
     }));
     const samples = [
       ['ne', 'go', 'tiate', 'đàm phán', -3], ['', 'lev', 'erage', 'đòn bẩy', 2], ['lia', 'bil', 'ity', 'trách nhiệm pháp lý', -1],
       ['', 'stake', 'holder', 'bên liên quan', 2.5], ['', 'rev', 'enue', 'doanh thu', -2],
-    ].map(([pre, stress, rest, vi, rot]) => ({ pre, stress, rest, vi, rot }));
-    const tiles = [['Total', '1,228', false], ['Mastered', '312', false], ['Learning', '304', false], ['Due today', '12', true]].map(([label, n, hot]) => ({
-      label, n, color: hot ? t.crimsonText : t.textStrong, line: hot ? t.panelEdge : t.line, bg: hot ? (dark ? 'rgb(255 42 77 / 0.12)' : 'rgb(255 255 255 / 0.9)') : m.inner }));
+    ].map(([pre, stress, rest, vi, rot], i) => ({ pre, stress, rest, vi, rot, enter: slide(i) }));
+    const tiles = [['Total', '1,228', false], ['Mastered', '312', false], ['Learning', '304', false], ['Due today', '12', true]].map(([label, n, hot], i) => ({
+      enter: slide(i), label, n, color: hot ? t.crimsonText : t.textStrong, line: hot ? t.panelEdge : t.line, bg: hot ? (dark ? 'rgb(255 42 77 / 0.12)' : 'rgb(255 255 255 / 0.9)') : m.inner }));
     const palette = dark ? ['#ff2a4d', '#5ef2ff', '#ffd166', '#ff8fb6', '#1aa7c9'] : ['#e0173f', '#0a8fb0', '#c98a00', '#b3265a', '#1f6fd6'];
     const cats = [['IELTS', 420], ['Daily English', 300], ['Business & law', 242], ['TACN', 170], ['Deep learning', 96]].map(([name, n], i) => ({ name, n, pct: Math.round(n / 420 * 100), color: palette[i] }));
     const C = 2 * Math.PI * 42;
@@ -228,7 +232,7 @@ class Component extends DCLogic {
       isExtract: kind === 'extract', isShare: kind === 'share', isShareIn: kind === 'sharein', isInsights: kind === 'insights',
       segs, words, samples, tiles, cats, donut,
       inStats: [{ label: 'Cards', value: '48' }, { label: 'Category', value: 'Business & law' }, { label: 'Level', value: 'B2 – C1' }],
-      facts: ['Recipients get their own copy — your progress and review history stay private.', 'Edits you make later are not pushed to copies already taken.', 'The link works until you revoke it.'],
+      facts: ['Recipients get their own copy — your progress and review history stay private.', 'Edits you make later are not pushed to copies already taken.', 'The link works until you revoke it.'].map((text, i) => ({ text, enter: slide(i + 1) })),
       cover: dark ? { back: 'rgb(94 242 255 / 0.35)', mid: 'rgb(255 143 182 / 0.45)' } : { back: '#a9dcff', mid: '#ffc2d6' },
       spark: { line, area: line + ' L560 90 L0 90 Z', lx: pts[13][0].toFixed(1), ly: pts[13][1].toFixed(1) },
       sparkFill: dark ? 'rgb(255 42 77 / 0.16)' : 'rgb(224 23 63 / 0.12)',

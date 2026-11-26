@@ -3,8 +3,9 @@ import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Loader2, X } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
+import { CrystalStar } from '../../components/stats/CrystalStar';
 import { useReducedMotion } from '../../lib/motionPreferenceHooks';
 import { useTheme } from '../theme/ThemeProvider';
 import type { WeeklyRecapShareOutcome } from '../weeklyRecap/weeklyRecapShare';
@@ -85,14 +86,33 @@ function TierLabel({ value, crystal }: { value?: string; crystal: boolean }) {
   return value && names[value] ? <Trans {...names[value]} /> : <>{value}</>;
 }
 function TierArtifact({ payload, crystal }: { payload?: AnimeRevealSourcePayload; crystal: boolean }) {
+  if (crystal) return <CrystalTierArtifact payload={payload} />;
   return <div className="anime-reveal__tier-art" aria-hidden="true"><div className="anime-reveal__tier-card">
     {payload?.imageUrl ? <img src={payload.imageUrl} alt="" /> : <div className="anime-reveal__tier-image" />}
     <div>{payload?.lexicalLabel ? <small>{payload.lexicalLabel}</small> : null}{payload?.headword ? <strong>{payload.headword}</strong> : null}{payload?.translation ? <span>{payload.translation}</span> : null}
       {payload?.previousValue && payload.currentValue ? <b><span><TierLabel value={payload.previousValue} crystal={crystal} /></span> <i>→</i> <em data-tier={payload.currentValue}><TierLabel value={payload.currentValue} crystal={crystal} /></em></b> : null}</div>
   </div><span className="anime-reveal__flare" /></div>;
 }
-function StreakArtifact({ value }: { value?: string }) {
-  return <div className="anime-reveal__streak-art" aria-hidden="true"><svg viewBox="0 0 24 28"><path d="M12 1c1.3 4.2-1.8 6.6-1.8 9.8 0 1.7 1.2 3 2.8 3 1.8 0 2.9-1.4 2.6-3.6 2.8 2 4.2 5.1 4.2 8.1C19.8 23.4 16.3 27 12 27s-7.8-2.9-7.8-7.3C4.2 14.1 9.4 11.4 12 1z" /></svg>{value ? <strong>{value}</strong> : null}<span>★</span></div>;
+/**
+ * The Crystal Star tier card: a rim in the colours of the tier reached around a chamfered card, the word's
+ * picture cut on a slant under a holo sheen, the word, and the move from the tier left behind to the tier
+ * reached. The text arrow stays in the text for anything that reads the card as text; the drawn arrow shows.
+ */
+function CrystalTierArtifact({ payload }: { payload?: AnimeRevealSourcePayload }) {
+  const move = payload?.previousValue && payload.currentValue ? { from: payload.previousValue, to: payload.currentValue } : null;
+  return <div className="anime-reveal__tier-art" data-tier={payload?.currentValue} aria-hidden="true">
+    <span className="anime-reveal__tier-rim"><span className="anime-reveal__tier-rim-spin" /></span>
+    <div className="anime-reveal__tier-card">
+      <div className="anime-reveal__tier-image">{payload?.imageUrl ? <img src={payload.imageUrl} alt="" /> : null}<span className="anime-reveal__tier-holo" /></div>
+      <div className="anime-reveal__tier-text">{payload?.lexicalLabel ? <small>{payload.lexicalLabel}</small> : null}{payload?.headword ? <strong>{payload.headword}</strong> : null}{payload?.translation ? <span>{payload.translation}</span> : null}</div>
+      {move ? <b className="anime-reveal__tier-move"><span><TierLabel value={move.from} crystal /></span> <i><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg><span className="sr-only">→</span></i> <em data-tier={move.to}><span><TierLabel value={move.to} crystal /></span></em></b> : null}
+    </div>
+    <span className="anime-reveal__flare"><span /><span /><span /></span>
+  </div>;
+}
+function StreakArtifact({ value, crystal }: { value?: string; crystal: boolean }) {
+  const flameFill = `${useId()}-flame`;
+  return <div className="anime-reveal__streak-art" aria-hidden="true"><svg viewBox="0 0 24 28"><path d="M12 1c1.3 4.2-1.8 6.6-1.8 9.8 0 1.7 1.2 3 2.8 3 1.8 0 2.9-1.4 2.6-3.6 2.8 2 4.2 5.1 4.2 8.1C19.8 23.4 16.3 27 12 27s-7.8-2.9-7.8-7.3C4.2 14.1 9.4 11.4 12 1z" fill={crystal ? `url(#${flameFill})` : undefined} />{crystal ? <defs><linearGradient id={flameFill} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffd166" /><stop offset="0.45" stopColor="#ff5470" /><stop offset="1" stopColor="#7a0820" /></linearGradient></defs> : null}</svg>{value ? <strong>{value}</strong> : null}{crystal ? <span className="anime-reveal__streak-star"><CrystalStar /></span> : <span>★</span>}</div>;
 }
 function streakDescription(facts: AnimeRevealStreakFacts): Phrase[] {
   return [
@@ -116,8 +136,21 @@ function StreakRewards({ facts, badges }: { facts?: AnimeRevealStreakFacts; badg
   return streakChips(facts, badges).map(({ key, tone, phrase: [message, values] }) => <li key={key} data-tone={tone}><Trans {...message} values={values} /></li>);
 }
 /** The level star carries the level reached; the move from the previous level reads in the title. */
-function LevelArtifact({ currentValue }: Pick<AnimeRevealSourcePayload, 'currentValue'>) {
-  return <div className="anime-reveal__level-art" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /></svg><div><small>LV</small>{currentValue ? <strong>{currentValue}</strong> : null}</div></div>;
+function LevelArtifact({ currentValue, crystal }: Pick<AnimeRevealSourcePayload, 'currentValue'> & { crystal: boolean }) {
+  return <div className="anime-reveal__level-art" aria-hidden="true">{crystal ? <span className="anime-reveal__level-star"><CrystalStar /></span> : <svg viewBox="0 0 100 100"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /></svg>}<div><small>LV</small>{currentValue ? <strong>{currentValue}</strong> : null}</div></div>;
+}
+/**
+ * The Crystal Star ceremony light, laid out on the board's 720px stage centred over the column: the prism and
+ * white beams, two slanted side beams, the starfield and the two crystal wings. It clips itself, so the tilted
+ * beams never make the reveal scroll.
+ */
+function CrystalBackdrop() {
+  return <div aria-hidden="true" className="anime-reveal__backdrop">
+    <div className="anime-reveal__prism" /><div className="anime-reveal__beam" data-beam="center" />
+    <div className="anime-reveal__beam" data-beam="left" /><div className="anime-reveal__beam" data-beam="right" />
+    <div className="anime-reveal__starfield" />
+    <div className="anime-reveal__wings"><span className="anime-reveal__wing crystal-wing-art" /><span className="anime-reveal__wing crystal-wing-art" data-mirrored="" /></div>
+  </div>;
 }
 function LevelTitle({ previousValue, currentValue }: { previousValue?: string; currentValue: string }) {
   return <>
@@ -178,7 +211,7 @@ export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater
     }
   };
   const streakFacts = event === 'streak' ? payload?.streak : undefined;
-  const artifact = event === 'tierup' ? <TierArtifact payload={payload} crystal={crystal} /> : event === 'streak' ? <StreakArtifact value={payload?.currentValue ?? (streakFacts ? String(streakFacts.length) : undefined)} /> : <LevelArtifact currentValue={payload?.currentValue} />;
+  const artifact = event === 'tierup' ? <TierArtifact payload={payload} crystal={crystal} /> : event === 'streak' ? <StreakArtifact value={payload?.currentValue ?? (streakFacts ? String(streakFacts.length) : undefined)} crystal={crystal} /> : <LevelArtifact currentValue={payload?.currentValue} crystal={crystal} />;
   const title = payload?.title ?? (isLevel && payload?.currentValue
     ? <LevelTitle previousValue={payload.previousValue} currentValue={payload.currentValue} />
     : streakFacts ? <Trans {...streakCopy.days} values={{ count: streakFacts.length }} /> : <Trans {...copy[event].title} />);
@@ -188,10 +221,12 @@ export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater
   return <Dialog.Root open={open} onOpenChange={nextOpen => { if (!nextOpen) later(); }}><Dialog.Portal>
     <Dialog.Overlay className="anime-reveal__overlay" />
     <Dialog.Content className="anime-reveal" data-event={event} data-motion={motionReduced ? 'reduced' : 'full'} onEscapeKeyDown={event => { if (isEquipping) event.preventDefault(); }} onPointerDownOutside={event => { if (isEquipping) event.preventDefault(); }}>
-      <div aria-hidden="true" className="anime-reveal__starfield" /><div aria-hidden="true" className="anime-reveal__prism" /><div aria-hidden="true" className="anime-reveal__wings" />
-      {lumiEnabled ? <Lumi pose={event === 'tierup' ? 'proud' : 'happy'} size={112} className="anime-reveal__lumi" /> : null}
-      <Dialog.Close className="anime-reveal__close" disabled={isEquipping} aria-label={_(msg({ id: 'rewards.reveal.close', message: 'Close reward' }))}><X size={18} aria-hidden="true" /></Dialog.Close>
-      <p className="anime-reveal__kicker"><Trans {...copy[event].kicker} /></p>{artifact}<Dialog.Title className="anime-reveal__title">{title}</Dialog.Title>
+      {crystal ? <CrystalBackdrop /> : <><div aria-hidden="true" className="anime-reveal__starfield" /><div aria-hidden="true" className="anime-reveal__prism" /><div aria-hidden="true" className="anime-reveal__wings" /></>}
+      {lumiEnabled ? crystal
+        ? <span className="anime-reveal__mascot"><Lumi pose={event === 'tierup' ? 'proud' : 'happy'} size="100%" className="anime-reveal__lumi" /></span>
+        : <Lumi pose={event === 'tierup' ? 'proud' : 'happy'} size={112} className="anime-reveal__lumi" /> : null}
+      <Dialog.Close className="anime-reveal__close" disabled={isEquipping} aria-label={_(msg({ id: 'rewards.reveal.close', message: 'Close reward' }))}><X size={crystal ? 15 : 18} aria-hidden="true" /></Dialog.Close>
+      <p className="anime-reveal__kicker">{crystal ? <span><Trans {...copy[event].kicker} /></span> : <Trans {...copy[event].kicker} />}</p>{artifact}<Dialog.Title className="anime-reveal__title">{title}</Dialog.Title>
       <Dialog.Description className="anime-reveal__description">{description}</Dialog.Description>
       {hasRewards ? <ul className="anime-reveal__rewards" aria-label={_(msg({ id: 'rewards.reveal.rewards-label', message: 'Unlocked rewards' }))}>
         {event === 'streak' ? <StreakRewards facts={streakFacts} badges={payload?.rewardLabels ?? []} /> : payload?.rewardLabels?.map(reward => <li key={reward}>{reward}</li>)}

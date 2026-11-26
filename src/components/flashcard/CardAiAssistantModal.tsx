@@ -37,6 +37,22 @@ const PRESET_PROMPTS = [
   },
 ];
 
+
+/** The four-point star the DlgTutor board draws in its mark and answer headings (DlgTutor.dc.html 4 and 18). */
+function TutorStar({ className }: { className?: string }) {
+  return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z" /></svg>;
+}
+
+/** Crystal keeps its sparkles; Classic shows the board's star. */
+function HeadingStar() {
+  return (
+    <>
+      <Sparkles aria-hidden="true" className="[html:not([data-theme-family=crystal])_&]:hidden" />
+      <TutorStar className="hidden [html:not([data-theme-family=crystal])_&]:block" />
+    </>
+  );
+}
+
 export function CardAiAssistantModal({
   card,
   open,
@@ -165,7 +181,7 @@ export function CardAiAssistantModal({
             <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-top" />
             <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-bottom" />
             <div className="overlay-dialog-header">
-              <span aria-hidden="true" className="card-tutor-mark"><Sparkles /></span>
+              <span aria-hidden="true" className="card-tutor-mark"><TutorStar /></span>
               <span aria-hidden="true" className="card-tutor-portrait"><Lumi pose="hint" size={74} /></span>
               <div className="min-w-0 flex-1">
                 <p className="overlay-dialog-kicker">
@@ -190,7 +206,7 @@ export function CardAiAssistantModal({
                   <Trans {...msg({ context: 'flashcard.ai.description', message: 'Ask questions about usage, nuances & practical examples.' })} />
                 </Dialog.Description>
               </div>
-              <Dialog.Close className="overlay-dialog-close" aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}>
+              <Dialog.Close className="overlay-dialog-close fx-press" aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}>
                 <span aria-hidden="true" className="overlay-dialog-close-surface"><X /></span>
               </Dialog.Close>
             </div>
@@ -207,7 +223,7 @@ export function CardAiAssistantModal({
                     disabled={isLoading}
                     data-active={lastQuestion === _(preset.label.id) ? 'true' : undefined}
                     onClick={() => void askAi(preset.prompt, _(preset.label.id))}
-                    className="card-tutor-preset"
+                    className="card-tutor-preset sf-ease"
                   >
                     {_(preset.label.id)}
                   </button>
@@ -215,19 +231,19 @@ export function CardAiAssistantModal({
               </div>
 
               {(turns.length > 0 || isLoading || error) && (
-                <div className="card-tutor-answers" aria-live="polite">
+                <div className="card-tutor-answers fx-stagger" aria-live="polite">
                   {turns.map((turn, index) => (
                     <div key={index} className="card-tutor-answer">
                       <p className="card-tutor-answer-heading">
-                        <Sparkles aria-hidden="true" />
+                        <HeadingStar />
                         <span className="sr-only"><Trans {...msg({ context: 'flashcard.ai.question', message: 'Q:' })} /> </span>
                         {turn.label || turn.question}
                       </p>
                       <p className="card-tutor-answer-text">{turn.answer}</p>
                     </div>
                   ))}
-                  {(isLoading || error) && <div className="card-tutor-answer">
-                    <p className="card-tutor-answer-heading"><Sparkles aria-hidden="true" />{activeQuestion}</p>
+                  {(isLoading || error) && <div key="pending" className="card-tutor-answer">
+                    <p className="card-tutor-answer-heading"><HeadingStar />{activeQuestion}</p>
                     {isLoading ? (
                       <div role="status" className="card-tutor-loading">
                         <span aria-hidden="true" className="card-tutor-spinner" />
@@ -238,7 +254,7 @@ export function CardAiAssistantModal({
                 </div>
               )}
 
-              <form onSubmit={handleCustomSubmit} className="card-tutor-ask">
+              <form onSubmit={handleCustomSubmit} className="card-tutor-ask sf-ease">
                 <input
                   type="text"
                   aria-label={_(msg({ id: 'flashcard.ai.question-label', message: 'Ask a question about this word' }))}
@@ -252,7 +268,7 @@ export function CardAiAssistantModal({
                 <button
                   type="submit"
                   disabled={!customQuery.trim() || isLoading}
-                  className="card-tutor-send"
+                  className="card-tutor-send fx-press"
                   aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
                 >
                   <span aria-hidden="true" className="card-tutor-send-surface"><ArrowRight /></span>

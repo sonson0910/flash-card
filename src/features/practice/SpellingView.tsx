@@ -2,7 +2,6 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react";
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Timer, Trophy, Zap } from "lucide-react";
-import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { Lumi } from "../../components/lumi/Lumi";
 import { useFocusModePreference } from "../settings/focus-mode-preference";
 import { useTheme } from "../theme/ThemeProvider";
@@ -12,7 +11,7 @@ import { createImeSubmitGuard } from "../../lib/imeSubmitGuard";
 import { speechLocaleFor } from "../../lib/speechLocale";
 import type { CardData } from "../../types/card";
 import { useCourseSession } from "../courses/CourseGate";
-import { EnterKeyHint, LumiCoach, PracticeCount, PracticeTopBar, practiceSegments, useCrystalLumi } from "./practice-board-parts";
+import { EnterKeyHint, LumiCoach, PracticeCount, PracticeEntrance, PracticeTopBar, practiceSegments, useCrystalLumi } from "./practice-board-parts";
 import { moveFocus } from "./practice-focus";
 import { spellingCharacters, spellingTilesFor } from "./spelling-tiles";
 import "./practice-board.css";
@@ -148,17 +147,17 @@ export function SpellingView({
     else coach = { pose: "oops", heading: <Trans {...msg({ context: "practice.quiz.lumi.almost", message: "Almost!" })} />, body: <span lang={targetLanguage}>{card.word}</span> };
   }
   const legend = (
-    <ul className="practice-spelling__legend">
+    <ul className={crystal ? "practice-spelling__legend" : "practice-spelling__legend fx-enter-3"}>
       <li data-state="correct"><Trans {...msg({ context: "practice.spelling.legend.correct", message: "Correct" })} /></li>
       <li data-state="wrong"><Trans {...msg({ context: "practice.spelling.legend.wrong", message: "Wrong letter" })} /></li>
       <li data-state="missing"><Trans {...msg({ context: "practice.spelling.legend.missing", message: "Missing letter" })} /></li>
     </ul>
   );
-  const actionClass = "crystal-chamfer-sm min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none";
+  const actionClass = `${crystal ? "" : "fx-press "}crystal-chamfer min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`;
   return (
     <div className="practice-board practice-board--spelling practice-stage" data-practice-mode="spelling">
       {showResults ? (
-        <GsapEntrance
+        <PracticeEntrance
           animationKey="spelling-results"
           variant="result"
           className="practice-results crystal-chamfer surface-glass"
@@ -210,21 +209,21 @@ export function SpellingView({
               data-color-role="primary"
               type="button"
               onClick={onRestart}
-              className="practice-primary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={`practice-primary${crystal ? "" : " fx-press"} crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
             >
               <Trans {...msg({ context: 'practice.actions.try-again', message: 'Try again' })} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="practice-secondary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={`practice-secondary${crystal ? "" : " fx-press"} crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
             >
               <Trans
                 {...msg({ context: 'practice.actions.back-to-library', message: 'Back to library' })}
               />
             </button>
           </div>
-        </GsapEntrance>
+        </PracticeEntrance>
       ) : card ? (
         <>
           <PracticeTopBar
@@ -242,13 +241,15 @@ export function SpellingView({
             progressValue={answeredCount}
             actions={runningAccuracy !== null ? (
               <span className="practice-topbar__accuracy">
-                <Trans {...msg({ context: 'practice.spelling.accuracy-so-far', message: '{percent}% accuracy' })} values={{ percent: runningAccuracy }} />
+                <Trans {...msg({ context: 'practice.spelling.accuracy-so-far', message: '{percent}% accuracy' })} values={{ percent: <span className="practice-topbar__accuracy-value">{runningAccuracy}</span> }} />
               </span>
             ) : undefined}
             chip={!focusModeEnabled && answeredCount >= 2 ? (
               <span data-practice-combo={answeredCount} className="practice-chip">
-                <Zap size={14} aria-hidden="true" />
-                <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                <span className="practice-chip__text">
+                  <Zap size={14} aria-hidden="true" />
+                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                </span>
               </span>
             ) : undefined}
             count={<PracticeCount current={answeredCount} total={cards.length} />}
@@ -259,7 +260,7 @@ export function SpellingView({
               values={{ score, total: cards.length }}
             />
           </p>
-          <GsapEntrance
+          <PracticeEntrance
             animationKey={currentIndex}
             variant="step"
             onEntered={() => {
@@ -283,11 +284,11 @@ export function SpellingView({
                   values={{ current: currentIndex + 1, total: cards.length }}
                 />
               </span>
-              <div className="practice-listen">
+              <div className={crystal ? "practice-listen" : "practice-listen fx-enter"}>
                 <button
                   type="button"
                   onClick={() => playPronunciation()}
-                  className="practice-listen__button transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none"
+                  className={`practice-listen__button${crystal ? "" : " fx-press"} focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none`}
                   aria-label={_(
                     msg({
                       id: "practice.spelling.play-pronunciation",
@@ -296,23 +297,30 @@ export function SpellingView({
                     { word: card.word },
                   )}
                 >
-                  {LISTEN_BARS.map(height => <i key={height} aria-hidden="true" style={{ height }} />)}
+                  {LISTEN_BARS.map((height, index) => (
+                    <i
+                      key={height}
+                      className="sf-wave"
+                      aria-hidden="true"
+                      style={{ height, animationDelay: `${index * 110}ms` }}
+                    />
+                  ))}
                 </button>
               </div>
-              <div className="practice-speed" role="group" aria-label={_(msg({ id: "practice.spelling.speed", message: "Playback speed" }))}>
-                <button type="button" aria-pressed={speed === 1} onClick={() => chooseSpeed(1)} className="practice-speed__chip min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2">
-                  <span className="practice-speed__face crystal-chamfer-sm transition-colors motion-reduce:transition-none">
+              <div className={crystal ? "practice-speed" : "practice-speed fx-enter"} role="group" aria-label={_(msg({ id: "practice.spelling.speed", message: "Playback speed" }))}>
+                <button type="button" aria-pressed={speed === 1} onClick={() => chooseSpeed(1)} className={`practice-speed__chip${crystal ? "" : " sf-ease"} min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2`}>
+                  <span className={`practice-speed__face ${crystal ? "transition-colors" : "sf-ease"} motion-reduce:transition-none`}>
                     <Trans {...msg({ context: 'practice.spelling.speed-normal', message: '1× normal' })} />
                   </span>
                 </button>
-                <button type="button" aria-pressed={speed === 0.6} onClick={() => chooseSpeed(0.6)} className="practice-speed__chip min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2">
-                  <span className="practice-speed__face crystal-chamfer-sm transition-colors motion-reduce:transition-none">
+                <button type="button" aria-pressed={speed === 0.6} onClick={() => chooseSpeed(0.6)} className={`practice-speed__chip${crystal ? "" : " sf-ease"} min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2`}>
+                  <span className={`practice-speed__face ${crystal ? "transition-colors" : "sf-ease"} motion-reduce:transition-none`}>
                     <Timer size={14} aria-hidden="true" />
                     <Trans {...msg({ context: 'practice.spelling.speed-slow', message: '0.6× slow' })} />
                   </span>
                 </button>
               </div>
-              <div className="practice-spelling__hint">
+              <div className={crystal ? "practice-spelling__hint" : "practice-spelling__hint fx-enter-2"}>
                 <span className="practice-spelling__hint-label"><Trans {...msg({ context: 'practice.spelling.meaning-hint', message: 'Meaning:' })} /></span>{" "}
                 <h3
                   id="spelling-question-heading"
@@ -360,16 +368,16 @@ export function SpellingView({
                   data-practice-tiles
                   style={{ "--tile-count": Math.max(tiles.length, 1) } as CSSProperties}
                 >
-                  <ol className="practice-tiles__row" aria-hidden="true" lang={targetLanguage}>
+                  <ol className={`practice-tiles__row${checked && !correct ? " sf-shake" : ""}`} aria-hidden="true" lang={targetLanguage}>
                     {tiles.map((tile, index) => (
                       <li
                         key={index}
-                        className="practice-tile crystal-chamfer-sm"
+                        className="practice-tile"
                         data-state={tile.state}
                         data-space={tile.char === " " ? "true" : undefined}
                         data-next={!checked && index === typedCount ? "true" : undefined}
                       >
-                        {tile.char === " " ? " " : tile.char}
+                        <span className="practice-tile__glyph">{tile.char === " " ? " " : tile.char}</span>
                       </li>
                     ))}
                   </ol>
@@ -408,7 +416,7 @@ export function SpellingView({
                 </div>
                 {checked && !correct && legend}
                 {checked && (
-                  <p className="practice-spelling__feedback" data-outcome={correct ? "correct" : "wrong"} aria-hidden="true">
+                  <p className={crystal ? "practice-spelling__feedback" : "practice-spelling__feedback fx-enter-3"} data-outcome={correct ? "correct" : "wrong"} aria-hidden="true">
                     {correct ? (
                       <Trans {...msg({ context: 'practice.spelling.correct', message: 'Correct' })} />
                     ) : (
@@ -421,7 +429,7 @@ export function SpellingView({
                     )}
                   </p>
                 )}
-                <div className="practice-spelling__actions">
+                <div className={crystal ? "practice-spelling__actions" : "practice-spelling__actions fx-enter-4"}>
                   {checked ? (
                     <button
                       data-color-role="primary"
@@ -446,7 +454,14 @@ export function SpellingView({
                   ) : (
                     <>
                       <button data-color-role="primary" type="submit" className={`practice-primary ${actionClass}`}>
-                        <Trans {...msg({ context: 'practice.spelling.check', message: 'Check' })} />
+                        {crystal ? (
+                          <>
+                            <span className="practice-primary__shine" aria-hidden="true" />
+                            <span className="practice-primary__label"><Trans {...msg({ context: 'practice.spelling.check', message: 'Check' })} /></span>
+                          </>
+                        ) : (
+                          <Trans {...msg({ context: 'practice.spelling.check', message: 'Check' })} />
+                        )}
                         <EnterKeyHint />
                       </button>
                       {onReveal && (
@@ -471,21 +486,21 @@ export function SpellingView({
             </div>
             {crystal && (
               <div className="practice-spelling__side">
-                <div className="practice-side-panel crystal-chamfer-sm">
+                <div className="practice-side-panel crystal-chamfer">
                   <span className="practice-side-panel__label"><Trans {...msg({ context: 'practice.results.accuracy', message: 'Accuracy' })} /></span>
-                  <b className="practice-side-panel__value">{runningAccuracy === null ? "—" : `${runningAccuracy}%`}</b>
+                  <b className="practice-side-panel__value">{runningAccuracy === null ? "—" : <>{runningAccuracy}<span className="practice-side-panel__unit">%</span></>}</b>
                   <span className="practice-side-panel__bar" aria-hidden="true"><i style={{ width: `${runningAccuracy ?? 0}%` }} /></span>
                   <span className="practice-side-panel__note">
                     <Trans {...msg({ context: 'practice.spelling.words-right', message: '{score} of {answered} words right' })} values={{ score, answered: answeredCount }} />
                   </span>
                 </div>
-                <div className="practice-side-panel crystal-chamfer-sm">
+                <div className="practice-side-panel crystal-chamfer">
                   <span className="practice-side-panel__label"><Trans {...msg({ context: 'practice.spelling.letter-key', message: 'Letter key' })} /></span>
                   {legend}
                 </div>
               </div>
             )}
-          </GsapEntrance>
+          </PracticeEntrance>
         </>
       ) : null}
     </div>

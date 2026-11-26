@@ -1,6 +1,7 @@
 import type { I18n, MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { resolveLanguagePackId } from '../../features/languagePacks/registry';
+import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import type { CardData } from '../../types/card';
 
 /** Target languages the card copy names; any other language reads as "the word". */
@@ -55,6 +56,13 @@ export function cardMeaningLanguageKey(card: Pick<CardData, 'translationLanguage
  */
 export function isLanguagePackCard(card: Pick<CardData, 'language'>): boolean {
   return resolveLanguagePackId(card.language) !== 'en';
+}
+
+/**
+ * Cards without a supported picture use the Study Card language form across every target language.
+ */
+export function usesLanguageCardForm(card: { imageUrl?: string | null }): boolean {
+  return !isSupportedImageUrl(card.imageUrl);
 }
 
 /** The side half of the card's group label, naming the language that side shows. */

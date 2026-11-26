@@ -14,12 +14,12 @@
 
   <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
     <button class="nk-lift" aria-label="End session" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
-    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">STEP 1 <span style="color: {{t.crimsonText}};">//</span> REVIEW</div>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">STEP 1 <span style="color: {{t.crimsonText}};">//</span> REVIEW</div>
     <div role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="{{position}}" style="margin: 0 auto; display: flex; align-items: center; gap: 4px;">
       <sc-for list="{{segments}}" as="seg" hint-placeholder-count="12">
         <span style="width: 32px; height: 10px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
       </sc-for>
-      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">{{position}}<span style="font-size: 15px; color: {{t.text3}};"> / 12</span></span>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">{{position}}<span style="font-size: 15px; color: {{t.text3}};"> / 12</span></span>
     </div>
     <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
       <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
@@ -29,7 +29,7 @@
   </header>
 
   <aside style="position: absolute; z-index: 4; left: 64px; top: 220px; width: 290px;">
-    <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+    <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
       <span aria-hidden="true" style="position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.1em; color: {{t.holoText}};">LUMI · LINK</div>
       <div style="margin-top: 4px; font-weight: 900; font-size: 18px; line-height: 1.3; color: {{t.textStrong}};">{{voltLine}}</div>
@@ -41,7 +41,7 @@
   </aside>
 
   <aside style="position: absolute; z-index: 4; right: 60px; top: 120px; width: 300px; display: flex; flex-direction: column; gap: 16px;">
-    <div style="position: relative; height: 150px;">
+    <div class="nk-rise" style="position: relative; height: 150px;">
       <div class="{{bannerCls}}" style="position: absolute; left: 6px; right: -40px; top: 16px; height: 96px; transform: skewX(-16deg); background: linear-gradient(90deg, rgb(179 15 51 / 0.95), rgb(255 42 77 / 0.9) 60%, rgb(255 42 77 / 0.88) 88%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / 0.7);"></div>
       <div style="position: absolute; left: 0; top: 0; width: 70px; height: 70px; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.9));">
 <!--#STAR5-->
@@ -52,17 +52,17 @@
         <div class="nk-pop" style="position: absolute; right: 8px; top: 118px; height: 30px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; display: flex; align-items: center;">+{{xpGain}} XP</div>
       </sc-if>
     </div>
-    <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 20px 18px;">
+    <div class="nk-rise-2" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 20px 18px;">
       <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>DAILY GOAL</div>
       <div style="margin-top: 6px; font-weight: 900; font-size: 17px; color: {{t.textStrong}};">Review 12 cards</div>
-      <div style="margin-top: 10px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{questPct}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7); transition: width 600ms {{t.snap}};"></div></div>
+      <div style="margin-top: 10px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: {{questPct}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7); transition: width 600ms {{t.snap}};"></div></div>
       <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 13px; color: {{t.text2}};"><span>{{position}} / 12</span><span style="color: {{t.goldText}}; font-weight: 900;">+50 XP</span></div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 9px; padding: 2px 4px;">
+    <div class="nk-rise-3" style="display: flex; flex-direction: column; gap: 9px; padding: 2px 4px;">
       <sc-for list="{{tiers}}" as="r" hint-placeholder-count="3">
         <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: {{t.text2}};">
-          <span style="min-width: 46px; height: 24px; padding: 0 8px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{r.rim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center;">{{r.grade}}</span>
-          <span style="font-weight: 800; color: {{t.textStrong}};">{{r.label}}</span>
+          <span style="min-width: 60px; height: 24px; padding: 0 8px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{r.rim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center;">{{r.grade}}</span>
+          <span style="font-weight: 800; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">{{r.label}}</span>
         </div>
       </sc-for>
     </div>
@@ -178,7 +178,7 @@
                     <span style="font-family: {{t.fMono}}; font-size: 13px;">{{back.ipa}}</span>
                     <button class="nk-lift" onClick="{{listen}}" aria-label="Listen to pronunciation" style="width: 32px; height: 32px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
                   </div>
-                  <figure class="{{revealCls3}}" style="position: relative; margin: 18px 0 0; width: 100%; box-sizing: border-box; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
+                  <figure class="{{revealCls3}}" style="position: relative; margin: 18px 0 0; width: 100%; box-sizing: border-box; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
                     <blockquote style="margin: 0; font-weight: 800; font-size: 17px; line-height: 1.45; color: {{t.textStrong}};">“{{back.examplePre}}<span style="font-weight: 900; color: {{t.crimsonText}};">{{back.exampleWord}}</span>{{back.examplePost}}”</blockquote>
                     <figcaption style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{back.exampleVi}}</figcaption>
                   </figure>
@@ -194,7 +194,7 @@
                     <button class="nk-lift" style="height: 44px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.8 9.2L24 12l-9.2 2.8L12 24l-2.8-9.2L0 12l9.2-2.8z"></path></svg>Ask AI tutor</button>
                   </div>
                 </div>
-                <button onClick="{{flip}}" style="position: relative; height: 48px; flex-shrink: 0; border: 0; border-top: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.text2}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>BACK TO ENGLISH</button>
+                <button class="nk-lift" onClick="{{flip}}" style="position: relative; height: 48px; flex-shrink: 0; border: 0; border-top: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.text2}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>BACK TO ENGLISH</button>
               </div>
             </div>
 
@@ -217,7 +217,7 @@
         </div>
       </sc-if>
       <sc-if value="{{notFlipped}}" hint-placeholder-val="{{true}}">
-        <div style="font-weight: 800; font-size: 15px; color: {{t.text2}}; display: flex; align-items: center; gap: 10px;">Say it out loud, then reveal <span style="height: 26px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">Space</span></div>
+        <div class="nk-rise-2" style="font-weight: 800; font-size: 15px; color: {{t.text2}}; text-shadow: {{t.onArtHalo}}; display: flex; align-items: center; gap: 10px;">Say it out loud, then reveal <span style="height: 26px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">Space</span></div>
       </sc-if>
     </div>
   </main>
@@ -268,7 +268,7 @@ class Component extends DCLogic {
       { label: 'EASY', key: '4', next: '3d', bg: t.easy, color: t.easyInk, w: 132, xp: 12 },
     ];
     const advance = (g) => {
-      this.setState({ index: s.index + 1, flipped: false, flipping: false, dealing: true, revealed: false, starred: false, blind: false, hover: false, rx: 0, ryTilt: 0, combo: g.reset ? 0 : s.combo + 1, xpPop: true, xpGain: g.xp });
+      this.setState({ index: s.index + 1, flipped: false, flipping: false, dealing: true, revealed: false, starred: false, blind: false, hover: false, rx: 0, ryTilt: 0, combo: g.reset ? 0 : s.combo + 1, xpPop: true, xpGain: g.xp, lastGrade: g.label });
       later(600, () => this.setState({ dealing: false }));
       later(1400, () => this.setState({ xpPop: false }));
     };
@@ -279,12 +279,15 @@ class Component extends DCLogic {
       front: card.front, back: card.back,
       rim: tv.rim, tierSoft: tv.soft, tierDrop: '0 0 22px ' + tv.soft, tierLabel: tv.label, tierGrade: tv.grade,
       rimCls: mastered ? 'nk-rim-spin' : '', mastered,
-      tiers: ['new', 'learning', 'mastered'].map(k => ({ label: t.tier[k].label, grade: t.tier[k].grade, rim: t.tier[k].rim })),
+      // The Star chip keeps only the gold stops of its rim: the crimson stops put the dark label under 2:1 (the app does the same).
+      tiers: ['new', 'learning', 'mastered'].map(k => ({ label: t.tier[k].label, grade: t.tier[k].grade, rim: k === 'mastered' ? 'linear-gradient(150deg, #fff3c4, #ffd166 55%, #fff3c4)' : t.tier[k].rim })),
       comboName: nkCombo(s.combo), bannerCls: s.xpPop ? 'nk-banner' : '',
-      lumiSrc: t.lumi[s.flipped ? 'hint' : s.xpPop ? (s.combo === 0 ? 'oops' : s.combo >= 3 ? 'proud' : 'happy') : s.blind ? 'proud' : 'idle'],
+      // After a grade Lumi reacts as the app does: Hard gets the focus pose, Again the oops pose.
+      lumiSrc: t.lumi[s.flipped ? 'hint' : s.xpPop ? (s.lastGrade === 'HARD' ? 'focus' : s.combo === 0 ? 'oops' : s.combo >= 3 ? 'proud' : 'happy') : s.blind ? 'proud' : 'idle'],
       voltLine: s.flipped ? 'Did you get it? Be honest!' : s.blind ? 'Meaning hidden — peek-free!' : 'Say it out loud first!',
       voltSub: s.flipped ? 'Good keeps your combo alive.' : s.blind ? 'No picture hint. Break it with memory alone.' : 'Then reveal. Hover the card to unfold its crystal wings.',
-      dealClass: s.dealing ? 'nk-unfold' : '',
+      // The card rises in with the page once; each later card is dealt with the unfold.
+      dealClass: s.dealing ? 'nk-unfold' : s.index === 0 ? 'nk-rise' : '',
       flash: s.flash,
       flipped: s.flipped, notFlipped: !s.flipped,
       revealCls: s.revealed ? 'nk-pop' : '', revealCls2: s.revealed ? 'nk-pop-2' : '', revealCls3: s.revealed ? 'nk-rise-3' : '',

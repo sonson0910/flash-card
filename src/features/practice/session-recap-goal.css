@@ -7,6 +7,15 @@
 /* Classic: below the description on phones, and a 470px column beside the headline and the
    stats on wide screens, with the promoted cards and the actions running full width under both. */
 .practice-recap-board[data-family="classic"] .practice-recap-main > .ielts-goal-panel { width: 100%; max-width: 470px; margin-top: 24px; }
+/* RecapNext.dc.html line 23: the goal card enters on the second beat, matching classic-motion.css .fx-enter-2.
+   The panel is a node handed in by the caller, so the motion is set here instead of through the class, with
+   the same two reduced-motion guards. */
+html.dark:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] > .ielts-goal-panel { animation: au-in-k 420ms cubic-bezier(.16, 1, .3, 1) 180ms backwards; }
+html:not(.dark):not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] > .ielts-goal-panel { animation: ip-in-k 480ms cubic-bezier(.16, 1, .3, 1) 200ms backwards; }
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] > .ielts-goal-panel { animation: none; }
+}
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] > .ielts-goal-panel { animation: none; }
 @media (min-width: 1024px) {
   .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) {
     display: grid;
@@ -25,6 +34,12 @@
   .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > :is(.practice-recap-cards, .practice-recap-progress) { order: 1; }
   .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > .practice-recap-actions { order: 2; justify-content: flex-start; }
   .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > .practice-recap-cards { justify-content: flex-start; }
+  /* RecapNext.dc.html lines 5-6: the page runs 72px from each edge, the 470px goal card sits 40px from the lead
+     column and both end on the same line. */
+  html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"]:has(> .ielts-goal-panel) { width: 100%; column-gap: 40px; padding-inline: 72px; }
+  html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"]:has(> .ielts-goal-panel) > .practice-recap-lead { justify-self: stretch; align-self: end; }
+  html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"] > .ielts-goal-panel { grid-row: 1; align-self: end; margin-top: 0; }
+  html:not([data-theme-family=crystal]) .practice-recap-board .practice-recap-main[data-recap-variant="next"]:has(> .ielts-goal-panel) .practice-recap-stats { justify-content: flex-start; }
 }
 
 /* Crystal: the panel shares the row with "Cards glowed up"; "To revisit" takes the next row, or

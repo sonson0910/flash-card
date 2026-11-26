@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useState, type CSSProperties, type RefObject } from 'react';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
@@ -46,8 +46,13 @@ const forecastWeekday = (dateKey: string, locale: string): string => {
 
 const localDateKey = (date: Date): string => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
 
+/** Bar height as a percent of the busiest day; a non-empty day keeps a visible sliver. */
+function forecastShare(count: number, maximum: number) {
+  return count ? Math.max(8, count / maximum * 100) : 0;
+}
+
 function ChartsFallback() {
-  return <div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status"><span className="sr-only"><Trans {...msg({ context: 'progress.charts.loading', message: 'Loading progress charts…' })} /></span></div>;
+  return <div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)]" role="status"><span className="sr-only"><Trans {...msg({ context: 'progress.charts.loading', message: 'Loading progress charts…' })} /></span></div>;
 }
 
 export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, isOffline, headingRef, focusIntent = 0, stats, isStatsLoading, statsError, continueReview, openVocabulary, openMasteredVocabulary, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed }: ProgressWorkspaceProps) {
@@ -55,6 +60,7 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
   const { i18n: activeI18n } = useLingui();
   const locale = activeI18n.locale || 'en';
   const { family } = useTheme();
+  const isCrystal = family === 'crystal';
   const [reviewRangeDays, setReviewRangeDays] = useState<ReviewRange>(182);
   const showsInsights = hasActivity || (stats.total > 0 && Boolean(stats.dueForecast || stats.recentlyMastered));
   const showsCharts = showsInsights && (hasActivity || Boolean(stats.reviewActivity));
@@ -86,26 +92,26 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
   };
   const message = isStatsLoading ? i18n._(msg({ id: 'progress.message.loading', message: 'Refreshing progress; saved metrics remain visible.' }).id) : statsError ? i18n._(msg({ id: 'progress.message.error', message: 'Showing saved progress. {error}' }).id, { error: statsError }) : i18n._(msg({ id: 'progress.message.ready', message: 'Progress is calculated from your learning history.' }).id);
   if (isAchievementsOpen && hasActivity) return <AchievementsMatrix stats={stats} onBackToProgress={() => showAchievements(false)} />;
-  return <><ProgressScreen model={{ headingRef, focusIntent, status: isStatsLoading ? 'loading' : statsError && !hasActivity ? 'error' : hasActivity ? 'ready' : 'empty', message, reviewed: stats.reviewed, mastered: stats.learned, dueToday, isOffline, hasVocabulary: stats.total > 0, ...(showsReviewRange ? { reviewRangeDays } : {}) }} actions={{ startReview: () => { if (!isOffline) void continueReview(); }, openVocabulary, changeReviewRange: setReviewRangeDays }}>
+  return <><ProgressScreen model={{ headingRef, focusIntent, status: isStatsLoading ? 'loading' : statsError && !hasActivity ? 'error' : hasActivity ? 'ready' : 'empty', message, reviewed: stats.reviewed, mastered: stats.learned, dueToday, isOffline, hasVocabulary: stats.total > 0, ...(showsReviewRange ? { reviewRangeDays } : {}) }} actions={{ startReview: () => { if (!isOffline) void continueReview(); }, openVocabulary, changeReviewRange: setReviewRangeDays }} emptyAside={family === 'crystal' ? <Suspense fallback={<ChartsFallback />}><div className="async-content-enter min-w-0" data-async-content="progress-mastery"><StatsCharts key={`${ownerId ?? 'signed-out'}:${targetLanguage ?? 'en'}`} darkMode={darkMode} data={stats} section="mastery" /></div></Suspense> : undefined}>
     {showsInsights && <div className="space-y-6">
       {showsCharts && <Suspense fallback={<ChartsFallback />}><div className="async-content-enter" data-async-content="progress-charts"><StatsCharts key={`${ownerId ?? 'signed-out'}:${targetLanguage ?? 'en'}`} darkMode={darkMode} data={stats} section="primary" reviewRangeDays={reviewRangeDays} /></div></Suspense>}
       {(stats.dueForecast || stats.recentlyMastered) && <section className="progress-evidence grid grid-cols-1" aria-label={i18n._(msg({ id: 'progress.evidence.forecast-and-mastery', message: 'Forecast and recently mastered cards' }))}>
-        <div className="progress-forecast crystal-chamfer-sm min-w-0">
+        <div className={`progress-forecast crystal-chamfer min-w-0${!isCrystal ? ' fx-enter-3' : ''}`}>
           <div className="stats-panel-head"><h2 className="stats-panel-title"><Trans {...msg({ context: 'progress.forecast.title', message: 'Coming up' })} /></h2><span className="stats-panel-note"><Trans {...msg({ context: 'progress.forecast.note', message: 'Cards due, next 14 days' })} /></span></div>
-          {dueTimeline ? <ol data-due-timeline className="progress-forecast-days">{dueTimeline.map((day, index) => <li key={day.date} data-forecast-day={index === 0 ? 'today' : index === 1 ? 'tomorrow' : undefined}>
+          {dueTimeline ? <ol data-due-timeline data-forecast-empty={dueTimeline.every(day => day.count === 0) ? 'true' : undefined} className="progress-forecast-days">{dueTimeline.map((day, index) => <li key={day.date} data-forecast-day={index === 0 ? 'today' : index === 1 ? 'tomorrow' : undefined} style={{ '--forecast-ratio': forecastShare(day.count, forecastMaximum) / 100 } as CSSProperties}>
             <time dateTime={day.date}>{index === 0 ? <Trans {...msg({ context: 'progress.forecast.today', message: 'Today' })} /> : forecastWeekday(day.date, locale)}</time>
-            <span className="progress-forecast-bar" aria-hidden="true"><span style={{ height: `${day.count ? Math.max(8, day.count / forecastMaximum * 100) : 0}%` }} /></span>
+            <span className="progress-forecast-bar" aria-hidden="true"><span style={{ height: `${forecastShare(day.count, forecastMaximum)}%` }} /></span>
             <strong className="progress-forecast-count">{day.count}</strong>
           </li>)}</ol> : <p className="progress-panel-empty"><Trans {...msg({ context: 'progress.forecast.unavailable', message: 'Forecast is unavailable while saved progress is loading.' })} /></p>}
         </div>
-        <div className="progress-mastered crystal-chamfer-sm min-w-0">
+        <div className={`progress-mastered crystal-chamfer min-w-0${!isCrystal ? ' fx-enter-3' : ''}`}>
           <div className="stats-panel-head">
             <h2 className="stats-panel-title">{family === 'crystal'
               ? <Trans {...msg({ context: 'progress.mastered.crystal-title', message: 'New stars' })} />
               : <Trans {...msg({ context: 'progress.mastered.title', message: 'Recently <0>mastered</0>' })} components={{ 0: <span className="progress-accent" /> }} />}</h2>
             {stats.learned > 0 && <button type="button" onClick={openMasteredVocabulary ?? openVocabulary} aria-label={activeI18n._({ ...msg({ id: 'progress.mastered.all-label', message: 'All {count, plural, one {# mastered card} other {# mastered cards}} in Vocabulary' }), values: { count: stats.learned } })} className="progress-mastered-all"><Trans {...msg({ context: 'progress.mastered.all', message: 'All {count}' })} values={{ count: stats.learned }} /><ArrowRight size={14} aria-hidden="true" /></button>}
           </div>
-          {stats.recentlyMastered?.length ? <ul className="progress-mastered-cards">{stats.recentlyMastered.map(card => <li key={card.id}>
+          {stats.recentlyMastered?.length ? <ul className={`progress-mastered-cards${!isCrystal ? ' fx-stagger' : ''}`}>{stats.recentlyMastered.map(card => <li key={card.id}>
             {family === 'crystal' && <span className="stats-grade-chip progress-mastered-chip" aria-hidden="true"><Trans {...msg({ context: 'progress.mastered.chip', message: 'Star' })} /></span>}
             <p className="progress-mastered-word">{card.word}</p>
             <p className="progress-mastered-meaning">{card.translation}</p>
@@ -114,9 +120,9 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
         </div>
       </section>}
       {showsCharts && <Suspense fallback={<ChartsFallback />}><div className="async-content-enter"><StatsCharts darkMode={darkMode} data={stats} section="secondary" /></div></Suspense>}
-      {hasActivity && <div className="flex justify-end"><button type="button" onClick={() => showAchievements(true)} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]"><Award size={16} aria-hidden="true" /><Trans {...msg({ context: 'progress.achievements.open', message: 'View achievements' })} /></button></div>}
+      {hasActivity && <div className="flex justify-end"><button type="button" onClick={() => showAchievements(true)} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]"><Award size={16} aria-hidden="true" /><Trans {...msg({ context: 'progress.achievements.open', message: 'View achievements' })} /></button></div>}
       {hasActivity && <div className="flex justify-end">
-        <button type="button" onClick={() => { setOpenRecapScope(recapScope); setIsRecapOpen(true); }} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]">
+        <button type="button" onClick={() => { setOpenRecapScope(recapScope); setIsRecapOpen(true); }} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]">
           <CalendarDays size={16} aria-hidden="true" />
           <Trans {...msg({ context: 'progress.weeklyRecap.open', message: 'View weekly recap' })} />
         </button>

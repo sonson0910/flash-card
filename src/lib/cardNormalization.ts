@@ -2,6 +2,7 @@ import {
   LEGACY_CARD_LANGUAGE,
   LEGACY_CARD_TRANSLATION_LANGUAGE,
   type CardData,
+  type CardLanguageDetails,
   type CardLanguageFields,
   type CardLanguagePair,
   type LearnerDifficulty,
@@ -253,6 +254,97 @@ const normalizeFsrs = (value: unknown): CardData['fsrs'] => {
   };
 };
 
+const normalizeOptionalReadingPair = <K extends 'source' | 'word'>(
+  value: unknown,
+  primaryKey: K,
+): (Record<K, string> & { reading?: string }) | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const raw = value as Record<string, unknown>;
+  const primary = boundedText(raw[primaryKey], 64);
+  if (!primary) return undefined;
+  const reading = boundedText(raw.reading, 128);
+  return {
+    [primaryKey]: primary,
+    ...(reading ? { reading } : {}),
+  } as Record<K, string> & { reading?: string };
+};
+
+export const normalizeLanguageDetails = (value: unknown): CardLanguageDetails | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const raw = value as Record<string, unknown>;
+  const details: CardLanguageDetails = {};
+
+  if (Array.isArray(raw.pronunciations)) {
+    const pronunciations = raw.pronunciations
+      .map((item) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+        const entry = item as Record<string, unknown>;
+        const tag = boundedText(entry.tag, 16);
+        const ipa = boundedText(entry.ipa, 128);
+        return tag && ipa ? { tag, ipa } : null;
+      })
+      .filter((item): item is { tag: string; ipa: string } => item !== null)
+      .slice(0, 6);
+    if (pronunciations.length > 0) details.pronunciations = pronunciations;
+  }
+
+  let syllables: string[] | undefined;
+  if (Array.isArray(raw.syllables)) {
+    const cleaned = raw.syllables
+      .filter((item): item is string => typeof item === 'string')
+      .map(item => item.trim().slice(0, 64))
+      .filter(Boolean)
+      .slice(0, 16);
+    if (cleaned.length > 0) {
+      syllables = cleaned;
+      details.syllables = cleaned;
+    }
+  }
+
+  if (typeof raw.stressIndex === 'number' && Number.isInteger(raw.stressIndex) && raw.stressIndex >= 0) {
+    const upperBound = syllables ? syllables.length : raw.syllables === undefined ? 16 : 0;
+    if (raw.stressIndex < upperBound) {
+      details.stressIndex = raw.stressIndex;
+    }
+  }
+
+  const article = boundedText(raw.article, 24);
+  if (article) details.article = article;
+
+  const indefiniteArticle = boundedText(raw.indefiniteArticle, 24);
+  if (indefiniteArticle) details.indefiniteArticle = indefiniteArticle;
+
+  if (raw.gender === 'm' || raw.gender === 'f' || raw.gender === 'n') {
+    details.gender = raw.gender;
+  }
+
+  const plural = boundedText(raw.plural, 128);
+  if (plural) details.plural = plural;
+
+  const sinoForm = normalizeOptionalReadingPair(raw.sinoForm, 'source');
+  if (sinoForm) details.sinoForm = sinoForm;
+
+  const measureWord = normalizeOptionalReadingPair(raw.measureWord, 'word');
+  if (measureWord) details.measureWord = measureWord;
+
+  const spokenForm = boundedText(raw.spokenForm, 128);
+  if (spokenForm) details.spokenForm = spokenForm;
+
+  const exampleReading = boundedText(raw.exampleReading, 512);
+  if (exampleReading) details.exampleReading = exampleReading;
+
+  if (Array.isArray(raw.hints)) {
+    const hints = raw.hints
+      .filter((item): item is string => typeof item === 'string')
+      .map(item => item.trim().slice(0, 120))
+      .filter(Boolean)
+      .slice(0, 6);
+    if (hints.length > 0) details.hints = hints;
+  }
+
+  return Object.keys(details).length > 0 ? details : undefined;
+};
+
 export function normalizeCardData(raw: Partial<CardData>, documentId: string): CardData {
   const word = boundedText(raw.word, 256);
   const candidateId = boundedText(raw.id, 128);
@@ -269,6 +361,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const japanesePitchAccent = raw.japanesePitchAccent && typeof raw.japanesePitchAccent === 'object' && !Array.isArray(raw.japanesePitchAccent)
     ? raw.japanesePitchAccent
     : undefined;
+  const languageDetails = normalizeLanguageDetails(raw.languageDetails);
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
   const language = normalizeStoredLanguage(raw.language);
   const translationLanguage = normalizeStoredLanguage(raw.translationLanguage);
@@ -332,6 +425,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     reviewHistory: normalizeReviewHistory(raw.reviewHistory),
     appliedReviewOperationIds: normalizeReviewOperationIds(raw.appliedReviewOperationIds),
     fsrs: normalizeFsrs(raw.fsrs),
+    ...(languageDetails ? { languageDetails } : {}),
     source: normalizeCardSource(raw.source),
   };
 }

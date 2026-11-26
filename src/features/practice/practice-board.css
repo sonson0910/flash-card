@@ -44,7 +44,7 @@
    that keeps AA on the page where the board's own tone falls just short. */
 .practice-recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
 .practice-recap-frame { position: fixed; inset: 0; z-index: 50; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; outline: 0; }
-.practice-recap-board {
+:where(html[data-theme-family=crystal]) .practice-recap-board {
   --rc-strong: #1d1a16; --rc-body: #3d372f; --rc-text2: #6b6255; --rc-text3: #756b5e;
   --rc-line: rgb(29 26 22 / .1); --rc-chip: #fbf8f2; --rc-track: rgb(29 26 22 / .08);
   --rc-accent: #b4461a; --rc-accent-text: #97400d; --rc-accent-soft: rgb(180 70 26 / .08); --rc-accent-line: rgb(151 64 13 / .25);
@@ -63,21 +63,45 @@
   position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100%; flex-direction: column; overflow-x: clip;
   background: var(--sf-canvas); color: var(--rc-strong); outline: 0;
 }
-:root.dark:not([data-theme-family="crystal"]) .practice-recap-board {
-  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: #8494a0;
-  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-border);
-  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent); --rc-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
-  --rc-em: var(--sf-brand); --rc-em-style: normal; --rc-em-glow: 0 0 36px color-mix(in srgb, var(--sf-brand) 50%, transparent); --rc-weight: 440; --rc-segment-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent);
-  --rc-surface: var(--sf-surface-glass); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: blur(18px); --rc-radius: 22px;
+:where(html:not([data-theme-family=crystal])) .practice-recap-board {
+  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: var(--sf-text-subtle);
+  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-track, rgb(29 26 22 / .08));
+  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: var(--sf-accent-soft, rgb(180 70 26 / .08)); --rc-accent-line: var(--sf-accent-line, rgb(151 64 13 / .25));
+  --rc-em: var(--sf-brand); --rc-em-style: var(--sf-em-style, italic); --rc-em-glow: var(--sf-em-glow, none); --rc-weight: var(--sf-display-weight, 380); --rc-segment-glow: none;
+  --rc-surface: var(--sf-surface); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: var(--sf-panel-blur, none); --rc-radius: var(--sf-panel-radius, 18px);
   --rc-again: var(--sf-rating-again); --rc-warm: var(--sf-warm); --rc-warm-bg: var(--sf-warm-bg); --rc-warm-line: var(--sf-warm-line);
-  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: 16px;
-  --rc-secondary-bg: var(--sf-surface-raised); --rc-secondary-shadow: none;
+  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: var(--sf-button-radius);
+  --rc-secondary-bg: var(--sf-surface-control); --rc-secondary-shadow: var(--sf-secondary-shadow, 0 1px 2px rgb(60 40 20 / .08));
+  --rc-card-radius: 16px; --rc-card-border: 0; --rc-card-bg: var(--sf-card-bg);
+  --rc-card-shadow: var(--sf-card-shadow, inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45));
+  --rc-card-ring-learning: 0 0 0 2px rgb(51 115 68 / .5); --rc-card-ring-mastered: 0 0 0 2px var(--sf-gold-line);
+  --rc-img-margin: var(--sf-img-margin, 12px 12px 0); --rc-img-radius: var(--sf-img-radius, 10px); --rc-img-mask: var(--sf-img-mask, none);
+  --rc-gold: var(--sf-reward); --rc-gold-text: #7d5a12; --rc-learning-text: var(--sf-success-text); --rc-foil-blend: multiply;
+  --rc-confetti-1: var(--sf-confetti-0); --rc-confetti-2: var(--sf-confetti-1); --rc-confetti-3: var(--sf-confetti-2); --rc-confetti-4: var(--sf-confetti-3); --rc-confetti-5: var(--sf-confetti-4); --rc-confetti-radius: 2px;
+  --rc-ambient: radial-gradient(rgb(29 26 22 / .07) 1px, transparent 1.2px) 0 0 / 28px 28px;
+  position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100%; flex-direction: column; overflow-x: clip;
+  background: var(--sf-canvas); color: var(--rc-strong); outline: 0;
+}
+:root.dark:not([data-theme-family="crystal"]) .practice-recap-board {
+  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: var(--sf-text-subtle);
+  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-track);
+  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: var(--sf-accent-soft); --rc-accent-line: var(--sf-accent-line);
+  --rc-em: var(--sf-brand); --rc-em-style: var(--sf-em-style); --rc-em-glow: var(--sf-em-glow); --rc-weight: var(--sf-display-weight); --rc-segment-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  --rc-surface: var(--sf-surface-glass); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: var(--sf-panel-blur); --rc-radius: var(--sf-panel-radius);
+  --rc-again: var(--sf-rating-again); --rc-warm: var(--sf-warm); --rc-warm-bg: var(--sf-warm-bg); --rc-warm-line: var(--sf-warm-line);
+  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: var(--sf-button-radius);
+  --rc-secondary-bg: var(--sf-surface-control); --rc-secondary-shadow: var(--sf-secondary-shadow);
   --rc-card-radius: 22px; --rc-card-border: 1.5px solid transparent; --rc-card-bg: var(--sf-solid-card, var(--sf-card-bg));
-  --rc-card-shadow: 0 30px 70px -30px rgb(0 0 0 / .9);
-  --rc-img-margin: 0; --rc-img-radius: 0; --rc-img-mask: linear-gradient(to bottom, #000 42%, transparent 100%);
+  --rc-card-shadow: var(--sf-card-shadow);
+  --rc-img-margin: var(--sf-img-margin); --rc-img-radius: var(--sf-img-radius); --rc-img-mask: var(--sf-img-mask);
   --rc-gold: var(--sf-reward); --rc-gold-text: var(--sf-reward); --rc-learning-text: var(--sf-brand-text); --rc-foil-blend: screen;
-  --rc-confetti-1: var(--sf-brand); --rc-confetti-2: var(--sf-brand-text); --rc-confetti-3: var(--sf-second); --rc-confetti-4: var(--sf-reward); --rc-confetti-5: #fff; --rc-confetti-radius: 50%;
-  --rc-ambient: radial-gradient(circle 520px at 30% -60px, color-mix(in srgb, var(--sf-second) 30%, transparent), transparent), radial-gradient(circle 760px at 50% 110%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent);
+  --rc-confetti-1: var(--sf-confetti-0); --rc-confetti-2: var(--sf-confetti-1); --rc-confetti-3: var(--sf-confetti-2); --rc-confetti-4: var(--sf-confetti-3); --rc-confetti-5: var(--sf-confetti-4); --rc-confetti-radius: 50%;
+  --rc-ambient: var(--shell-aurora);
+}
+/* RecapScreen and RecapNext place their two glows at their own spots (see the shell's Midnight Aurora rule). */
+@media (min-width: 641px) {
+  :root.dark:not([data-theme-family="crystal"]) .practice-recap-board { --shell-aurora-violet-at: 31.9% 17.8%; --shell-aurora-cyan-at: 77.8% 71.1%; }
+  :root.dark:not([data-theme-family="crystal"]) .practice-recap-board:has([data-recap-variant="next"]) { --shell-aurora-violet-at: 5.6% 2.2%; --shell-aurora-cyan-at: 87.5% 62.2%; }
 }
 .practice-recap-board::before { position: absolute; z-index: -1; inset: 0; background: var(--rc-ambient); content: ''; pointer-events: none; }
 .practice-recap-board :is(button, a):focus-visible { outline: 2px solid var(--rc-accent); outline-offset: 3px; }
@@ -169,11 +193,61 @@
 .practice-recap-primary:hover, .practice-recap-secondary:hover { filter: brightness(1.05); }
 .practice-recap-primary:active, .practice-recap-secondary:active { transform: scale(.98); }
 
+/* RecapScreen.dc.html values the shared rules above do not carry. The board's root ink is t.text, its close link
+   and its pill and streak spans are content-box (border outside the 44/32/24px box), the card word sits on a 1.0
+   line box, the result values have no gap ("83%", "+120 XP" with a word space, the streak chip 10px off), the recall
+   bar shows the tile surface between its parts, and the labels use normal line boxes (lines 15, 23, 42-47, 53-66). */
+html:not([data-theme-family=crystal]) .practice-recap-card-foil.sf-sheen { animation: sf-sheen-k 3.6s ease-in-out infinite; }
+html:not([data-theme-family=crystal]) .practice-recap-card.sf-deal-3 { animation: sf-deal-k 700ms cubic-bezier(.16, 1, .3, 1) 510ms both; }
+@media (prefers-reduced-motion: reduce) {
+  html:is(.dark, :not(.dark)):not([data-theme-family=crystal]) :is(.practice-recap-card-foil.sf-sheen, .practice-recap-card.sf-deal-3) { animation: none; }
+}
+html[data-motion="reduced"]:is(.dark, :not(.dark)):not([data-theme-family=crystal]) :is(.practice-recap-card-foil.sf-sheen, .practice-recap-card.sf-deal-3) { animation: none; }
+html:not([data-theme-family=crystal]) .practice-recap-board { color: var(--sf-text); }
+html:not([data-theme-family=crystal]) .practice-recap-card-word { line-height: 1; }
+html:not([data-theme-family=crystal]) :is(.practice-recap-pill, .practice-recap-chip-today, .practice-recap-card-meaning, .practice-recap-card-move, .practice-recap-card-level, .practice-recap-stat dt, .practice-recap-stat-sub) { line-height: normal; }
+html:not([data-theme-family=crystal]) .practice-recap-stat-value { gap: 0; }
+html:not([data-theme-family=crystal]) .practice-recap-unit { margin-left: 8px; }
+html:not([data-theme-family=crystal]) .practice-recap-chip-today { margin-left: 10px; }
+html:not([data-theme-family=crystal]) .practice-recap-bar { background: transparent; }
+html:not([data-theme-family=crystal]) .practice-recap-secondary { color: var(--sf-text); }
+@media (min-width: 761px) {
+  html:not([data-theme-family=crystal]) .practice-recap-close { width: 46px; height: 46px; }
+  html:not([data-theme-family=crystal]) .practice-recap-pill { height: 34px; }
+  html:not([data-theme-family=crystal]) .practice-recap-chip-today { height: 26px; }
+}
+
+/* RecapNext.dc.html lines 9-17: the next-steps recap opens with an uppercase session line, a 68px headline and a
+   row of bordered stat tiles, the XP tile warm. The tile radius is the board's 16px in both modes. */
+:where(html:not([data-theme-family=crystal])) .practice-recap-board { --rc-tile-radius: 16px; }
+html:not([data-theme-family=crystal]) .practice-recap-lead { min-width: 0; }
+html:not([data-theme-family=crystal]) .practice-recap-overline { margin: 0; color: var(--rc-text2); font-size: 12px; font-weight: 600; line-height: normal; letter-spacing: .12em; text-transform: uppercase; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-headline { margin-top: 12px; line-height: .98; letter-spacing: -.04em; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats {
+  display: flex; width: auto; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 26px 0 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats > .practice-recap-stat {
+  min-width: 128px; flex: none; box-sizing: border-box; padding: 14px 16px; border: 1px solid var(--rc-line); border-radius: var(--rc-tile-radius); background: var(--rc-surface);
+}
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats > .practice-recap-stat[data-tone="warm"] { border-color: var(--rc-warm-line); background: var(--rc-warm-bg); }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat dt { font-size: 12px; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat-value { margin-top: 2px; font-size: 32px; line-height: normal; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat[data-tone="warm"] .practice-recap-stat-value { color: var(--rc-warm); }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat-sub { margin: 0; font-family: var(--sf-font-mono); font-size: 11px; }
+@media (min-width: 761px) {
+  html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-headline { font-size: 68px; }
+}
+@media (max-width: 760px) {
+  html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats > .practice-recap-stat { flex: 1 1 128px; }
+}
+
 /* Crystal Star (AnimeRecap). */
-[data-family="crystal"] {
+.practice-recap-board[data-family="crystal"] {
   --rk-text: #f3f5fa; --rk-strong: #fff; --rk-text2: #aab3c5; --rk-text3: #7a8397; --rk-crimson: #ff6b85; --rk-holo: var(--sf-second); --rk-gold: var(--sf-reward); --rk-violet: #ff9ec0;
   --rk-chip: rgb(255 255 255 / .06); --rk-line-strong: rgb(255 255 255 / .22); --rk-track: rgb(255 255 255 / .1);
-  --rk-panel: linear-gradient(160deg, rgb(22 26 40 / .9), rgb(8 10 18 / .94)); --rk-edge: rgb(255 84 112 / .55); --rk-edge2: color-mix(in srgb, var(--sf-second) 40%, transparent);
+  --rk-panel: linear-gradient(160deg, rgb(22 26 40 / .9), rgb(8 10 18 / .94)); --rk-edge: var(--sf-panel-edge); --rk-edge2: var(--sf-panel-edge-2);
   --rk-card-front: linear-gradient(180deg, #121624 0%, #080a12 100%); --rk-beam: rgb(255 255 255 / .08);
   --rk-primary: linear-gradient(180deg, #ff5470 0%, var(--sf-brand) 45%, #b30f33 100%); --rk-primary-glow: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 70%, transparent));
   --rk-cheer: var(--sf-metal); --rk-cheer-shadow: drop-shadow(0 5px 0 var(--sf-star-shade)) drop-shadow(0 0 26px color-mix(in srgb, var(--sf-brand) 85%, transparent));
@@ -181,12 +255,12 @@
   background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%), var(--sf-canvas);
   color: var(--rk-text); font-family: var(--sf-font-body);
 }
-:root[data-theme-family="crystal"]:not(.dark) [data-family="crystal"] {
-  --rk-text: var(--sf-text); --rk-strong: var(--sf-text-strong); --rk-text2: var(--sf-text-muted); --rk-text3: var(--sf-text-muted); --rk-crimson: var(--sf-brand-text); --rk-holo: #065a6e; --rk-gold: #8a5a00; --rk-violet: #b3265a;
+:root[data-theme-family="crystal"]:not(.dark) .practice-recap-board[data-family="crystal"] {
+  --rk-text: var(--sf-text); --rk-strong: var(--sf-text-strong); --rk-text2: var(--sf-text-muted); --rk-text3: var(--sf-text-muted); --rk-crimson: var(--sf-brand-text); --rk-holo: var(--sf-holo-text); --rk-gold: #8a5a00; --rk-violet: #b3265a;
   --rk-chip: var(--sf-surface-raised); --rk-line-strong: var(--sf-edge-highlight); --rk-track: var(--sf-border);
   --rk-panel: var(--sf-surface-glass); --rk-edge: var(--sf-panel-edge); --rk-edge2: var(--sf-panel-edge-2);
   --rk-card-front: var(--sf-card-front); --rk-beam: rgb(255 255 255 / .5);
-  --rk-primary: var(--sf-primary-bg); --rk-primary-glow: drop-shadow(0 12px 20px rgb(224 23 63 / .45));
+  --rk-primary: var(--sf-primary-bg); --rk-primary-glow: drop-shadow(0 0 18px rgb(255 42 77 / .7));
   /* The white cheer metal disappears on Prism Day; the theme metal is a navy-to-crimson ink there. */
   --rk-cheer: var(--sf-metal);
   --rc-accent: #a30c2d;
@@ -194,23 +268,25 @@
   background: var(--sf-space), var(--sf-canvas);
 }
 .practice-recap-board[data-family="crystal"]::before {
-  inset: -10% auto auto 50%; width: 380px; height: 120%; margin-left: -190px;
+  inset: -10% auto auto 50%; width: 380px; height: 120%; margin-left: -190px; opacity: .45;
   background: linear-gradient(90deg, transparent, var(--rk-beam), rgb(255 255 255 / .12), var(--rk-beam), transparent); filter: blur(6px);
 }
 .practice-recap-board[data-family="crystal"]::after { position: absolute; z-index: -1; inset: 0; background: var(--nk-stars, none); content: ''; pointer-events: none; }
-[data-family="crystal"] :is(button, a):focus-visible { outline-color: var(--rk-holo); }
-[data-family="crystal"] .practice-recap-header { height: 70px; gap: 10px; padding: 0 44px; }
-.practice-recap-kicker { margin: 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-board[data-family="crystal"] :is(button, a):focus-visible { outline-color: var(--rk-holo); }
+.practice-recap-board[data-family="crystal"] .practice-recap-header { height: 70px; gap: 14px; padding: 0 44px; }
+.practice-recap-kicker { margin: 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; }
 .practice-recap-kicker i { color: var(--rk-crimson); font-style: inherit; }
-[data-family="crystal"] .practice-recap-theme { margin-left: auto; }
-[data-family="crystal"] .practice-recap-icon-button { width: 42px; height: 42px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-text); }
-[data-family="crystal"] .practice-recap-main { padding: 0 56px 30px; }
+.practice-recap-board[data-family="crystal"] .practice-recap-theme { margin-left: auto; }
+.practice-recap-board[data-family="crystal"] .practice-recap-icon-button { width: 42px; height: 42px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-text); }
+.practice-recap-board[data-family="crystal"] .practice-recap-main { padding: 0 56px 30px; }
 .practice-recap-hero { position: relative; display: flex; width: min(1000px, 100%); height: 300px; flex-shrink: 0; justify-content: center; }
 .practice-recap-burst { position: absolute; inset: 0; pointer-events: none; }
 .practice-recap-wing { position: absolute; top: -20px; left: 50px; width: 460px; height: 310px; overflow: visible; filter: drop-shadow(0 0 26px rgb(255 42 77 / .75)); }
 .practice-recap-wing[data-mirrored] { right: 50px; left: auto; transform: scaleX(-1); }
 .practice-recap-star { position: absolute; top: 0; left: 50%; width: 230px; height: 230px; margin-left: -115px; filter: drop-shadow(0 0 30px rgb(255 42 77 / .9)); }
 .practice-recap-star svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* The board's star rests stamped at -12deg (where its stamp entrance ends), its grade word turning with it. */
+.practice-recap-board[data-family="crystal"] .practice-recap-star { rotate: -12deg; }
 .practice-recap-star-text {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 18px;
   background: linear-gradient(180deg, #fff 0%, #fff3c4 45%, #ffd166 55%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -222,63 +298,71 @@
   position: absolute; right: 0; bottom: 0; left: 0; margin: 0; background: var(--rk-cheer); -webkit-background-clip: text; background-clip: text; color: transparent;
   font-family: var(--sf-font-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: .02em; text-transform: uppercase; filter: var(--rk-cheer-shadow);
 }
-[data-family="crystal"] .practice-recap-stats {
+.practice-recap-board[data-family="crystal"] .practice-recap-stats {
   width: 100%; grid-auto-columns: auto; grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 14px; margin-top: 22px;
   border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-[data-family="crystal"] .practice-recap-stat {
-  --rk-bar: var(--rk-holo); position: relative; padding: 14px 20px 16px; border: 0; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge2);
+/* The stat bars are the board's literal accents in both modes; study time pairs the cyan edge with a gold bar. */
+.practice-recap-board[data-family="crystal"] .practice-recap-stat {
+  --rk-bar: #5ef2ff; position: relative; padding: 14px 20px 16px; border: 0; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge2);
 }
-[data-family="crystal"] .practice-recap-stat::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--rk-bar); content: ''; }
-[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] { --rk-bar: var(--sf-brand); box-shadow: inset 0 0 0 1px var(--rk-edge); }
-[data-family="crystal"] .practice-recap-stat[data-tone="gold"] { --rk-bar: var(--sf-reward); box-shadow: inset 0 0 0 1px var(--rk-edge); }
-[data-family="crystal"] .practice-recap-stat dt { color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-[data-family="crystal"] .practice-recap-stat-value { margin-top: 2px; gap: 0; color: var(--rk-strong); font-size: 44px; font-style: italic; font-weight: 900; line-height: 1.05; }
-[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] .practice-recap-stat-value { color: var(--rk-crimson); }
-[data-family="crystal"] .practice-recap-stat[data-tone="gold"] .practice-recap-stat-value { color: var(--rk-gold); }
-[data-family="crystal"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
-[data-family="crystal"] .practice-recap-stat-sub { margin: 0; color: var(--rk-text2); font-size: 12.5px; }
-[data-family="crystal"] .practice-recap-progress { color: var(--rk-text2); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--rk-bar); content: ''; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] { --rk-bar: #ff2a4d; box-shadow: inset 0 0 0 1px var(--rk-edge); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="gold"] { --rk-bar: #ffd166; box-shadow: inset 0 0 0 1px var(--rk-edge); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat:has([data-recap-duration]) { --rk-bar: #ffd166; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat dt { color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat-value { margin-top: 2px; gap: normal; color: var(--rk-strong); font-size: 44px; font-style: italic; font-weight: 900; line-height: 1.05; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] .practice-recap-stat-value { color: var(--rk-crimson); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="gold"] .practice-recap-stat-value { color: var(--rk-gold); }
+.practice-recap-board[data-family="crystal"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat-sub { margin: 0; color: var(--rk-text3); font-size: 12.5px; line-height: normal; }
+.practice-recap-board[data-family="crystal"] .practice-recap-progress { color: var(--rk-text2); }
 .practice-recap-panels { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 16px; text-align: left; }
 .practice-recap-panels:has(> :nth-child(2)) { grid-template-columns: 1.3fr 1fr; }
 .practice-recap-panel { min-width: 0; padding: 16px 22px 18px; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge); }
 .practice-recap-panel--revisit { box-shadow: inset 0 0 0 1px var(--rk-edge2); }
-.practice-recap-panel-heading { margin: 0; color: var(--rk-crimson); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-panel-heading { margin: 0; color: var(--rk-crimson); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; }
 .practice-recap-panel--revisit .practice-recap-panel-heading { color: var(--rk-holo); }
 .practice-recap-panel-heading span { color: var(--rk-text3); }
 /* "Cards glowed up" fills the row the goal panel sets: the card grid grows and the cards stretch with it. */
-[data-family="crystal"] .practice-recap-panel--up { display: flex; flex-direction: column; }
-[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin: 12px 0 0; }
-[data-family="crystal"] .practice-recap-card { --rk-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, var(--sf-second)); --rk-to: var(--rk-violet); display: block; filter: drop-shadow(0 0 14px rgb(155 107 255 / .55)); }
-[data-family="crystal"] .practice-recap-card[data-tier="mastered"] { --rk-rim: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), #ff5470, #fff, var(--sf-reward), #fff3c4); --rk-to: var(--rk-crimson); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent)); }
+.practice-recap-board[data-family="crystal"] .practice-recap-panel--up { display: flex; flex-direction: column; }
+.practice-recap-board[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin: 12px 0 0; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card { --rk-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, var(--sf-second)); --rk-to: var(--rk-violet); display: block; filter: drop-shadow(0 0 14px rgb(155 107 255 / .55)); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card[data-tier="mastered"] { --rk-rim: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), #ff5470, #fff, var(--sf-reward), #fff3c4); --rk-to: var(--rk-crimson); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent)); }
 .practice-recap-board[data-family="crystal"] .practice-recap-card-face {
   width: auto; height: 100%; min-height: 92px; padding: 2px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-rim); box-shadow: none; transform: none;
 }
-[data-family="crystal"] .practice-recap-card-body { height: 100%; box-sizing: border-box; padding: 10px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-card-front); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-body { height: 100%; box-sizing: border-box; padding: 10px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-card-front); }
 .practice-recap-board[data-family="crystal"] .practice-recap-card-word { color: var(--rk-strong); font-size: 20px; font-style: italic; font-weight: 900; line-height: 1.15; letter-spacing: 0; }
-[data-family="crystal"] .practice-recap-card-meaning { margin-top: 0; color: var(--rk-text2); font-size: 12.5px; }
-[data-family="crystal"] .practice-recap-card-move { padding: 0; color: var(--rk-text3); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: none; }
-[data-family="crystal"] .practice-recap-card-move svg { color: var(--rk-text2); }
-[data-family="crystal"] .practice-recap-card-from { text-decoration: none; }
-[data-family="crystal"] .practice-recap-card-to { color: var(--rk-to); }
-[data-family="crystal"] .practice-recap-card-foil { display: none; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-meaning { margin-top: 0; color: var(--rk-text2); font-size: 12.5px; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-move { padding: 0; color: var(--rk-text3); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: none; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-move svg { color: var(--rk-text2); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-from { text-decoration: none; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-to { color: var(--rk-to); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-foil { display: none; }
 .practice-recap-weak { display: flex; flex-wrap: wrap; gap: 8px; max-height: 92px; margin: 12px 0 0; padding: 0; overflow-y: auto; list-style: none; }
 .practice-recap-weak li { padding: 6px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-strong); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; }
-.practice-recap-next { display: flex; width: 100%; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; text-align: left; }
-.practice-recap-lumi { width: 112px; height: 108px; flex-shrink: 0; object-fit: contain; }
-.practice-recap-next-label { margin: 0 6px 0 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+/* The footer sits at the bottom of the board; the block above it keeps it at least 20px away when the board scrolls. */
+.practice-recap-next { display: flex; width: 100%; align-items: center; gap: 12px; margin-top: auto; text-align: left; }
+.practice-recap-main > :has(+ .practice-recap-next) { margin-bottom: 20px; }
+/* The board's mascot: the glow sits on the frame and the fade on the image, so the glow follows the faded outline. */
+.practice-recap-mascot { display: block; width: 112px; height: 108px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(94 242 255 / .35)); pointer-events: none; }
+.practice-recap-lumi {
+  display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
+  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%);
+}
+.practice-recap-next-label { margin: 0 6px 0 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
 .practice-recap-next-chips { display: flex; min-width: 0; flex-wrap: wrap; gap: 12px; }
 .practice-recap-chip { display: flex; min-height: 52px; align-items: center; padding: 0 22px; border: 0; background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-strong); transform: skewX(-14deg); }
-button.practice-recap-chip { cursor: pointer; transition: transform .15s ease, filter .15s ease; }
-button.practice-recap-chip:hover { filter: brightness(1.08); }
+button.practice-recap-chip { cursor: pointer; }
 .practice-recap-chip > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; transform: skewX(14deg); }
 .practice-recap-chip strong { font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .practice-recap-chip small { color: var(--rk-text2); font-size: 12px; }
-[data-family="crystal"] .practice-recap-primary {
-  min-height: 60px; margin-left: auto; padding: 0 34px; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--rk-primary); box-shadow: none; color: #fff;
-  font-family: var(--sf-font-display); font-size: 20px; font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+.practice-recap-board[data-family="crystal"] .practice-recap-primary {
+  min-height: 60px; margin-left: auto; gap: normal; padding: 0 34px; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--rk-primary); box-shadow: none; color: #fff;
+  font-family: var(--sf-font-display); font-size: 20px; font-style: italic; font-weight: 900; line-height: normal; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
 }
-[data-family="crystal"] .practice-recap-next > .practice-recap-primary { filter: var(--rk-primary-glow); }
+.practice-recap-board[data-family="crystal"] .practice-recap-next > .practice-recap-primary { filter: var(--rk-primary-glow); }
 
 @media (max-width: 760px) {
   .practice-recap-header { height: 64px; gap: 12px; padding: 0 16px; }
@@ -305,9 +389,9 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   .practice-recap-actions { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 22px; }
   .practice-recap-primary, .practice-recap-secondary { min-height: 52px; }
 
-  [data-family="crystal"] .practice-recap-header { height: 60px; padding: 0 16px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-header { height: 60px; padding: 0 16px; }
   .practice-recap-kicker { font-size: 12px; letter-spacing: .12em; }
-  [data-family="crystal"] .practice-recap-main { padding: 0 16px 20px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-main { padding: 0 16px 20px; }
   .practice-recap-hero { width: 100%; height: 220px; }
   .practice-recap-wing { top: 10px; left: calc(50% - 215px); width: 230px; height: 155px; opacity: .85; }
   .practice-recap-wing[data-mirrored] { right: calc(50% - 215px); left: auto; }
@@ -315,25 +399,34 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   .practice-recap-star-text { padding-top: 12px; font-size: 40px; }
   .practice-recap-flare { width: 240px; margin-left: -120px; }
   .practice-recap-cheer { font-size: 54px; }
-  [data-family="crystal"] .practice-recap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
-  [data-family="crystal"] .practice-recap-stat { padding: 12px 14px; clip-path: var(--nk-chamfer-sm); }
-  [data-family="crystal"] .practice-recap-stat dt { font-size: 11px; letter-spacing: .12em; }
-  [data-family="crystal"] .practice-recap-stat-value { font-size: 30px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stat { padding: 12px 14px; clip-path: var(--nk-chamfer-sm); }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stat dt { font-size: 11px; letter-spacing: .12em; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stat-value { font-size: 30px; }
   .practice-recap-panels, .practice-recap-panels:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
   .practice-recap-panel { padding: 12px 14px 14px; clip-path: var(--nk-chamfer-sm); }
-  [data-family="crystal"] .practice-recap-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .practice-recap-board[data-family="crystal"] .practice-recap-card-face { height: auto; min-height: 0; }
-  [data-family="crystal"] .practice-recap-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 8px 12px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 8px 12px; }
   .practice-recap-board[data-family="crystal"] .practice-recap-card-word { font-size: 17px; }
-  [data-family="crystal"] .practice-recap-card-meaning { grid-row: 2; }
-  [data-family="crystal"] .practice-recap-card-move { grid-row: 1 / span 2; grid-column: 2; margin: 0; font-size: 13px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-meaning { grid-row: 2; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-move { grid-row: 1 / span 2; grid-column: 2; margin: 0; font-size: 13px; }
   .practice-recap-next { flex-wrap: wrap; gap: 10px; padding-top: 16px; }
-  .practice-recap-lumi { display: none; }
+  .practice-recap-main > :has(+ .practice-recap-next) { margin-bottom: 0; }
+  .practice-recap-mascot { display: none; }
   .practice-recap-next-label { width: 100%; }
   .practice-recap-next-chips { width: 100%; flex-direction: column; gap: 8px; }
   .practice-recap-chip { min-height: 48px; justify-content: flex-start; padding: 0 18px; clip-path: var(--nk-chamfer-sm); transform: none; }
   .practice-recap-chip > span { transform: none; }
-  [data-family="crystal"] .practice-recap-primary { width: 100%; min-height: 56px; margin-left: 0; font-size: 18px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-primary { width: 100%; min-height: 56px; margin-left: 0; font-size: 18px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .practice-recap-confetti > span.sf-fall-once {
+    animation-name: sf-fall-k;
+    animation-timing-function: linear;
+    animation-iteration-count: 2;
+    animation-fill-mode: forwards;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .practice-recap-confetti { display: none; }
@@ -346,9 +439,10 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   background: radial-gradient(ellipse at 50% 10%, color-mix(in srgb, var(--sf-brand) 17%, transparent), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
 }
 :root[data-theme-family='crystal'] .practice-board :is(h1, h2, h3) { font-family: var(--sf-font-display, Kanit, sans-serif); font-style: italic; }
-/* The story page is an unframed reading column that hosts the word meaning sheet; clipping it cuts the sheet off. */
-:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']),
-:root[data-theme-family='crystal'] .practice-board :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
+/* The story page and its side column are unframed: the reading column hosts the word meaning sheet and the side
+   column holds the gloss card's glow, and clipping either cuts them off. */
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article:not(.practice-story__article), aside:not(.practice-story__aside), [aria-labelledby$='question-heading']),
+:root[data-theme-family='crystal'] .practice-board :is(article:not(.practice-story__article), aside:not(.practice-story__aside), [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
 @media (max-width: 640px) {
   .practice-board:not(.practice-stage) { min-height: auto; padding-inline: 12px; }
   .practice-board:not(.practice-stage)::before { inset-inline: 0; top: 36px; height: 230px; }

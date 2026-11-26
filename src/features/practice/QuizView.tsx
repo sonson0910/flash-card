@@ -2,15 +2,16 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react";
 import { ArrowRight, Check, Trophy, X, Zap } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { CardTierName, CardTierStatus } from "../../components/flashcard/CardFront";
 import { headwordStressParts } from "../../components/flashcard/CardHeadword";
-import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { Lumi } from "../../components/lumi/Lumi";
 import { isSupportedImageUrl } from "../../lib/images";
 import { parseSyllables } from "../../lib/syllableParser";
 import type { CardData } from "../../types/card";
 import { getLibraryCardTier } from "../library/libraryViewModel";
 import { useFocusModePreference } from "../settings/focus-mode-preference";
-import { EnterKeyHint, LumiCoach, PracticeCount, PracticeTopBar, practiceSegments, useCrystalLumi } from "./practice-board-parts";
+import { useTheme } from "../theme/ThemeProvider";
+import { EnterKeyHint, LumiCoach, PracticeCount, PracticeEntrance, PracticeTopBar, practiceSegments, useCrystalLumi } from "./practice-board-parts";
 import { isQuizAnswerCorrect, type QuizQuestion } from "./practiceModel";
 import { moveFocus } from "./practice-focus";
 import "./practice-board.css";
@@ -113,6 +114,7 @@ export function QuizView({
     descriptor: ReturnType<typeof msg>,
     values?: Record<string, unknown>,
   ) => i18n._(descriptor.id, values, { message: descriptor.message });
+  const crystal = useTheme().family === "crystal";
   const showLumi = useCrystalLumi();
   const { focusModeEnabled } = useFocusModePreference();
   const answeredCount = currentIndex + (selectedAnswer === null ? 0 : 1);
@@ -189,6 +191,7 @@ export function QuizView({
   if (outcomes) for (let index = answeredCount - 1; index >= 0 && outcomes[index] === true; index -= 1) streak += 1;
   const segments = practiceSegments(questions.length, answeredCount, outcomes);
   const card = question?.card;
+  const cardTier = card ? getLibraryCardTier(card) : "new";
   const example = card?.exampleSentence?.trim() ? card.exampleSentence.trim() : "";
   const exampleParts = card && example ? splitExample(example, card.word) : null;
   const syllables = card && targetLanguage === "en" ? parseSyllables(card.word, card.phonetic) : null;
@@ -206,7 +209,7 @@ export function QuizView({
   return (
     <div className="practice-board practice-board--quiz practice-stage" data-practice-mode="quiz">
       {showResults ? (
-        <GsapEntrance
+        <PracticeEntrance
           animationKey="quiz-results"
           variant="result"
           className="practice-results crystal-chamfer surface-glass"
@@ -273,21 +276,21 @@ export function QuizView({
               data-color-role="primary"
               type="button"
               onClick={onRestart}
-              className="practice-primary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={`practice-primary${crystal ? "" : " fx-press"} crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
             >
               <Trans {...msg({ context: 'practice.actions.try-again', message: 'Try again' })} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="practice-secondary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={`practice-secondary${crystal ? "" : " fx-press"} crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
             >
               <Trans
                 {...msg({ context: 'practice.actions.back-to-library', message: 'Back to library' })}
               />
             </button>
           </div>
-        </GsapEntrance>
+        </PracticeEntrance>
       ) : question && card ? (
         <>
           <PracticeTopBar
@@ -300,8 +303,10 @@ export function QuizView({
             progressValue={answeredCount}
             chip={!focusModeEnabled && answeredCount >= 2 ? (
               <span data-practice-combo={answeredCount} className="practice-chip">
-                <Zap size={14} aria-hidden="true" />
-                <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                <span className="practice-chip__text">
+                  <Zap size={14} aria-hidden="true" />
+                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                </span>
               </span>
             ) : undefined}
             count={<PracticeCount current={answeredCount} total={questions.length} />}
@@ -313,7 +318,7 @@ export function QuizView({
             />
             {streak >= 2 && <>{" "}<Trans {...msg({ context: 'practice.quiz.streak', message: '{count} in a row' })} values={{ count: streak }} /></>}
           </p>
-          <GsapEntrance
+          <PracticeEntrance
             animationKey={currentIndex}
             variant="step"
             onEntered={() => {
@@ -330,8 +335,12 @@ export function QuizView({
               </LumiCoach>
             )}
             <span className="practice-quiz__wing crystal-wing-art" aria-hidden="true" />
-            <section data-quiz-question-panel className="practice-prompt crystal-chamfer" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
+            <section data-quiz-question-panel data-tier={cardTier} className={crystal ? "practice-prompt sf-rise" : "practice-prompt fx-enter"} aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
               <div className="practice-prompt__top">
+                <span className="practice-prompt__tier" aria-hidden="true">
+                  <span className="practice-prompt__tier-grade"><CardTierName tier={cardTier} /></span>
+                  <span className="practice-prompt__tier-name"><CardTierStatus tier={cardTier} /></span>
+                </span>
                 <p className="practice-prompt__direction">
                   <span>{targetToNative ? targetLanguageName : nativeLanguageName}</span>
                   <ArrowRight size={13} aria-hidden="true" />
@@ -432,7 +441,7 @@ export function QuizView({
                       disabled={answered}
                       aria-pressed={selected}
                       data-state={state}
-                      className="practice-option crystal-chamfer min-w-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                      className={`practice-option${state === "wrong" ? " sf-shake" : state === "correct" ? " fx-correct" : ""} min-w-0${crystal ? " transition-colors" : ""} focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
                     >
                       <span aria-hidden="true" className="practice-option__key">
                         {optionIndex + 1}
@@ -461,7 +470,7 @@ export function QuizView({
                 </button>
               )}
               {answered && hasExplanation && (
-                <div className="practice-explain crystal-chamfer-sm">
+                <div className={crystal ? "practice-explain sf-rise-2 crystal-chamfer" : "practice-explain fx-enter-3 crystal-chamfer"}>
                   <span className="practice-explain__icon" aria-hidden="true" />
                   <p>
                     <b lang={targetLanguage}>{explanationWord}</b>
@@ -471,10 +480,10 @@ export function QuizView({
                 </div>
               )}
               {answered && (
-                <GsapEntrance
+                <PracticeEntrance
                   animationKey={`${currentIndex}-feedback`}
                   variant="feedback"
-                  className="practice-quiz__continue"
+                  className={crystal ? "practice-quiz__continue" : "practice-quiz__continue fx-enter-4"}
                   data-quiz-feedback
                   data-outcome={answeredCorrectly ? "correct" : "wrong"}
                 >
@@ -496,7 +505,7 @@ export function QuizView({
                     onClick={onNext}
                     disabled={savingResult}
                     aria-busy={savingResult}
-                    className="practice-primary crystal-chamfer-sm min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                    className={`practice-primary${crystal ? "" : " fx-press"} crystal-chamfer min-h-14 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-13 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
                   >
                     {savingResult ? (
                       <Trans {...msg({ context: 'practice.actions.saving-result', message: 'Saving result…' })} />
@@ -509,10 +518,10 @@ export function QuizView({
                     )}
                     {!savingResult && <EnterKeyHint />}
                   </button>
-                </GsapEntrance>
+                </PracticeEntrance>
               )}
             </div>
-          </GsapEntrance>
+          </PracticeEntrance>
         </>
       ) : null}
     </div>

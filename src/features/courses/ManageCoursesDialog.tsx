@@ -17,7 +17,7 @@ export interface ManageCoursesDialogProps extends Pick<CoursesSurfaceProps, 'due
 export function ManageCoursesDialog({ open, onOpenChange, onCloseAutoFocus, ...surface }: ManageCoursesDialogProps) {
   return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
-      <Dialog.Overlay className="course-manage-overlay" />
+      <Dialog.Overlay className="course-manage-overlay sf-scrim" />
       <Dialog.Content className="course-manage" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus}>
         <CoursesSurface {...surface}
           renderTitle={title => <Dialog.Title className="course-manage__title">{title}</Dialog.Title>}

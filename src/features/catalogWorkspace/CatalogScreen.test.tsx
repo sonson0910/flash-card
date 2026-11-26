@@ -573,4 +573,37 @@ describe('CatalogScreen', () => {
     expect(screenSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB|cardRepository|getDocs\(|getDoc\(/);
     expect(presentationSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
   });
+
+  it('applies Classic motion roles on Paths while leaving Crystal unchanged', () => {
+    const modelWithUnits: CatalogScreenModel = {
+      ...readyModel,
+      pathUnits: [
+        { unit: { unitId: 'unit-1', trackId: 'ielts', tier: 'foundation', ordinal: 1, titles: [{ language: 'en', text: 'Start here' }], total: 2, started: 1, mastered: 1, preview: [{ lexemeId: 'one', lemma: 'one' }] }, introduced: 1, mastered: 1, status: 'active' },
+      ],
+    };
+    const classic = renderToStaticMarkup(<CatalogScreen model={modelWithUnits} actions={actions} />);
+    expect(classic).toContain('paths-title fx-title');
+    expect(classic).toContain('paths-subtitle fx-enter');
+    expect(classic).toContain('catalog-current-path paths-hero fx-enter-2');
+    expect(classic).toContain('catalog-feature-words fx-stagger');
+    expect(classic).toContain('paths-cta brand-action fx-press');
+    expect(classic).toContain('paths-ghost fx-press');
+    expect(classic).toContain('catalog-shelf paths-shelf fx-enter-3');
+    expect(classic).toContain('paths-books fx-stagger');
+    expect(classic).toContain('catalog-track-card paths-book fx-lift');
+    expect(classic).toContain('<span class="paths-book-track" aria-hidden="true"><span class="sf-grow"');
+
+    vi.stubGlobal('document', { documentElement: { dataset: { themeFamily: 'crystal' } } });
+    try {
+      const crystal = renderToStaticMarkup(<CatalogScreen model={modelWithUnits} actions={actions} />);
+      expect(crystal).not.toContain('fx-title');
+      expect(crystal).not.toContain('fx-enter');
+      expect(crystal).not.toContain('fx-stagger');
+      expect(crystal).not.toContain('fx-press');
+      expect(crystal).not.toContain('fx-lift');
+      expect(crystal).not.toContain('sf-grow');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

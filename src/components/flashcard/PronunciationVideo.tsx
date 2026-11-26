@@ -1,6 +1,6 @@
 import { useState } from 'react';
-export const mediaButtonClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold focus-visible:outline-2';
-export const mediaPanelClass = 'my-3 space-y-3 rounded-xl border border-[var(--sf-border)] p-3 text-left';
+export const mediaButtonClass = 'min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,12px)] border border-[var(--sf-border)] px-3 text-sm font-bold focus-visible:outline-2';
+export const mediaPanelClass = 'my-3 space-y-3 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,14px)] border border-[var(--sf-border)] p-3 text-left';
 export const stopMediaEvent = (event: { stopPropagation(): void }) => event.stopPropagation();
 
 interface PronunciationLesson {

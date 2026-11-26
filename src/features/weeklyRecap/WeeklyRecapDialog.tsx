@@ -4,6 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { X } from 'lucide-react';
 import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
+import { useTheme } from '../theme/ThemeProvider';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import {
   availableWeeklyRecapSelectionKeys,
@@ -44,6 +45,7 @@ const defaultNow = (): Date => new Date();
 
 export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSavedStats = false, now = defaultNow }: WeeklyRecapDialogProps) {
   const { _, i18n: activeI18n } = useLingui();
+  const isCrystal = useTheme().family === 'crystal';
   const verified = useVerifiedStats();
   const data = useMemo(
     () => computeWeeklyRecap(stats.xpChartData, now(), stats.reviewActivity, verified?.state?.rewardTimeZone ?? stats.rewardTimeZone),
@@ -166,14 +168,14 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
 
   return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
-      <Dialog.Overlay className="weekly-recap-dialog-overlay" />
-      <Dialog.Content className="weekly-recap-dialog crystal-chamfer">
+      <Dialog.Overlay className={`weekly-recap-dialog-overlay${!isCrystal ? ' sf-scrim' : ''}`} />
+      <Dialog.Content className="weekly-recap-dialog">
         <div className="weekly-recap-dialog__header">
           <Dialog.Title className="weekly-recap-dialog__title"><Trans {...msg({ id: 'weeklyRecap.dialog.title', message: 'Your weekly recap' })} /></Dialog.Title>
           <Dialog.Close aria-label={_(msg({ id: 'weeklyRecap.dialog.close', message: 'Close' }))} className="weekly-recap-dialog__close liquid-control"><X size={18} /></Dialog.Close>
         </div>
         <div className="weekly-recap-dialog__body">
-          {showingSavedStats && <p role="status" className="mb-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'weeklyRecap.saved-warning', message: 'Showing saved recap. Recent reviews may not be included.' })} /></p>}
+          {showingSavedStats && <p role="status" className="mb-3 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'weeklyRecap.saved-warning', message: 'Showing saved recap. Recent reviews may not be included.' })} /></p>}
           <WeeklyRecapScreen
             content={content}
             intro={{

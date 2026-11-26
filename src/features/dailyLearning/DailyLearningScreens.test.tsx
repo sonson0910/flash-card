@@ -669,19 +669,45 @@ describe('LessonScreen', () => {
     expect(sentenceHtml).toContain('1. word');
   });
 
-  it('gives every question and its reveal a GSAP entrance, collapsed for reduced motion', () => {
-    const questionHtml = renderToStaticMarkup(<LessonScreen model={choiceLesson} actions={lessonActions} />);
-    expect(questionHtml).toContain('data-gsap-entrance="step"');
-    expect(questionHtml).not.toContain('data-gsap-entrance="feedback"');
+  it('gives every question and its reveal a GSAP entrance in Crystal, and board CSS motion in Classic', () => {
+    vi.stubGlobal('localStorage', { getItem: (key: string) => key === 'sonflash_theme_family' ? 'crystal' : null });
+    try {
+      const crystalQuestion = renderToStaticMarkup(<ThemeProvider><LessonScreen model={choiceLesson} actions={lessonActions} /></ThemeProvider>);
+      expect(crystalQuestion).toContain('data-gsap-entrance="step"');
+      expect(crystalQuestion).not.toContain('data-gsap-entrance="feedback"');
 
-    const feedbackHtml = renderToStaticMarkup(<LessonScreen model={{
+      const crystalFeedback = renderToStaticMarkup(<ThemeProvider><LessonScreen model={{
+        ...choiceLesson,
+        status: 'feedback',
+        feedback: { outcome: 'correct', message: 'Correct.', expectedAnswer: 'sự phân tích', answerLanguage: 'vi' },
+        canSubmit: false,
+      }} actions={lessonActions} /></ThemeProvider>);
+      expect(crystalFeedback).toContain('data-gsap-entrance="step"');
+      expect(crystalFeedback).toContain('data-gsap-entrance="feedback"');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    const classicQuestion = renderToStaticMarkup(<LessonScreen model={choiceLesson} actions={lessonActions} />);
+    expect(classicQuestion).not.toContain('data-gsap-entrance=');
+    expect(classicQuestion).toContain('lesson-card fx-enter');
+
+    const classicFeedback = renderToStaticMarkup(<LessonScreen model={{
       ...choiceLesson,
       status: 'feedback',
       feedback: { outcome: 'correct', message: 'Correct.', expectedAnswer: 'sự phân tích', answerLanguage: 'vi' },
       canSubmit: false,
     }} actions={lessonActions} />);
-    expect(feedbackHtml).toContain('data-gsap-entrance="step"');
-    expect(feedbackHtml).toContain('data-gsap-entrance="feedback"');
+    expect(classicFeedback).not.toContain('data-gsap-entrance=');
+    expect(classicFeedback).toContain('lesson-feedback fx-correct');
+
+    const classicIncorrect = renderToStaticMarkup(<LessonScreen model={{
+      ...choiceLesson,
+      status: 'feedback',
+      feedback: { outcome: 'incorrect', message: 'Check the answer.', expectedAnswer: 'sự phân tích', answerLanguage: 'vi' },
+      canSubmit: false,
+    }} actions={lessonActions} />);
+    expect(classicIncorrect).toContain('lesson-feedback sf-shake');
   });
 
   it('routes the reveal cue and the rating tap through the shared, already-gated haptics/sound helpers', () => {

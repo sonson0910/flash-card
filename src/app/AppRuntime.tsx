@@ -644,15 +644,15 @@ export default function AppRuntime({
         className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
         <div className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
-          {viewMode !== 'landing' && <OfflineReadiness beforePrepare={moveLegacyPushWorkerBeforePrepare} />}
+          {viewMode !== 'landing' && <OfflineReadiness beforePrepare={moveLegacyPushWorkerBeforePrepare} updatesOnly={viewMode !== 'files'} />}
           {shouldShowViewHeading(viewMode) && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
             {!courseScopeReady && user ? (courseSession?.model.ownerId === user.uid && courseSession.model.status === 'error'
-              ? <div role="alert" className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
-                  <p><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
-                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 font-bold"><Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} /></button>
+              ? <div role="alert" className="app-course-error rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,1rem)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
+                  <p className="app-course-error-title"><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
+                  <button type="button" onClick={() => void courseSession.actions.retry()} className="app-course-error-retry liquid-control fx-press mt-3 min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] px-4 font-bold"><Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} /></button>
                 </div>
               : <WorkspaceLoadingPanel><Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} /></WorkspaceLoadingPanel>) : <AppViewStage
               {...viewStageNavigationActions(setViewMode)}

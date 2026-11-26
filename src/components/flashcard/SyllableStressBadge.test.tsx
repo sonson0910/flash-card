@@ -53,4 +53,15 @@ describe('SyllableStressBadge', () => {
     );
     expect(markup).toBe('');
   });
+
+  it('renders nothing for non-English Latin languages such as French, German, and Spanish', () => {
+    for (const sample of [
+      { word: 'décision', language: 'fr', phonetic: '/de.si.zjɔ̃/' },
+      { word: 'Entscheidung', language: 'de', phonetic: '/ɛntˈʃaɪ̯dʊŋ/' },
+      { word: 'decisión', language: 'es', phonetic: '/de.θiˈsjon/' },
+    ]) {
+      const markup = renderToStaticMarkup(<SyllableStressBadge card={card(sample)} />);
+      expect(markup).toBe('');
+    }
+  });
 });

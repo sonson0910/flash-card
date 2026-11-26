@@ -169,10 +169,17 @@ for (const theme of themes) for (const viewport of viewports) {
       element.append(probe);
       const expected = getComputedStyle(probe).backgroundColor;
       probe.remove();
-      return { actual: getComputedStyle(element).backgroundColor, expected };
+      return { actual: getComputedStyle(element).backgroundColor, expected, face: getComputedStyle(element, '::after').backgroundImage };
     });
-    expect(surface.actual, 'course overlay hides text underneath it').toBe(surface.expected);
-    expect(surface.actual).toMatch(/^rgb\(/);
+    if (theme.family === 'crystal' && viewport.name === 'desktop') {
+      // The Crystal desktop popover draws its face on a chamfered layer inside the gradient rim, so that layer,
+      // not the popover box, is what must be opaque.
+      expect(surface.face, 'course overlay hides text underneath it').toMatch(/^linear-gradient\(/);
+      expect(surface.face, 'course overlay hides text underneath it').not.toMatch(/rgba\(|transparent/);
+    } else {
+      expect(surface.actual, 'course overlay hides text underneath it').toBe(surface.expected);
+      expect(surface.actual).toMatch(/^rgb\(/);
+    }
     await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
     const coursesBox = await expectBox(courses, 'course switcher');
     if (viewport.name === 'desktop') {
@@ -402,11 +409,11 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   await expect(pace).toHaveAttribute('aria-pressed', 'true');
   await expect(onboarding.locator('.onboarding-pace-grid > button')).toHaveCount(4);
   const paceScreenshot = await expectScreen(page, testInfo, 'course-onboarding-pace-classic-light-mobile');
-  for (const name of ['Back', 'Try 5 cards']) {
-    const button = onboarding.getByRole('button', { name });
-    const box = await button.boundingBox();
-    expect(box?.width, `${name} spans the mobile content width`).toBeGreaterThan(300);
-  }
+  // On a phone the board puts Back in the header as a round 44px button and gives the footer to the one action.
+  const backBox = await onboarding.getByRole('button', { name: 'Back' }).boundingBox();
+  expect([Math.round(backBox?.width ?? 0), Math.round(backBox?.height ?? 0)], 'Back keeps a 44px touch target').toEqual([44, 44]);
+  const tryBox = await onboarding.getByRole('button', { name: 'Try 5 cards' }).boundingBox();
+  expect(tryBox?.width, 'Try 5 cards spans the mobile content width').toBeGreaterThan(300);
 
   await onboarding.getByRole('button', { name: 'Try 5 cards' }).click();
   const firstCard = onboarding.getByRole('group', { name: /^안녕하세요 flashcard/ });

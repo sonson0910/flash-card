@@ -4,7 +4,8 @@
 .ielts-band-picker__chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr)); gap: 8px; }
 .ielts-band-picker__chip { position: relative; display: flex; min-width: 44px; min-height: 44px; }
 .ielts-band-picker__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.ielts-band-picker__value { display: flex; flex: 1; align-items: center; justify-content: center; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-control, var(--sf-surface-raised)); color: var(--sf-text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none; }
+:where(html[data-theme-family=crystal]) .ielts-band-picker__value { display: flex; flex: 1; align-items: center; justify-content: center; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-control, var(--sf-surface-raised)); color: var(--sf-text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none; }
+:where(html:not([data-theme-family=crystal])) .ielts-band-picker__value { display: flex; flex: 1; align-items: center; justify-content: center; border: 1px solid var(--sf-border); border-radius: var(--sf-input-radius, 999px); background: var(--sf-surface-control, var(--sf-surface-raised)); color: var(--sf-text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none; }
 .ielts-band-picker__chip:hover .ielts-band-picker__value { border-color: var(--sf-brand-text); }
 .ielts-band-picker__input:checked + .ielts-band-picker__value { border-color: var(--sf-brand); background: var(--sf-brand); color: var(--sf-on-brand); }
 .ielts-band-picker__input:focus-visible + .ielts-band-picker__value { outline: 2px solid var(--sf-brand); outline-offset: 3px; }

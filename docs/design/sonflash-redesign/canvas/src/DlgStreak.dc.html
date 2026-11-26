@@ -1,6 +1,6 @@
 <!--#HEAD Streak-->
 <!--#DLGOPEN-->
-    <button aria-label="Close" style="position: absolute; top: 18px; right: 18px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <button aria-label="Close" class="{{t.fx.press}}" style="position: absolute; top: 18px; right: 18px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
 
     <sc-if value="{{milestone}}" hint-placeholder-val="{{false}}">
       <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; overflow: hidden;">
@@ -11,7 +11,7 @@
     </sc-if>
 
     <div style="position: relative; padding: 36px 36px 8px; display: flex; flex-direction: column; align-items: center; text-align: center;">
-      <div style="position: relative; width: 116px; height: 116px; box-sizing: border-box; border-radius: 50%; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; color: {{hero.fg}}; display: flex; align-items: center; justify-content: center;">
+      <div class="{{heroCls}}" style="position: relative; width: 116px; height: 116px; box-sizing: border-box; border-radius: 50%; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; color: {{hero.fg}}; display: flex; align-items: center; justify-content: center;">
         <svg width="52" height="52" viewBox="0 0 24 24" fill="currentColor" style="filter: {{hero.glow}};"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
         <sc-if value="{{freeze}}" hint-placeholder-val="{{true}}">
           <span style="position: absolute; right: -4px; bottom: 2px; width: 40px; height: 40px; border-radius: 50%; background: {{ice.chip}}; border: 2px solid {{ice.chipRing}}; color: {{ice.text}}; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5"></path></svg></span>
@@ -27,7 +27,7 @@
     </div>
 
     <div style="position: relative; padding: 18px 36px 24px; display: flex; flex-direction: column; gap: 16px;">
-      <div role="list" aria-label="This week" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;">
+      <div role="list" aria-label="This week" class="{{t.fx.stagger}}" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;">
         <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
           <div role="listitem" aria-label="{{d.aria}}" style="display: flex; flex-direction: column; align-items: center; gap: 7px;">
             <span style="font-size: 11.5px; font-weight: 600; color: {{d.labelColor}};">{{d.label}}</span>
@@ -89,8 +89,8 @@
 
     <footer style="position: relative; margin-top: auto; flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
       <span style="font-size: 12.5px; color: {{t.text3}};">{{copy.foot}}</span>
-      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">{{copy.secondary}}</button>
-      <button class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">{{copy.primary}}</button>
+      <button class="{{t.fx.press}}" style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">{{copy.secondary}}</button>
+      <button class="{{t.fx.press}}" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">{{copy.primary}}</button>
     </footer>
 <!--#DLGCLOSE-->
 </x-dc>
@@ -141,6 +141,8 @@ class Component extends DCLogic {
       t, dw: 560, grainId: 'streak-grain-' + (dark ? 'd' : 'l'),
       amb: { ax: -200, ay: -220, bx: 360, by: 420 },
       freeze, repair, milestone, ice, gold, hero, copy, week, confetti,
+      // The badge seal lands as a reward only when a milestone unlocks it.
+      heroCls: milestone ? t.fx.reward : '',
       stats: [{ label: 'Reviews', value: '1,284' }, { label: 'New words', value: '312' }, { label: 'Recall', value: '91%' }],
     };
   }

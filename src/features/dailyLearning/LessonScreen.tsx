@@ -36,7 +36,7 @@ const stageOrder: readonly { readonly mode: LessonMode; readonly label: ReturnTy
 const clozeBlank = /_{3,}/;
 
 function ProgressSegments({ total, current }: { readonly total: number; readonly current: number }) {
-  return <span className="lesson-segments" data-segment-count={total > 16 ? 'many' : 'few'} aria-hidden="true">
+  return <span className="lesson-segments fx-stagger" data-segment-count={total > 16 ? 'many' : 'few'} aria-hidden="true">
     {Array.from({ length: total }, (_, index) => <span key={index} data-segment-state={index < current - 1 ? 'complete' : index === current - 1 ? 'current' : 'upcoming'} />)}
   </span>;
 }
@@ -47,7 +47,7 @@ function TopBar({ model, actions, title }: LessonScreenProps & { readonly title:
   const current = Math.min(total, Math.max(0, model.progress.current));
   return <>
     <header className="lesson-topbar">
-      <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.lesson.exit', message: 'Exit lesson' }).id)} className="lesson-round lesson-exit"><X size={18} aria-hidden="true" /></button>
+      <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.lesson.exit', message: 'Exit lesson' }).id)} className="lesson-round lesson-exit fx-press"><X size={18} aria-hidden="true" /></button>
       <div className="lesson-topbar-title min-w-0">{title}</div>
       <div className="lesson-progress" role="progressbar" aria-label={i18n._(msg({ id: 'daily.lesson.progress-label', message: 'Lesson progress' }).id)} aria-valuemin={0} aria-valuemax={total} aria-valuenow={current}>
         <ProgressSegments total={total} current={current} />
@@ -62,7 +62,7 @@ function TopBar({ model, actions, title }: LessonScreenProps & { readonly title:
 function StageChips({ mode }: { readonly mode: LessonMode }) {
   const { _ } = useLingui();
   return <nav className="lesson-stages" aria-label={i18n._(msg({ id: 'daily.lesson.stages-label', message: 'Exercise types' }).id)}>
-    <ol>
+    <ol className="fx-stagger">
       {stageOrder.map(stage => <li key={stage.mode} className="lesson-stage-chip" data-stage-state={stage.mode === mode ? 'current' : 'other'} aria-current={stage.mode === mode ? 'step' : undefined}>
         <span className="lesson-stage-dot" aria-hidden="true" /><span>{_(stage.label)}</span>
       </li>)}
@@ -79,7 +79,7 @@ function Prompt({ model }: LessonScreenProps) {
     {before}
     <span className="lesson-blank" data-filled={model.answer.value ? 'true' : 'false'}>
       <span className="sr-only">{blank[0]}</span>
-      <span aria-hidden="true" lang={model.answer.language}>{model.answer.value}</span>
+      <span className="lesson-blank-ink" aria-hidden="true" lang={model.answer.language}>{model.answer.value}</span>
       {model.status === 'answering' && <span className="lesson-caret" aria-hidden="true" />}
     </span>
     {after}
@@ -92,10 +92,10 @@ function ChoiceAnswer({ model, actions }: LessonScreenProps) {
   const answer = model.answer;
   return <fieldset className="mt-6" disabled={model.status !== 'answering'}>
     <legend className="sr-only">{_(msg({ id: 'daily.lesson.choose-answer', message: 'Choose one answer' }))}</legend>
-    <div className="lesson-choice-grid">
+    <div className="lesson-choice-grid fx-stagger">
       {answer.options.map((option, index) => {
         const selected = answer.selectedId === option.id;
-        return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="lesson-choice" data-selected={selected ? 'true' : 'false'}>
+        return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="lesson-choice fx-press" data-selected={selected ? 'true' : 'false'}>
           <span className="lesson-choice-index font-mono" aria-hidden="true">{index + 1}</span>
           <span className="min-w-0">{option.label}</span>
         </button>;
@@ -115,8 +115,8 @@ function SentenceAnswer({ model, actions }: LessonScreenProps) {
       <p className="lesson-field-label">{_(msg({ id: 'daily.lesson.your-sentence', message: 'Your sentence' }))}</p>
       {answer.selectedOrder.length ? <ol className="lesson-sentence-words">{answer.selectedOrder.map((token, index) => <li key={token.occurrenceId} lang={token.language}>{index + 1}. {token.label}</li>)}</ol> : <p className="lesson-help mt-1">{_(msg({ id: 'daily.lesson.no-words', message: 'No words selected yet.' }))}</p>}
     </div>
-    <div className="lesson-token-list">
-      {answer.tokens.map(token => <button key={token.occurrenceId} type="button" lang={token.language} data-occurrence-id={token.occurrenceId} aria-pressed={token.isSelected} onClick={() => actions.toggleSentenceToken(token.occurrenceId)} className="lesson-token" data-selected={token.isSelected ? 'true' : 'false'}>{token.label}</button>)}
+    <div className="lesson-token-list fx-stagger">
+      {answer.tokens.map(token => <button key={token.occurrenceId} type="button" lang={token.language} data-occurrence-id={token.occurrenceId} aria-pressed={token.isSelected} onClick={() => actions.toggleSentenceToken(token.occurrenceId)} className="lesson-token fx-press" data-selected={token.isSelected ? 'true' : 'false'}>{token.label}</button>)}
     </div>
   </fieldset>;
 }
@@ -125,18 +125,19 @@ function Feedback({ model, actions }: LessonScreenProps) {
   const { _ } = useLingui();
   if (!model.feedback || model.status === 'answering' || model.status === 'complete') return null;
   const saving = model.status === 'rating-saving';
-  return <section aria-labelledby="lesson-feedback-heading" className="lesson-feedback" data-outcome={model.feedback.outcome}>
+  const feedbackMotion = model.feedback.outcome === 'correct' ? 'fx-correct' : 'sf-shake';
+  return <section aria-labelledby="lesson-feedback-heading" className={`lesson-feedback ${feedbackMotion}`} data-outcome={model.feedback.outcome}>
     <div role="status" aria-live="polite" aria-atomic="true">
       <p className="lesson-field-label">{_(msg({ id: 'daily.lesson.answer-feedback', message: 'Answer feedback' }))}</p>
       <h2 id="lesson-feedback-heading" className="lesson-feedback-title"><CheckCircle2 size={22} aria-hidden="true" />{model.feedback.message}</h2>
       <p className="lesson-feedback-answer"><strong>{_(msg({ id: 'daily.lesson.correct-answer', message: 'Correct answer:' }))}</strong> <span lang={model.feedback.answerLanguage}>{model.feedback.expectedAnswer}</span></p>
       {model.feedback.explanation && <p className="lesson-help mt-2 max-w-2xl text-pretty">{model.feedback.explanation}</p>}
     </div>
-    {model.status === 'rating-error' && <div className="lesson-feedback-error" role="alert"><p>{model.errorMessage}</p><button type="button" onClick={actions.retryRating} className="lesson-secondary mt-3">{_(msg({ id: 'daily.lesson.retry-rating', message: 'Retry saving rating' }))}</button></div>}
+    {model.status === 'rating-error' && <div className="lesson-feedback-error" role="alert"><p>{model.errorMessage}</p><button type="button" onClick={actions.retryRating} className="lesson-secondary fx-press mt-3">{_(msg({ id: 'daily.lesson.retry-rating', message: 'Retry saving rating' }))}</button></div>}
     <fieldset className="mt-5" disabled={saving || model.status === 'rating-error'} aria-busy={saving || undefined}>
       <legend className="lesson-rating-legend">{_(msg({ id: 'daily.lesson.rate-memory', message: 'How well did you remember?' }))}</legend>
       <p className="lesson-help mt-1">{_(msg({ id: 'daily.lesson.rate-memory-help', message: 'Choose one rating to save this review and continue.' }))}</p>
-      <div className="lesson-rating-grid">{ratings.map(rating => <button key={rating.id} type="button" data-rating={rating.id} onClick={() => { triggerHaptic('light'); actions.rate(rating.id); }} className="lesson-rating"><span className="block">{_(rating.label)}</span><span className="lesson-rating-note">{_(rating.description)}</span></button>)}</div>
+      <div className="lesson-rating-grid">{ratings.map(rating => <button key={rating.id} type="button" data-rating={rating.id} onClick={() => { triggerHaptic('light'); actions.rate(rating.id); }} className="lesson-rating fx-press"><span className="block">{_(rating.label)}</span><span className="lesson-rating-note">{_(rating.description)}</span></button>)}</div>
       {saving && <p className="lesson-help mt-3" role="status">{_(msg({ id: 'daily.lesson.saving', message: 'Saving your rating before the next question…' }))}</p>}
     </fieldset>
   </section>;
@@ -160,11 +161,16 @@ function AudioError({ message }: { readonly message?: string }) {
   return message ? <p className="lesson-audio-error" role="alert">{message}</p> : null;
 }
 
+// The board's light beam across the card face; decorative, behind the card content.
+function CardBeam() {
+  return <span className="lesson-card-beam" aria-hidden="true" />;
+}
+
 function LessonDecor({ crystal }: { readonly crystal: boolean }) {
   if (!crystal) return null;
   return <>
-    <span className="lesson-shard lesson-shard--left crystal-wing crystal-ornament" aria-hidden="true" />
-    <span className="lesson-shard lesson-shard--right crystal-wing crystal-ornament" aria-hidden="true" />
+    <span className="lesson-shard lesson-shard--left crystal-wing crystal-wing-art crystal-ornament" aria-hidden="true" />
+    <span className="lesson-shard lesson-shard--right crystal-wing crystal-wing-art crystal-ornament" aria-hidden="true" />
   </>;
 }
 
@@ -177,7 +183,7 @@ function Guidance({ showLumi, pose }: { readonly showLumi: boolean; readonly pos
       <p className="lesson-lumi-label">{_(msg({ id: 'daily.lesson.lumi-label', message: 'Lumi is here' }))}</p>
       <p className="lesson-lumi-copy">{copy}</p>
     </div>
-    <Lumi pose={pose} size={168} className="crystal-ornament lesson-lumi-figure" />
+    <Lumi pose={pose} className="crystal-ornament lesson-lumi-figure" />
   </aside>;
 }
 
@@ -195,20 +201,24 @@ function Introduction({ model, actions, showLumi, crystal }: LessonScreenProps &
     <LessonDecor crystal={crystal} />
     <TopBar model={model} actions={actions} title={<LessonTitle heading={false} model={model} />} />
     <div className="lesson-stage">
-      <div className="lesson-card" data-lesson-card="true">
-        <div className="lesson-card-meta"><span className="lesson-chip">{_(msg({ id: 'daily.lesson.guidance.0', message: 'Introduction' }))}</span></div>
-        <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title">{_(msg({ id: 'daily.lesson.guidance.1', message: 'Meet this word' }))}</h1>
-        <CardDetails model={model} actions={actions} />
-        {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill mt-5"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.guidance.3', message: 'Play audio' }))}</button>}
-        <AudioError message={model.audioErrorMessage} />
-        <p className="lesson-help mt-5">{_(msg({ id: 'daily.lesson.guidance.4', message: 'Take a moment to connect the word with its meaning.' }))}</p>
-        <div className="lesson-action-pair">
-          <button type="button" onClick={() => actions.chooseIntroduction?.('guided')} className="lesson-primary">{_(msg({ id: 'daily.lesson.guidance.5', message: "I don't know this yet" }))}</button>
-          <button type="button" onClick={() => actions.chooseIntroduction?.('independent-recall')} className="lesson-secondary">{_(msg({ id: 'daily.lesson.guidance.6', message: 'I already know it — test me' }))}</button>
+      <div className="lesson-card fx-enter" data-lesson-card="true">
+        <div className="lesson-card-face">
+          {crystal && <CardBeam />}
+          <div className="lesson-card-meta"><span className="lesson-chip">{_(msg({ id: 'daily.lesson.guidance.0', message: 'Introduction' }))}</span></div>
+          <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title fx-title">{_(msg({ id: 'daily.lesson.guidance.1', message: 'Meet this word' }))}</h1>
+          <CardDetails model={model} actions={actions} />
+          {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill fx-press mt-5"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.guidance.3', message: 'Play audio' }))}</button>}
+          <AudioError message={model.audioErrorMessage} />
+          <p className="lesson-help mt-5">{_(msg({ id: 'daily.lesson.guidance.4', message: 'Take a moment to connect the word with its meaning.' }))}</p>
+          <div className="lesson-action-pair">
+            <button type="button" onClick={() => actions.chooseIntroduction?.('guided')} className="lesson-primary fx-press">{_(msg({ id: 'daily.lesson.guidance.5', message: "I don't know this yet" }))}</button>
+            <button type="button" onClick={() => actions.chooseIntroduction?.('independent-recall')} className="lesson-secondary fx-press">{_(msg({ id: 'daily.lesson.guidance.6', message: 'I already know it — test me' }))}</button>
+          </div>
         </div>
       </div>
-      <Guidance showLumi={showLumi} pose="hint" />
+      {!showLumi && <Guidance showLumi={false} pose="hint" />}
     </div>
+    {showLumi && <Guidance showLumi pose="hint" />}
   </section>;
 }
 
@@ -218,16 +228,20 @@ function GuidedPractice({ model, actions, showLumi, crystal }: LessonScreenProps
     <LessonDecor crystal={crystal} />
     <TopBar model={model} actions={actions} title={<LessonTitle heading={false} model={model} />} />
     <div className="lesson-stage">
-      <div className="lesson-card" data-lesson-card="true">
-        <div className="lesson-card-meta"><span className="lesson-chip">{_(msg({ id: 'daily.lesson.guidance.7', message: 'Guided practice' }))}</span></div>
-        <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title">{_(msg({ id: 'daily.lesson.guidance.8', message: 'See it in context' }))}</h1>
-        <CardDetails model={model} actions={actions} />
-        {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill mt-5"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.guidance.3', message: 'Play audio' }))}</button>}
-        <AudioError message={model.audioErrorMessage} />
-        <div className="lesson-action-pair"><button type="button" onClick={actions.continueGuided} className="lesson-primary">{_(msg({ id: 'daily.lesson.guidance.9', message: 'Continue to independent recall' }))}</button></div>
+      <div className="lesson-card fx-enter" data-lesson-card="true">
+        <div className="lesson-card-face">
+          {crystal && <CardBeam />}
+          <div className="lesson-card-meta"><span className="lesson-chip">{_(msg({ id: 'daily.lesson.guidance.7', message: 'Guided practice' }))}</span></div>
+          <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title fx-title">{_(msg({ id: 'daily.lesson.guidance.8', message: 'See it in context' }))}</h1>
+          <CardDetails model={model} actions={actions} />
+          {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill fx-press mt-5"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.guidance.3', message: 'Play audio' }))}</button>}
+          <AudioError message={model.audioErrorMessage} />
+          <div className="lesson-action-pair"><button type="button" onClick={actions.continueGuided} className="lesson-primary fx-press">{_(msg({ id: 'daily.lesson.guidance.9', message: 'Continue to independent recall' }))}</button></div>
+        </div>
       </div>
-      <Guidance showLumi={showLumi} pose="hint" />
+      {!showLumi && <Guidance showLumi={false} pose="hint" />}
     </div>
+    {showLumi && <Guidance showLumi pose="hint" />}
   </section>;
 }
 
@@ -262,68 +276,74 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
   if (model.status === 'introduction') return <Introduction model={model} actions={actions} showLumi={showLumi} crystal={crystal} />;
   if (model.status === 'guided') return <GuidedPractice model={model} actions={actions} showLumi={showLumi} crystal={crystal} />;
   if (model.status === 'complete') return <section aria-labelledby="daily-lesson-heading" className="lesson-complete-canvas daily-canvas" data-learning-canvas="lesson-complete">
-    <div className="lesson-complete-card">
+    <div className="lesson-complete-card fx-enter">
       {showLumi && <Lumi pose="cheer" size={88} className="crystal-ornament mx-auto mb-2" />}
       <p className="lesson-field-label">{_(msg({ id: 'daily.lesson.session-complete-kicker', message: 'Session complete' }))}</p>
-      <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title mt-3">{_(msg({ id: 'daily.lesson.complete', message: 'Lesson complete' }))}</h1>
+      <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title fx-title mt-3">{_(msg({ id: 'daily.lesson.complete', message: 'Lesson complete' }))}</h1>
       <p className="lesson-help mx-auto mt-3 max-w-xl text-pretty" role="status">{model.liveMessage}</p>
-      <button type="button" onClick={actions.finish} className="lesson-primary mt-6">{_(msg({ id: 'daily.lesson.back-to-today', message: 'Back to Today' }))}</button>
+      <button type="button" onClick={actions.finish} className="lesson-primary fx-press mt-6">{_(msg({ id: 'daily.lesson.back-to-today', message: 'Back to Today' }))}</button>
     </div>
   </section>;
   const answering = model.status === 'answering';
   const instruction = model.answer.kind === 'text'
     ? <label htmlFor="daily-lesson-answer" className="lesson-instruction">{model.answer.label}</label>
     : <span className="lesson-instruction" aria-hidden="true">{model.answer.kind === 'choice' ? _(msg({ id: 'daily.lesson.choose-answer', message: 'Choose one answer' })) : _(msg({ id: 'daily.lesson.build-sentence', message: 'Build the sentence' }))}</span>;
-  const submitButton = answering && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className="lesson-primary lesson-submit">
+  const submitButton = answering && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className="lesson-primary lesson-submit fx-press">
     {_(msg({ id: 'daily.lesson.check', message: 'Check' }))}<kbd className="lesson-kbd font-mono" aria-hidden="true">{_(msg({ id: 'daily.lesson.enter-key', message: 'Enter' }))}</kbd>
   </button>;
   const canAskForGuidance = Boolean(model.card && actions.requestGuidance && (model.status === 'answering' || model.status === 'feedback'));
   const showAudio = model.mode === 'listening' && model.canPlayAudio;
+  const cardFace = <div className="lesson-card-face">
+    {crystal && <CardBeam />}
+    <form className="lesson-form" onSubmit={submit} onCompositionStart={imeSubmitGuard.onCompositionStart} onCompositionEnd={imeSubmitGuard.onCompositionEnd} onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}>
+      <div className="lesson-card-meta"><span className="lesson-chip">{model.modeLabel}</span>{instruction}</div>
+      <Prompt model={model} actions={actions} />
+      <AudioError message={model.audioErrorMessage} />
+      {model.answer.kind === 'text' && <div className="lesson-input-row sf-ease" data-disabled={answering ? 'false' : 'true'}>
+        <input
+          id="daily-lesson-answer"
+          name="daily-lesson-answer"
+          type="text"
+          lang={model.answer.language}
+          inputMode={model.answer.inputMode}
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          disabled={!answering}
+          value={model.answer.value}
+          onChange={event => actions.changeTextAnswer(event.target.value)}
+          className="lesson-text-input"
+        />
+        {submitButton}
+      </div>}
+      <ChoiceAnswer model={model} actions={actions} />
+      <SentenceAnswer model={model} actions={actions} />
+      {(model.answer.kind !== 'text' && submitButton) || showAudio || canAskForGuidance ? <div className="lesson-aux-row">
+        {model.answer.kind !== 'text' && submitButton}
+        {showAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill lesson-audio fx-press"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }))}</button>}
+        {canAskForGuidance && <button type="button" onClick={actions.requestGuidance} className="lesson-link">{_(msg({ id: 'daily.lesson.learn-first', message: "I don't know this — learn first" }))}</button>}
+      </div> : null}
+    </form>
+    {model.feedback && model.status !== 'answering' && (crystal
+      ? <GsapEntrance variant="feedback" animationKey={current} data-lesson-feedback="true"><Feedback model={model} actions={actions} /></GsapEntrance>
+      : <div className="fx-enter" data-lesson-feedback="true"><Feedback model={model} actions={actions} /></div>)}
+  </div>;
   return <section aria-labelledby="daily-lesson-heading" className="lesson-canvas daily-canvas" data-session-shell="lesson" data-learning-canvas="lesson" data-lesson-mode={model.mode}>
     <LessonDecor crystal={crystal} />
     <TopBar model={model} actions={actions} title={<LessonTitle heading model={model} />} />
     <StageChips mode={model.mode} />
     <p className="sr-only" role="status">{model.liveMessage}</p>
     <div className="lesson-stage">
-      <GsapEntrance variant="step" animationKey={current} className="lesson-card" data-lesson-card="true">
-        <form className="lesson-form" onSubmit={submit} onCompositionStart={imeSubmitGuard.onCompositionStart} onCompositionEnd={imeSubmitGuard.onCompositionEnd} onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}>
-          <div className="lesson-card-meta"><span className="lesson-chip">{model.modeLabel}</span>{instruction}</div>
-          <Prompt model={model} actions={actions} />
-          <AudioError message={model.audioErrorMessage} />
-          {model.answer.kind === 'text' && <div className="lesson-input-row" data-disabled={answering ? 'false' : 'true'}>
-            <input
-              id="daily-lesson-answer"
-              name="daily-lesson-answer"
-              type="text"
-              lang={model.answer.language}
-              inputMode={model.answer.inputMode}
-              autoComplete="off"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              disabled={!answering}
-              value={model.answer.value}
-              onChange={event => actions.changeTextAnswer(event.target.value)}
-              className="lesson-text-input"
-            />
-            {submitButton}
-          </div>}
-          <ChoiceAnswer model={model} actions={actions} />
-          <SentenceAnswer model={model} actions={actions} />
-          {(model.answer.kind !== 'text' && submitButton) || showAudio || canAskForGuidance ? <div className="lesson-aux-row">
-            {model.answer.kind !== 'text' && submitButton}
-            {showAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill lesson-audio"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }))}</button>}
-            {canAskForGuidance && <button type="button" onClick={actions.requestGuidance} className="lesson-link">{_(msg({ id: 'daily.lesson.learn-first', message: "I don't know this — learn first" }))}</button>}
-          </div> : null}
-        </form>
-        {model.feedback && model.status !== 'answering' && <GsapEntrance variant="feedback" animationKey={current} data-lesson-feedback="true"><Feedback model={model} actions={actions} /></GsapEntrance>}
-      </GsapEntrance>
-      <div className="lesson-footer">
+      {crystal
+        ? <GsapEntrance variant="step" animationKey={current} className="lesson-card" data-lesson-card="true">{cardFace}</GsapEntrance>
+        : <div key={current} className="lesson-card fx-enter" data-lesson-card="true">{cardFace}</div>}
+      <div className="lesson-footer fx-enter-3">
         {!showLumi && <Guidance showLumi={false} pose="thinking" />}
         <span className="lesson-footer-count">{_({ ...msg({ id: 'daily.lesson.question-progress', message: 'Question {current} of {total}' }), values: { current, total } })}</span>
       </div>
-      {showLumi && <Guidance showLumi pose="thinking" />}
     </div>
+    {showLumi && <Guidance showLumi pose="thinking" />}
   </section>;
 }
 

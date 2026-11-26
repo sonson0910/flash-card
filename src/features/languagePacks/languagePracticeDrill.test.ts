@@ -215,6 +215,7 @@ describe('language practice drill model', () => {
       useLingui: () => ({ i18n: { _: (descriptor: { message: string }) => descriptor.message } }),
     }));
     vi.doMock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: { activeCourse: null } }) }));
+    vi.doMock('../theme/ThemeProvider', () => ({ useTheme: () => ({ family: 'classic' }) }));
     vi.doMock('./registry', async importOriginal => ({
       ...(await importOriginal<typeof import('./registry')>()),
       loadLanguagePack,
@@ -251,6 +252,7 @@ describe('language practice drill model', () => {
       vi.doUnmock('react');
       vi.doUnmock('@lingui/react');
       vi.doUnmock('../courses/CourseGate');
+      vi.doUnmock('../theme/ThemeProvider');
       vi.doUnmock('./registry');
       vi.resetModules();
     }
@@ -277,6 +279,7 @@ describe('language practice drill model', () => {
       useLingui: () => ({ i18n: { _: (descriptor: { message: string }) => descriptor.message } }),
     }));
     vi.doMock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: { activeCourse: null } }) }));
+    vi.doMock('../theme/ThemeProvider', () => ({ useTheme: () => ({ family: 'classic' }) }));
 
     try {
       const { LanguagePracticeDrill: ClientLanguagePracticeDrill } = await import('./LanguagePracticeDrill');
@@ -323,6 +326,7 @@ describe('language practice drill model', () => {
       vi.doUnmock('react');
       vi.doUnmock('@lingui/react');
       vi.doUnmock('../courses/CourseGate');
+      vi.doUnmock('../theme/ThemeProvider');
       vi.resetModules();
     }
   });

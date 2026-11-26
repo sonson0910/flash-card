@@ -1,7 +1,11 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import '../../src/index.css';
+import '../../src/styles/themes/crystal-motion.css';
+import '../../src/styles/themes/classic-motion.css';
 import '../../src/styles/app-bootstrap.css';
+// The app always loads the shell stylesheet (AppRuntime); the recap board takes its Midnight Aurora glow from it.
+import '../../src/styles/shell.css';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
 import { SessionRecapModal } from '../../src/features/practice/SessionRecapModal';

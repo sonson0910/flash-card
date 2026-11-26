@@ -22,8 +22,9 @@ import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardBack } from './flashcard/CardBack';
 import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
-import { cardSideAnnouncement, cardSideStatus, isLanguagePackCard } from './flashcard/cardLanguage';
-import { useCardLook } from './flashcard/cardLook';
+import { cardSideAnnouncement, cardSideStatus, usesLanguageCardForm } from './flashcard/cardLanguage';
+import { cardTierOf, useCardLook } from './flashcard/cardLook';
+import { classicCardMotion, crystalFlipMotion, crystalTiltMotion } from './flashcard/crystalCardMotion';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
 import { useFlashcardSpeechMatch } from './flashcard/useFlashcardSpeechMatch';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
@@ -44,8 +45,8 @@ const EditCardDialog = lazy(() => Promise.all([
   import('../features/cardEdit/EditCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.EditCardDialog })));
 const HangulBreakdown = lazy(() => import('./flashcard/HangulBreakdown').then(module => ({ default: module.HangulBreakdown })));
-const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
-const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
 const detailsSectionHeaderClass = 'mb-2.5 flex w-full items-center gap-2 border-b border-[var(--sf-border)] pb-2.5';
 const detailsSectionIconClass = 'flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)]';
 const detailsSectionTitleClass = 'text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]';
@@ -65,6 +66,8 @@ export interface FlashcardProps {
   onEditOpenChange?: (open: boolean) => void;
   editorContext?: EditCardDialogContext;
   initialSide?: 'front' | 'back';
+  /** Starts with the picture and definition hidden, as the study prompt that turns into this card hid them. */
+  initialBlind?: boolean;
   imagePriority?: boolean;
 }
 
@@ -80,7 +83,7 @@ const startsOnCardControl = (target: EventTarget, card: Element): boolean => {
   return dialog !== null && !dialog.contains(card);
 };
 
-export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', imagePriority = false }: FlashcardProps) {
+export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', initialBlind = false, imagePriority = false }: FlashcardProps) {
   const { _, i18n } = useLingui();
   const { model: courseModel } = useCourseSession();
   const translationFailureMessage = _(msg({ id: 'flashcard.translation.failed', message: 'The explanation could not be translated. Check your connection and try again.' }));
@@ -90,6 +93,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   const [isFlipped, setIsFlipped] = useState(initialSide === 'back');
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
+  // The side the running turn ends on: the Crystal light pillar and the meaning's entrance belong only to the turn toward the back.
+  const [flipTarget, setFlipTarget] = useState<'front' | 'back'>('back');
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const frontFlipRef = useRef<HTMLButtonElement | null>(null);
   const backFlipRef = useRef<HTMLButtonElement | null>(null);
@@ -120,12 +125,29 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   const editDialogOpenRef = useRef(false);
   const latestEditOpenChangeRef = useRef(onEditOpenChange);
   latestEditOpenChangeRef.current = onEditOpenChange;
-  const [isBlindMode, setIsBlindMode] = useState(false);
+  const [isBlindMode, setIsBlindMode] = useState(initialBlind);
   const [showReading, setShowReading] = useState(true);
-  const isPackCard = isLanguagePackCard(data);
+  const isLangForm = usesLanguageCardForm(data);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
+  const [starPulse, setStarPulse] = useState(false);
+  const prevStarRef = useRef({ id: data.id, bookmarked: Boolean(data.bookmarked) });
   const [isZenMode] = useZenGlassMode();
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const next = Boolean(data.bookmarked);
+    if (prevStarRef.current.id !== data.id) {
+      prevStarRef.current = { id: data.id, bookmarked: next };
+      setStarPulse(false);
+      return;
+    }
+    if (!prevStarRef.current.bookmarked && next) {
+      setStarPulse(true);
+    } else if (!next) {
+      setStarPulse(false);
+    }
+    prevStarRef.current.bookmarked = next;
+  }, [data.id, data.bookmarked]);
   const cancelLearningDetailsFocusRestore = () => {
     if (learningDetailsFocusTimerRef.current !== null) {
       globalThis.clearTimeout(learningDetailsFocusTimerRef.current);
@@ -179,6 +201,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     latestEditOpenChangeRef.current?.(false);
   }, []);
 
+  const cardLook = useCardLook();
+  const isCrystalCard = cardLook === 'crystal' && !isZenMode;
+  const isClassicLangCard = isLangForm && cardLook !== 'crystal' && !isZenMode;
+  // Classic standard cards turn and tilt on their seed board's curves (Aurora dark, Atelier light);
+  // the language card turns in 640 ms and tilts 4deg in both looks (LangCard.dc.html 496, 515).
+  const classicMotion = !isZenMode && cardLook !== 'crystal'
+    ? (isLangForm ? classicCardMotion.aurora : classicCardMotion[cardLook])
+    : null;
+  const boardFlip = isCrystalCard ? crystalFlipMotion : classicMotion?.flip ?? null;
+
   const showCardSide = (side: 'front' | 'back') => {
     const nextFlipped = side === 'back';
     if (nextFlipped === isFlipped || isFlipAnimating) return;
@@ -204,21 +236,32 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       return;
     }
 
+    setFlipTarget(nextFlipped ? 'back' : 'front');
     setIsFlipAnimating(true);
     flipOutTweenRef.current?.kill();
-    flipOutTweenRef.current = gsap.to(faceRef.current, {
-      autoAlpha: 0.62,
-      rotationY: direction * -92,
-      scale: 0.985,
-      duration: 0.16,
-      ease: 'power2.in',
-      force3D: true,
-      transformOrigin: 'center center',
-      onComplete: commitSideChange,
-    });
+    flipOutTweenRef.current = boardFlip
+      // The leaving face runs the first half of the board's single 180deg turn: no fade, no shrink.
+      ? gsap.to(faceRef.current, {
+        rotationY: direction * 90,
+        duration: boardFlip.out.durationSeconds,
+        ease: boardFlip.out.ease,
+        force3D: true,
+        transformOrigin: 'center center',
+        onComplete: commitSideChange,
+      })
+      : gsap.to(faceRef.current, {
+        autoAlpha: 0.62,
+        rotationY: direction * -92,
+        scale: 0.985,
+        duration: 0.16,
+        ease: 'power2.in',
+        force3D: true,
+        transformOrigin: 'center center',
+        onComplete: commitSideChange,
+      });
     // GSAP relies on requestAnimationFrame, which browsers may suspend in a
     // throttled/background tab. Never let that leave the card interaction locked.
-    flipCommitTimerRef.current = window.setTimeout(commitSideChange, 320);
+    flipCommitTimerRef.current = window.setTimeout(commitSideChange, boardFlip ? Math.round(boardFlip.out.durationSeconds * 1000) + 160 : 320);
   };
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -278,7 +321,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       completeFaceTransition(side);
       return;
     }
-    const animation = getFlashcardFlipMotion(flipDirection, reduceMotion);
+    const animation = boardFlip
+      // The arriving face runs the rest of the same curve from the far edge to flat.
+      ? {
+        from: { rotationY: flipDirection * -90 },
+        to: { rotationY: 0, duration: boardFlip.in.durationSeconds, ease: boardFlip.in.ease },
+      }
+      : getFlashcardFlipMotion(flipDirection, reduceMotion);
+    const fallbackMs = boardFlip ? Math.round(boardFlip.in.durationSeconds * 1000) + 260 : 500;
         let transitionFinished = false;
         const finishTransition = () => {
           if (transitionFinished) return;
@@ -287,7 +337,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           gsap.set(face, { clearProps: 'transform,opacity,visibility' });
           completeFaceTransition(side);
         };
-        const completionFallback = window.setTimeout(finishTransition, 500);
+        const completionFallback = window.setTimeout(finishTransition, fallbackMs);
         gsap.fromTo(face, animation.from, {
           ...animation.to,
           transformOrigin: 'center center',
@@ -298,7 +348,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           },
         });
         return () => window.clearTimeout(completionFallback);
-  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion], revertOnUpdate: true });
+  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion, boardFlip], revertOnUpdate: true });
 
   useEffect(() => () => {
     flipOutTweenRef.current?.kill();
@@ -335,7 +385,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     }
   };
 
-  const spotlightBackground = 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(2, 132, 199, 0.11) 0%, rgba(6, 182, 212, 0.025) 40%, transparent 70%)';
+  // Crystal Star follows the board: a tier-tinted light under the pointer, screen-blended in CSS.
+  // Classic standard cards take their board's light from the stylesheet (--flashcard-spotlight per look and side).
+  const fallbackSpotlight = 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(2, 132, 199, 0.11) 0%, rgba(6, 182, 212, 0.025) 40%, transparent 70%)';
+  const spotlightBackground = isCrystalCard
+    ? 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), var(--flashcard-tier-soft) 0%, transparent 40%)'
+    : classicMotion ? `var(--flashcard-spotlight, ${fallbackSpotlight})` : fallbackSpotlight;
   const { aura, isHovered, handleMouseEnter, handleMouseMove, handleMouseLeave } = useCardEffects({
     category: data.category,
     faceRef,
@@ -343,18 +398,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     reduceMotion,
     isFlipAnimating,
     spotlightBackground,
+    tilt: isCrystalCard ? crystalTiltMotion : classicMotion?.tilt,
   });
-  const cardTier = data.difficulty === 'easy' ? 'mastered'
-    : (data.nextReviewDate || (data.reviews ?? 0) > 0 || (data.difficulty && data.difficulty !== 'unrated'))
-      ? 'learning' : 'new';
+  const cardTier = cardTierOf(data);
   const hasHangulReviewPanel = editorContext?.kind === 'review' && /^ko(?:-|$)/i.test(data.language ?? '');
-  const cardLook = useCardLook();
 
   return (
     <div className="relative mx-auto w-full max-w-[960px]">
     <div
       ref={shellRef}
-      className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] bg-transparent transition-[max-width,height] duration-300 ${
+      className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--flashcard-radius,34px)] bg-transparent transition-[max-width,height] duration-300 ${
         isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px] [@media(max-height:500px)]:h-[320px]' : 'h-[clamp(560px,72dvh,620px)] max-w-[460px] [@media(max-height:500px)]:h-[320px]'
       }`}
       onMouseEnter={handleMouseEnter}
@@ -364,15 +417,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       aria-label={_({ ...cardStatusMessage, values: { word: data.word, side: cardSideStatus(i18n, data, isFlipped ? 'back' : 'front') } })}
       data-card-side={isFlipped ? 'back' : 'front'}
       data-card-tier={cardTier}
+      data-card-flipping={isFlipAnimating ? `to-${flipTarget}` : 'false'}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
       data-card-mode={isZenMode ? 'zen' : 'standard'}
       data-card-look={cardLook}
-      data-card-kind={isPackCard ? 'language' : undefined}
+      data-card-kind={isLangForm ? 'language' : undefined}
       data-card-hovered={isHovered ? 'true' : 'false'}
       data-card-blind={isBlindMode ? 'true' : 'false'}
       data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"
     >
       <CardEffectsLayer aura={aura} wings tier={cardTier} isHovered={isHovered} />
+      {/* The board flashes a light pillar across the card while it turns to the back; reduced motion skips it. */}
+      {isCrystalCard && isFlipAnimating && flipTarget === 'back' && !reduceMotion && <span data-card-effect="flip-pillar" className="flashcard-flip-pillar" aria-hidden="true" />}
       <span className="sr-only" aria-live="polite">{cardSideAnnouncement(i18n, data, isFlipped ? 'back' : 'front')}</span>
       <AlertDialog.Root
         open={showConfirmDelete}
@@ -383,7 +439,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       >
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-[110] dialog-veil backdrop-blur-xs" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
             event.preventDefault();
             if (!deleteConfirmedRef.current) deleteButtonRef.current?.focus();
             deleteConfirmedRef.current = false;
@@ -391,11 +447,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
             <AlertDialog.Title className="text-balance text-lg font-black"><Trans {...msg({ context: 'flashcard.delete.title', message: 'Delete “{word}”?' })} values={{ word: data.word }} /></AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.delete.description', message: 'The card will be removed from your library and the change will sync to the shared store.' })} /></AlertDialog.Description>
             <div className="mt-6 flex justify-end gap-3">
-              <AlertDialog.Cancel className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"><Trans {...msg({ context: 'flashcard.delete.cancel', message: 'Keep card' })} /></AlertDialog.Cancel>
+              <AlertDialog.Cancel className="min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,16px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"><Trans {...msg({ context: 'flashcard.delete.cancel', message: 'Keep card' })} /></AlertDialog.Cancel>
               <AlertDialog.Action onClick={() => {
                 deleteConfirmedRef.current = true;
                 void onDelete?.(data.id);
-              }} className="min-h-11 rounded-xl bg-[var(--sf-danger)] px-4 py-2 text-sm font-semibold text-[var(--sf-on-brand)] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)]"><Trans {...msg({ id: 'flashcard.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action>
+              }} className="min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,16px)] bg-[var(--sf-danger)] px-4 py-2 text-sm font-semibold text-[var(--sf-on-brand)] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)]"><Trans {...msg({ id: 'flashcard.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action>
             </div>
           </AlertDialog.Content>
         </AlertDialog.Portal>
@@ -407,7 +463,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[110] dialog-veil backdrop-blur-xs" />
           <Dialog.Content
-            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
+            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
             aria-describedby={`learning-details-description-${data.id}`}
             onCloseAutoFocus={event => {
               event.preventDefault();
@@ -581,7 +637,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
               {/* Common Mistake / Usage Note */}
               {data.commonMistake && (
-                <div className="flex w-full flex-col items-start rounded-[24px] border border-[color-mix(in_srgb,var(--sf-reward)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,transparent)] p-4 text-left [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                <div className="flex w-full flex-col items-start rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[color-mix(in_srgb,var(--sf-reward)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,transparent)] p-4 text-left [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   <div className="mb-2.5 flex w-full items-center gap-2 border-b border-[color-mix(in_srgb,var(--sf-reward)_30%,transparent)] pb-2.5">
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--sf-reward)_25%,transparent)] text-xs font-bold text-[var(--sf-text)]" aria-hidden="true">
                       ⚠️
@@ -630,10 +686,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               data-color-role="reward"
               data-card-effect="star-pop"
               onMouseEnter={event => {
-                if (reduceMotion) return;
+                // Crystal and the Classic standard card take the star's hover from CSS (their boards have no tilt).
+                if (reduceMotion || isCrystalCard || classicMotion) return;
                 gsap.to(event.currentTarget, { scale: 1.05, rotation: 6, duration: 0.18, ease: 'power3.out', overwrite: 'auto' });
               }}
               onMouseLeave={event => {
+                if (isCrystalCard || classicMotion) return;
                 gsap.to(event.currentTarget, { scale: 1, rotation: 0, duration: reduceMotion ? 0 : 0.22, ease: 'power3.out', overwrite: 'auto' });
               }}
               onClick={(event) => {
@@ -647,16 +705,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                 onToggleBookmark(data.id);
               }}
               data-selected={data.bookmarked ? 'true' : 'false'}
-              className="flashcard-chrome-button flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-chrome-button flashcard-reward-button${isClassicLangCard ? ' fx-press' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               title={data.bookmarked ? _(msg({ id: 'flashcard.star.remove', message: 'Remove star' })) : _(msg({ id: 'flashcard.star.add', message: 'Star this word' }))}
               aria-label={data.bookmarked ? _(msg({ id: 'flashcard.star.remove', message: 'Remove star' })) : _(msg({ id: 'flashcard.star.add', message: 'Star this word' }))}
               aria-pressed={data.bookmarked}
             >
-              <span className={data.bookmarked ? 'flashcard-star-selected' : undefined}>
+              <span className={starPulse ? 'flashcard-star-selected' : undefined} onAnimationEnd={() => setStarPulse(false)}>
                 <Star size={17} className={data.bookmarked ? 'fill-current' : ''} aria-hidden="true" />
               </span>
             </button>
           )}
+          {/* A starred Crystal card keeps a slow cross flare centred on the star; it sits outside the chamfered button so the clip does not cut it. */}
+          {onToggleBookmark && isCrystalCard && data.bookmarked && <span data-card-effect="star-flare" className="flashcard-star-flare" aria-hidden="true" />}
 
           {!isFlipped && (
             <button
@@ -666,9 +726,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
                 setIsBlindMode(value => !value);
               }}
               data-selected={isBlindMode ? 'true' : 'false'}
-              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-chrome-button${isClassicLangCard ? ' fx-press' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               title={isBlindMode ? _(msg({ id: 'flashcard.hints.show', message: 'Show hints' })) : _(msg({ id: 'flashcard.hints.hide', message: 'Hide hints' }))}
-              aria-label={isPackCard
+              aria-label={isLangForm
                 ? isBlindMode
                   ? _({ ...showReadingsMessage, values: { image: supportedImageUrl ? 'yes' : 'no' } })
                   : _({ ...hideReadingsMessage, values: { image: supportedImageUrl ? 'yes' : 'no' } })
@@ -682,7 +742,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           {onEditDelete && onUpdateCard && !isFlipped && (
             <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
               onClick={event => { event.stopPropagation(); setEditDialogOpen(true); }}
-              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`flashcard-chrome-button${isClassicLangCard ? ' fx-press' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}
               title={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))} aria-label={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))}><Pencil size={16} aria-hidden="true" /></button>
           )}
 
@@ -692,7 +752,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
               data-card-danger
-              className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,opacity,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100"
+              className={`flashcard-chrome-button${isClassicLangCard ? ' fx-press-danger' : ''} flex min-h-11 min-w-11 items-center justify-center p-2 transition-[transform,opacity,background-color,border-color,color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100`}
               title={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
               aria-label={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
             >
@@ -704,7 +764,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
       <div
         data-flashcard-stage
-        className="relative z-10 h-full w-full overflow-visible rounded-[32px]"
+        className="relative z-10 h-full w-full overflow-visible rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--flashcard-radius,34px)]"
         style={{ perspective: reduceMotion ? 'none' : '1600px' }}
         onPointerDownCapture={handleCardPointerDown}
         onPointerMove={handleCardPointerMove}
@@ -783,6 +843,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           backFlipRef={backFlipRef}
           focusAfterFlipRef={focusAfterFlipRef}
           showCardSide={showCardSide}
+          showReading={showReading}
         />
         )}
       </div>
@@ -791,7 +852,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
         <audio ref={audioRef} src={data.audioUrl} preload={imagePriority ? 'metadata' : 'none'} />
       )}
     </div>
-    {hasHangulReviewPanel && <Suspense fallback={null}><div className="hangul-breakdown-slot"><HangulBreakdown word={data.word} /></div></Suspense>}
+    {hasHangulReviewPanel && <Suspense fallback={null}><div className="hangul-breakdown-slot fx-enter-3"><HangulBreakdown word={data.word} /></div></Suspense>}
     </div>
   );
 });

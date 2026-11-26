@@ -11,12 +11,14 @@ interface CardMnemonicSectionProps {
   card: CardData;
   onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void;
   className?: string;
+  buttonMotionClass?: string;
 }
 
 export const CardMnemonicSection = React.memo(function CardMnemonicSection({
   card,
   onUpdateCard,
   className = '',
+  buttonMotionClass = '',
 }: CardMnemonicSectionProps) {
   const { _ } = useLingui();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -59,7 +61,7 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
         </div>
       ) : (
         <>
-          <button type="button" data-card-control data-mnemonic-generate disabled={isGenerating} onPointerDown={event => event.stopPropagation()} onClick={handleGenerateMnemonic} className="flashcard-back-tool flashcard-hook-button flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 transition-[background-color,box-shadow] duration-200 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]">
+          <button type="button" data-card-control data-mnemonic-generate disabled={isGenerating} onPointerDown={event => event.stopPropagation()} onClick={handleGenerateMnemonic} className={`flashcard-back-tool flashcard-hook-button${buttonMotionClass ? ` ${buttonMotionClass}` : ''} flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 transition-[background-color,box-shadow] duration-200 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]`}>
             {isGenerating ? <><Loader2 size={15} className="animate-spin" aria-hidden="true" /><span className="truncate"><Trans {...msg({ context: 'flashcard.mnemonic.generating', message: 'Generating memory hint…' })} /></span></> : <><Lightbulb size={15} className="flashcard-hook-icon shrink-0" aria-hidden="true" /><span className="truncate"><Trans {...msg({ id: 'flashcard.memory-hook', message: 'Memory hook' })} /></span></>}
           </button>
           {error && <p className="mt-2 text-xs font-medium text-[var(--sf-danger)]" role="alert">{error}</p>}

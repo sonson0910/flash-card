@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Children, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { ArrowRight, CalendarDays, Globe2, Play, Plus, RefreshCw, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowRight, CalendarDays, Globe, Plus, RefreshCw, Sparkles, Star, Zap } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { Lumi } from '../../components/lumi/Lumi';
 import { DailyGoalsPanel } from '../dailyGoals/DailyGoalsPanel';
@@ -154,7 +154,7 @@ function StageRail({ model, facts, variant }: { readonly model: TodayScreenModel
   const { _ } = useLingui();
   const currentId = facts.stages.find(stage => !stage.skipped)?.id;
   return (
-    <ol className={`today-stage-rail today-stage-rail--${variant}`} aria-label={_(msg({ id: 'today.plan.order', message: 'Daily plan order' }))}>
+    <ol className={`today-stage-rail today-stage-rail--${variant}${variant === 'classic' ? ' fx-stagger' : ''}`} aria-label={_(msg({ id: 'today.plan.order', message: 'Daily plan order' }))}>
       {facts.stages.map((stage, index) => {
         const Icon = stageIcons[stage.id];
         const minutes = stageMinutes(stage);
@@ -163,7 +163,14 @@ function StageRail({ model, facts, variant }: { readonly model: TodayScreenModel
           <li key={stage.id} className={`today-stage${stage.skipped ? ' today-stage--skipped' : ''}${isCurrent ? ' today-stage--current' : ''}`} data-stage-id={stage.id} data-stage-count={stage.count}>
             {variant === 'classic'
               ? <span className="today-stage-mark" aria-hidden="true"><span className="today-stage-icon"><Icon size={17} strokeWidth={1.9} /></span><span className="today-stage-link" /></span>
-              : <span className="today-stage-node" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>}
+              : (
+                // The rim and the fill are clipped separately so the flare and the glow can sit outside the cut corners.
+                <span className="today-stage-node" aria-hidden="true">
+                  <span className="today-stage-rim" />
+                  <span className="today-stage-num">{String(index + 1).padStart(2, '0')}</span>
+                  {isCurrent && <span className="today-stage-flare"><span /><span /></span>}
+                </span>
+              )}
             <p className="today-stage-title">{_(sessionStageContent[stage.id].label)}</p>
             <p className="today-stage-sub"><StageSub stage={stage} model={model} /></p>
             {variant === 'classic' && !stage.skipped && (
@@ -208,6 +215,11 @@ function GoalChip({ model }: { readonly model: TodayScreenModel }) {
   return <p className="today-chip today-chip--accent"><CalendarDays size={13} aria-hidden="true" />{text}</p>;
 }
 
+/** The board's filled play triangle: a 15 px glyph with no stroke, so it reads lighter than an outlined icon. */
+function PlayGlyph() {
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>;
+}
+
 function PrimaryAction({ model, actions, facts, label, shortcut, className, children }: {
   readonly model: TodayScreenModel;
   readonly actions: TodayScreenActions;
@@ -227,7 +239,7 @@ function PrimaryAction({ model, actions, facts, label, shortcut, className, chil
       className={className}
       data-session-minutes={facts.minutes}
     >
-      {children ?? <><Play size={14} fill="currentColor" aria-hidden="true" /><span>{label}</span></>}
+      {children ?? <><PlayGlyph /><span>{label}</span></>}
       {shortcut && <kbd aria-hidden="true">{shortcut}</kbd>}
     </button>
   );
@@ -239,7 +251,7 @@ function LevelRow({ model, actions, facts }: { readonly model: TodayScreenModel;
   if (!level && facts.reviewCount === 0) return null;
   const number = new Intl.NumberFormat(i18n.locale);
   return (
-    <div className="today-level-row">
+    <div className="today-level-row fx-enter-4">
       {level && (
         <div className="today-level">
           <div className="today-level-copy">
@@ -247,7 +259,7 @@ function LevelRow({ model, actions, facts }: { readonly model: TodayScreenModel;
             {facts.sessionsToLevel !== null && <span>{_({ ...msg({ id: 'today.hero.level-eta', message: 'Level {level} after ≈ {sessions, plural, one {# session} other {# sessions}}' }), values: { level: level.level + 1, sessions: facts.sessionsToLevel } })}</span>}
           </div>
           <div className="today-level-track" role="progressbar" aria-label={_(msg({ id: 'today.hero.level-progress', message: 'Level progress' }))} aria-valuemin={0} aria-valuemax={100} aria-valuenow={level.percent}>
-            <span style={{ width: `${level.percent}%` }} />
+            <span className="sf-grow fx-glint" style={{ width: `${level.percent}%` }} />
           </div>
         </div>
       )}
@@ -266,7 +278,7 @@ function siteBadge(site: string | null): string {
 
 function WebWordRows({ items }: { readonly items: readonly CardData[] }) {
   return (
-    <ul className="today-words-list">
+    <ul className="today-words-list fx-stagger">
       {items.map(card => {
         const site = sourceSite(card.source?.url);
         return (
@@ -290,7 +302,7 @@ function SessionWordRows({ words }: { readonly words: readonly TodaySessionWord[
       ? _(msg({ id: 'today.words.reason.weak', message: 'Needs another pass' }))
       : _(msg({ id: 'today.words.reason.due', message: 'Due for review' }));
   return (
-    <ul className="today-words-list">
+    <ul className="today-words-list fx-stagger">
       {words.map(word => {
         const site = sourceSite(word.sourceUrl);
         const Icon = word.reason === 'new' ? Plus : RefreshCw;
@@ -311,7 +323,7 @@ function WordsPanelFrame({ title, subtitle, children, footer }: { readonly title
   return (
     <>
       <div className="today-words-head">
-        <span className="today-words-logo" aria-hidden="true"><Globe2 size={17} /></span>
+        <span className="today-words-logo" aria-hidden="true"><Globe size={16} strokeWidth={2} /></span>
         <div>
           <h2 id="today-words-heading">{title}</h2>
           <p>{subtitle}</p>
@@ -331,7 +343,7 @@ function SessionWordsPanel({ model, actions }: { readonly model: TodayScreenMode
     <WordsPanelFrame
       title={_(msg({ id: 'today.words.session.title', message: "In today's session" }))}
       subtitle={_({ ...msg({ id: 'today.words.session.subtitle', message: '{shown} of {total, plural, one {# planned word} other {# planned words}}' }), values: { shown: words.length, total } })}
-      footer={<button type="button" className="today-words-link" onClick={actions.openVocabulary}>{_(msg({ id: 'today.words.session.open', message: 'Open vocabulary' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
+      footer={<button type="button" className="today-words-link fx-press" onClick={actions.openVocabulary}>{_(msg({ id: 'today.words.session.open', message: 'Open vocabulary' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
     >
       {words.length > 0
         ? <SessionWordRows words={words} />
@@ -350,7 +362,7 @@ function WebWordsPanel({ preview, model }: { readonly preview: WebWordsPreview; 
       subtitle={preview.isAtCap
         ? _({ ...msg({ id: 'today.words.web.subtitle-cap', message: 'Your {count} newest saves · {inSession} in today’s session' }), values: { count, inSession } })
         : _({ ...msg({ id: 'today.words.web.subtitle', message: '{count, plural, one {# saved word} other {# saved words}} · {inSession} in today’s session' }), values: { count, inSession } })}
-      footer={<button type="button" className="today-words-link" onClick={openWebWordsRoute}>{_(msg({ id: 'today.words.web.open', message: 'See all with their sentences' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
+      footer={<button type="button" className="today-words-link fx-press" onClick={openWebWordsRoute}>{_(msg({ id: 'today.words.web.open', message: 'See all with their sentences' }))}<ArrowRight size={13} aria-hidden="true" /></button>}
     >
       <WebWordRows items={preview.items} />
     </WordsPanelFrame>
@@ -386,18 +398,18 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
   return (
     <section aria-labelledby="daily-today-heading" className="today-hero" data-today-ready="true">
       <div className="today-hero-main">
-        <div className="today-hero-chips">
+        <div className="today-hero-chips fx-enter">
           <GoalChip model={model} />
           {streakChip}
         </div>
-        <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title">
+        <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title fx-title">
           <span className="today-hero-line">{greeting}</span>
           <span className="today-hero-line">
             <Trans {...msg({ id: 'today.hero.minutes', message: '<0>{minutes, plural, one {# minute} other {# minutes}}</0> today.' })} values={{ minutes: facts.minutes }} components={{ 0: <em /> }} />
           </span>
         </h1>
         <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
-        <div className="today-session-card">
+        <div className="today-session-card fx-enter-2">
           <div className="today-session-head">
             <h2>{_(msg({ id: 'today.hero.session', message: "Today's session" }))}</h2>
             <span>{_({ ...msg({ id: 'today.hero.session-size', message: '{count, plural, one {# card} other {# cards}} planned' }), values: { count: facts.readyCount } })}</span>
@@ -409,7 +421,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
               actions={actions}
               facts={facts}
               shortcut="Space"
-              className="today-primary"
+              className="today-primary fx-press"
               label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
             />
             <p className="today-session-reward">
@@ -421,7 +433,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
         </div>
         <LevelRow model={model} actions={actions} facts={facts} />
       </div>
-      <aside className="today-words" aria-labelledby="today-words-heading" data-today-words="true">
+      <aside className="today-words fx-enter-3" aria-labelledby="today-words-heading" data-today-words="true">
         <WordsPanel
           model={model}
           actions={actions}
@@ -444,19 +456,20 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
   const card = model.previewCard;
   const firstReason = model.sessionWords?.[0]?.reason;
   const number = new Intl.NumberFormat(i18n.locale);
+  const startLabel = _({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } });
 
   return (
     <section aria-labelledby="daily-today-heading" className="today-hero today-hero--compact" data-today-ready="true">
       <div className="today-compact-top">
-        <p className="today-compact-date">{dateLabel}</p>
+        <p className="today-compact-date fx-enter">{dateLabel}</p>
         {streakChip}
       </div>
-      <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title">
+      <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title fx-title">
         <Trans {...msg({ id: 'today.hero.ready-words', message: '{count, plural, one {# word ready to <0>remember.</0>} other {# words ready to <0>remember.</0>}}' })} values={{ count: facts.readyCount }} components={{ 0: <em /> }} />
       </h1>
       <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
       {card && (
-        <div className="today-stack">
+        <div className="today-stack sf-deal-1">
           <span className="today-stack-ghost today-stack-ghost--back" aria-hidden="true" />
           <span className="today-stack-ghost today-stack-ghost--mid" aria-hidden="true" />
           <article className="today-stack-card" data-today-preview="true" aria-label={`${card.word}: ${card.translation}`}>
@@ -475,10 +488,13 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
         actions={actions}
         facts={facts}
         shortcut={null}
-        className="today-primary today-primary--wide"
-        label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
-      />
-      <div className="today-tiles">
+        className="today-primary today-primary--wide fx-press fx-enter-3"
+        label={startLabel}
+      >
+        {/* The phone board's start button carries no play glyph. */}
+        <span>{startLabel}</span>
+      </PrimaryAction>
+      <div className="today-tiles fx-enter-4">
         <div className="today-tile">
           <span>{_(msg({ id: 'today.tile.review', message: 'To review' }))}</span>
           <strong>{facts.reviewCount}<small> / {facts.readyCount}</small></strong>
@@ -501,6 +517,38 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
   );
 }
 
+/** The board sets the "//" in a kicker in the quieter text colour; a translation without one renders as is. */
+function KickerText({ text }: { readonly text: string }) {
+  const at = text.indexOf('//');
+  if (at < 0) return <>{text}</>;
+  return <>{text.slice(0, at)}<span className="today-crystal-kicker-sep">//</span>{text.slice(at + 2)}</>;
+}
+
+/** The board paints the title word and the day number with separate metals and glows, so the word needs its own element. */
+function wrapTitleWords(node: ReactNode): ReactNode {
+  return Children.map(node, child => {
+    if (typeof child !== 'string') return child;
+    const match = /^(\s*)([\s\S]*?)(\s*)$/.exec(child);
+    if (!match?.[2]) return child;
+    return <>{match[1]}<span className="today-crystal-title-word">{match[2]}</span>{match[3]}</>;
+  });
+}
+
+/** The board's two-tone star (white with a gold facet) and the phone board's play mark; CSS shows one per layout. */
+function StartMarks() {
+  return (
+    <>
+      <svg className="today-crystal-start-star" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z" fill="#ffffff" />
+        <path d="M12 1.5l3 7.1-3 9.1z" fill="#ffd166" />
+      </svg>
+      <svg className="today-crystal-start-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M6 4l14 8-14 8z" />
+      </svg>
+    </>
+  );
+}
+
 function CrystalHero({ model, actions, ownerId, targetLanguage, translationLanguage, streakChip, showLumi }: TodayReadyHeroProps) {
   const { _, i18n } = useLingui();
   const facts = readyFacts(model);
@@ -520,15 +568,20 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
   const planHasMatch = facts.stages.some(stage => stage.id === 'match' && !stage.skipped);
 
   return (
-    <section aria-labelledby="daily-today-heading" className="today-crystal" data-today-ready="true">
+    <section aria-labelledby="daily-today-heading" className={`today-crystal${showLumi ? ' today-crystal--lumi' : ''}`} data-today-ready="true">
       <span aria-hidden="true" className="crystal-starfield today-crystal-stars pointer-events-none motion-reduce:animate-none" />
       <div className="today-crystal-left">
         <div className="today-crystal-kicker">
-          <p>{_({ ...msg({ id: 'today.crystal.kicker', message: '{weekday} // Week {week}' }), values: { weekday, week: isoWeekNumber(now) } })}</p>
+          <p><KickerText text={_({ ...msg({ id: 'today.crystal.kicker', message: '{weekday} // Week {week}' }), values: { weekday, week: isoWeekNumber(now) } })} /></p>
           {streakChip}
         </div>
         <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-crystal-title">
-          <Trans {...msg({ id: 'today.crystal.day-title', message: 'Day <0>{day}</0>' })} values={{ day }} components={{ 0: <span className="today-crystal-title-number" /> }} />
+          <Trans
+            {...msg({ id: 'today.crystal.day-title', message: 'Day <0>{day}</0>' })}
+            values={{ day }}
+            components={{ 0: <span className="today-crystal-title-number" /> }}
+            render={({ translation }) => <>{wrapTitleWords(translation)}</>}
+          />
         </h1>
         <p className="today-crystal-lede">
           {_({ ...msg({ id: 'today.crystal.lede', message: '{count, plural, one {# card is waiting for you.} other {# cards are waiting for you.}} One lesson covers {steps, plural, one {# step} other {all # steps}}.' }), values: { count: facts.readyCount, steps: facts.activeSteps } })}
@@ -537,7 +590,8 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
         <div className="today-crystal-cta">
           <span className="today-crystal-wing crystal-wing-art" aria-hidden="true" />
           <PrimaryAction model={model} actions={actions} facts={facts} shortcut="Enter" className="today-crystal-start" label="">
-            <span className="today-crystal-start-icon" aria-hidden="true"><Star size={22} fill="currentColor" /></span>
+            <span className="today-crystal-start-shine" aria-hidden="true" />
+            <StartMarks />
             <span className="today-crystal-start-copy">
               <strong>{_(msg({ id: 'today.crystal.start', message: "Start today's lesson" }))}</strong>
               <small>{_({ ...msg({ id: 'today.crystal.start-meta', message: '{minutes} min · {steps, plural, one {# step} other {# steps}} · up to +{xp} XP' }), values: { minutes: facts.minutes, steps: facts.activeSteps, xp: facts.xpCeiling } })}</small>
@@ -546,7 +600,7 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
         </div>
         {showLumi && (
           <div className="today-crystal-lumi" data-today-lumi="hero">
-            <Lumi pose="idle" size={238} eager className="crystal-ornament" />
+            <span className="today-crystal-mascot"><Lumi pose="idle" size={238} eager className="crystal-ornament" /></span>
             <div className="today-crystal-bubble">
               <p className="today-crystal-bubble-kicker">{_(msg({ id: 'today.crystal.lumi-link', message: 'Lumi · Link' }))}</p>
               <p className="today-crystal-bubble-title">
@@ -554,7 +608,7 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
                   ? _({ ...msg({ id: 'today.crystal.lumi-hi.named', message: '{count, plural, one {Hi {name}! # card is waiting.} other {Hi {name}! # cards are waiting.}}' }), values: { name, count: facts.readyCount } })
                   : _({ ...msg({ id: 'today.crystal.lumi-hi', message: '{count, plural, one {Hi! # card is waiting.} other {Hi! # cards are waiting.}}' }), values: { count: facts.readyCount } })}
               </p>
-              <p>{lumiStreakLine ?? (facts.run.studiedToday
+              <p className="today-crystal-bubble-body">{lumiStreakLine ?? (facts.run.studiedToday
                 ? _({ ...msg({ id: 'today.crystal.lumi-streak.today', message: '{count, plural, one {Streak # day. Nice work today.} other {Streak # days. Nice work today.}}' }), values: { count: Math.max(model.streak ?? 0, facts.run.days, 1) } })
                 : facts.run.days > 0
                   ? _({ ...msg({ id: 'today.crystal.lumi-streak.extend', message: 'Finish today to make it {count} days in a row.' }), values: { count: day } })
@@ -574,14 +628,21 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
         {(model.dailyGoals || facts.level) && <div className={`today-crystal-row${facts.level && model.dailyGoals ? '' : ' today-crystal-row--single'}`}>
           {model.dailyGoals && <DailyGoalsPanel gamification={model.dailyGoals} planHasMatch={planHasMatch} />}
           {facts.level && (
+            // The board's league card, carrying the learner's real level: a big metal number with a two-line
+            // side label, a skewed chip and one line of body copy.
             <section className="today-crystal-panel today-crystal-level" aria-labelledby="today-crystal-level-heading">
               <h2 id="today-crystal-level-heading">{_(msg({ id: 'today.crystal.level', message: 'Level' }))}</h2>
-              <p className="today-crystal-level-value">{_({ ...msg({ id: 'today.crystal.level-value', message: 'Lv {level}' }), values: { level: facts.level.level } })}</p>
-              <div className="today-crystal-level-progress">
-                <p className="today-crystal-level-xp">{number.format(facts.level.xp)} / {number.format(facts.level.next)} XP</p>
-                <span className="today-crystal-goal-bar" role="progressbar" aria-label={_(msg({ id: 'today.hero.level-progress', message: 'Level progress' }))} aria-valuemin={0} aria-valuemax={100} aria-valuenow={facts.level.percent}><span style={{ width: `${facts.level.percent}%` }} /></span>
+              <div className="today-crystal-level-row">
+                <p className="today-crystal-level-value">
+                  <span className="sr-only">{_({ ...msg({ id: 'today.crystal.level-value', message: 'Lv {level}' }), values: { level: facts.level.level } })}</span>
+                  <span aria-hidden="true">{number.format(facts.level.level)}</span>
+                </p>
+                <p className="today-crystal-level-side">{number.format(facts.level.xp)} / {number.format(facts.level.next)}<br />XP</p>
               </div>
-              <p className="today-crystal-level-next">{_({ ...msg({ id: 'today.crystal.level-next', message: '+{xp} XP to Lv {level}' }), values: { xp: number.format(facts.level.remaining), level: facts.level.level + 1 } })}</p>
+              <p className="today-crystal-level-chip"><span>{_({ ...msg({ id: 'today.crystal.level-next', message: '+{xp} XP to Lv {level}' }), values: { xp: number.format(facts.level.remaining), level: facts.level.level + 1 } })}</span></p>
+              {facts.sessionsToLevel !== null && (
+                <p className="today-crystal-level-next">{_({ ...msg({ id: 'today.hero.level-eta', message: 'Level {level} after ≈ {sessions, plural, one {# session} other {# sessions}}' }), values: { level: facts.level.level + 1, sessions: facts.sessionsToLevel } })}</p>
+              )}
             </section>
           )}
         </div>}

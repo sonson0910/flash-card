@@ -1,11 +1,14 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { I18n } from '@lingui/core';
+import { useEffect } from 'react';
 import type { Course, CourseGoal, CourseTargetLanguage } from './courseModel';
 import { goalKindLabel } from './courseGoalCatalog';
 import {
   NATIVE_ENDONYM, NATIVE_LANGUAGE_LABEL, TARGET_ENDONYM, TARGET_GLYPH, TARGET_LANGUAGE_LABEL,
 } from './courseLanguageLabels';
+import { loadScriptFont, type ScriptFont } from '../theme/loadThemeAssets';
+import { useTheme } from '../theme/ThemeProvider';
 import './course-surfaces.css';
 
 type Translate = I18n['_'];
@@ -33,8 +36,24 @@ export const translatedTargetName = (language: CourseTargetLanguage, _: Translat
   return name === TARGET_ENDONYM[language] ? null : name;
 };
 
+const COURSE_SCRIPT_FONT: Readonly<Partial<Record<CourseTargetLanguage, ScriptFont>>> = { ko: 'ko', ja: 'ja', zh: 'zh-Hans' };
+
+/**
+ * Classic sets course names and tile glyphs in their script's Noto Sans face (LangCourses); this loads the
+ * app's own subsets of those faces for the given course languages. Crystal keeps its display face.
+ */
+export function useCourseScriptFonts(languages: readonly CourseTargetLanguage[]) {
+  const { family } = useTheme();
+  const scripts = [...new Set(languages.flatMap(language => COURSE_SCRIPT_FONT[language] ?? []))].sort().join(',');
+  useEffect(() => {
+    if (family === 'crystal' || !scripts) return;
+    for (const script of scripts.split(',') as ScriptFont[]) void loadScriptFont(script).catch(() => undefined);
+  }, [family, scripts]);
+}
+
 /** The language's glyph on its own coloured tile; decorative, since the name always sits beside it. */
 export function CourseTile({ language, className = '' }: { readonly language: CourseTargetLanguage; readonly className?: string }) {
+  useCourseScriptFonts([language]);
   return <span className={`course-tile crystal-chamfer-sm ${className}`} data-course-language={language} lang={language} aria-hidden="true">
     {TARGET_GLYPH[language]}
   </span>;

@@ -6,6 +6,7 @@ import { Lumi } from '../../components/lumi/Lumi';
 import { displayCardDate } from '../library/libraryPresentation';
 import type { WebWordsReturnView } from '../navigation/useAppNavigation';
 import { useWebWordsPage } from './useWebWordsPage';
+import { splitStressedWord } from '../library/libraryCardFace';
 import { getLibraryCardTier, type LibraryCardTier } from '../library/libraryViewModel';
 import type { WebWordsArticleGroup } from './webWordsGrouping';
 import './web-words.css';
@@ -97,11 +98,15 @@ function StatusChip({ tier }: { readonly tier: LibraryCardTier }) {
 function ArticleGroupCard({
   group,
   edge,
+  motionClass,
+  targetLanguage,
   selectedCardIds,
   onToggleSelected,
 }: {
   readonly group: WebWordsArticleGroup;
   readonly edge: 'crimson' | 'holo';
+  readonly motionClass: string;
+  readonly targetLanguage: string | null;
   readonly selectedCardIds: ReadonlySet<string>;
   readonly onToggleSelected: (cardId: string) => void;
 }) {
@@ -109,7 +114,7 @@ function ArticleGroupCard({
   const heading = group.title || group.site || _(msg({ id: 'webWords.group.untitled', message: 'Untitled capture' }));
   const link = isDisplayableSourceUrl(group.url) ? group.url : null;
   return (
-    <li className="ww-article crystal-chamfer" data-edge={edge}>
+    <li className={`ww-article crystal-chamfer ${motionClass}`} data-edge={edge}>
       <div className="ww-article__head">
         <span className="ww-article__mark crystal-chamfer-sm" aria-hidden="true">{(group.site || heading).slice(0, 1).toUpperCase()}</span>
         <div className="ww-article__text">
@@ -123,18 +128,21 @@ function ArticleGroupCard({
           </p>
         </div>
         {link && (
-          <a href={link} target="_blank" rel="noopener noreferrer" className="ww-article__open" aria-label={_(msg({ context: 'webWords.group.open', message: 'Open {title} in a new tab' }).id, { title: heading })}>
+          <a href={link} target="_blank" rel="noopener noreferrer" className="ww-article__open fx-press" aria-label={_(msg({ context: 'webWords.group.open', message: 'Open {title} in a new tab' }).id, { title: heading })}>
             <span className="ww-article__open-face crystal-chamfer-sm"><ExternalLink size={13} aria-hidden="true" /></span>
           </a>
         )}
       </div>
-      <ul className="ww-article__rows">
+      <ul className="ww-article__rows fx-stagger">
         {group.cards.map(card => {
           const tier = getLibraryCardTier(card);
+          const stressed = splitStressedWord(card.word, card.phonetic, card.language || targetLanguage || 'en');
           return (
             <li key={card.id} className="ww-row" data-tier={tier}>
               <div className="ww-row__word">
-                <span className="ww-row__term">{card.word}</span>
+                <span className="ww-row__term">
+                  {stressed ? <>{stressed.before}<span className="ww-row__stress">{stressed.stressed}</span>{stressed.after}</> : card.word}
+                </span>
                 {card.translation && <span className="ww-row__meaning">{card.translation}</span>}
               </div>
               <div className="ww-row__context">
@@ -194,16 +202,16 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
       <div className="ww-inner">
         <header className="ww-head">
           <div className="ww-head__text">
-            <button type="button" onClick={onClose} className="ww-back">
+            <button type="button" onClick={onClose} className="ww-back fx-enter sf-ease">
               <span aria-hidden="true">←</span> {backLabel}
               <span className="sr-only"> · <Trans {...msg({ id: 'webWords.page.close-label', message: 'Close web words' })} /></span>
             </button>
-            <h1 ref={headingRef} tabIndex={-1} className="ww-title"><Trans {...msg({ context: 'webWords.page.heading', message: '<0>Words you met</0> <1>on the web</1>' })} components={{ 0: <span className="ww-title__lead" />, 1: <em /> }} /></h1>
-            <p className="ww-subtitle"><Trans {...msg({ context: 'webWords.page.description', message: 'Saved with the SonFlash extension — each one keeps the sentence you found it in.' })} /></p>
+            <h1 ref={headingRef} tabIndex={-1} className="ww-title fx-title"><Trans {...msg({ context: 'webWords.page.heading', message: '<0>Words you met</0> <1>on the web</1>' })} components={{ 0: <span className="ww-title__lead" />, 1: <em /> }} /></h1>
+            <p className="ww-subtitle fx-enter"><Trans {...msg({ context: 'webWords.page.description', message: 'Saved with the SonFlash extension — each one keeps the sentence you found it in.' })} /></p>
           </div>
           <div className="ww-lumi" data-web-words-lumi>
             <Lumi pose="hint" size={92} />
-            <div className="ww-lumi__bubble crystal-chamfer-sm">
+            <div className="ww-lumi__bubble crystal-chamfer">
               <p className="ww-lumi__tag"><Trans {...msg({ context: 'webWords.lumi.tag', message: 'Lumi · Link' })} /></p>
               <p className="ww-lumi__text"><Trans {...msg({ context: 'webWords.lumi.text', message: 'I keep the whole sentence, so you remember the context.' })} /></p>
             </div>
@@ -211,27 +219,27 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
           {isReady && (
             <div className="ww-toolbar">
               <div className="ww-filters">
-                <div role="radiogroup" aria-label={_(msg({ context: 'webWords.filter.status.label', message: 'Status' }))} className="ww-tabs">
+                <div role="radiogroup" aria-label={_(msg({ context: 'webWords.filter.status.label', message: 'Status' }))} className="ww-tabs fx-enter">
                   {statusTabs.map(tab => {
                     const checked = state.filters.tier === tab.value;
                     return (
                       <label key={tab.value ?? 'all'} className="ww-tab" data-checked={checked}>
                         <input type="radio" name="web-words-status" className="sr-only" checked={checked} onChange={() => actions.setTierFilter(tab.value)} />
-                        <span className="ww-tab__face">{tab.label}</span>
+                        <span className="ww-tab__face sf-ease">{tab.label}</span>
                       </label>
                     );
                   })}
                 </div>
-                <label className="ww-select">
+                <label className="ww-select fx-enter">
                   <span className="sr-only"><Trans {...msg({ context: 'webWords.filter.site.label', message: 'Site' })} /></span>
-                  <select value={state.filters.site ?? ''} onChange={event => actions.setSiteFilter(event.target.value || null)}>
+                  <select className="sf-ease" value={state.filters.site ?? ''} onChange={event => actions.setSiteFilter(event.target.value || null)}>
                     <option value="">{_(msg({ id: 'webWords.filter.site.all', message: 'All sites' }))}</option>
                     {state.availableSites.map(site => <option key={site} value={site}>{site}</option>)}
                   </select>
                 </label>
-                <label className="ww-select">
+                <label className="ww-select fx-enter">
                   <span className="sr-only"><Trans {...msg({ context: 'webWords.filter.day.label', message: 'Day' })} /></span>
-                  <select value={state.filters.day ?? ''} onChange={event => actions.setDayFilter(event.target.value || null)}>
+                  <select className="sf-ease" value={state.filters.day ?? ''} onChange={event => actions.setDayFilter(event.target.value || null)}>
                     <option value="">{_(msg({ id: 'webWords.filter.day.all', message: 'All days' }))}</option>
                     {state.availableDays.map(day => <option key={day} value={day}>{displayCardDate(day)}</option>)}
                   </select>
@@ -242,7 +250,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
                   {state.selectedCardIds.size > 0 && <p className="ww-cta__count">
                     <Trans {...msg({ context: 'webWords.selection.count', message: '{count, plural, one {# word selected} other {# words selected}}' })} values={{ count: state.selectedCardIds.size }} />
                   </p>}
-                  <button type="button" onClick={state.selectedCardIds.size > 0 ? actions.addSelectedToToday : actions.addAllFilteredToToday} className="ww-primary">
+                  <button type="button" onClick={state.selectedCardIds.size > 0 ? actions.addSelectedToToday : actions.addAllFilteredToToday} className="ww-primary fx-enter fx-press">
                     <Plus size={15} strokeWidth={2.5} aria-hidden="true" />
                     <span className="ww-primary__label">
                       {state.selectedCardIds.size > 0
@@ -257,7 +265,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
         </header>
 
         {state.addToTodayStatus !== 'idle' && (
-          <p role="status" aria-live="polite" className="ww-feedback">
+          <p role="status" aria-live="polite" className="ww-feedback fx-enter">
             {state.addToTodayStatus === 'added' && <Trans {...msg({ context: 'webWords.feedback.added', message: 'Added to today\'s new words.' })} />}
             {state.addToTodayStatus === 'added-partial' && <Trans {...msg({ context: 'webWords.feedback.added-partial', message: 'Added the words that fit today; the rest are queued for a later session.' })} />}
             {['added-capped', 'added-unloaded', 'added-session-not-started'].includes(state.addToTodayStatus) && <Trans {...msg({ context: 'webWords.feedback.queued', message: 'These words are queued and get priority in your next new-word session.' })} />}
@@ -280,7 +288,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
         {state.status === 'error' && (
           <StateMessage>
             <p className="ww-state__text"><Trans {...msg({ context: 'webWords.status.error', message: 'Web words could not load. Try again.' })} /></p>
-            <button type="button" onClick={actions.retry} className="ww-secondary crystal-chamfer-sm"><Trans {...msg({ id: 'today.error.retry', message: 'Try again' })} /></button>
+            <button type="button" onClick={actions.retry} className="ww-secondary crystal-chamfer-sm fx-press"><Trans {...msg({ id: 'today.error.retry', message: 'Try again' })} /></button>
           </StateMessage>
         )}
         {state.status === 'empty' && (
@@ -300,12 +308,20 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
             )}
             <ul className="ww-articles">
               {state.groups.map((group, index) => (
-                <ArticleGroupCard key={group.key} group={group} edge={index % 2 === 0 ? 'crimson' : 'holo'} selectedCardIds={state.selectedCardIds} onToggleSelected={actions.toggleSelected} />
+                <ArticleGroupCard
+                  key={group.key}
+                  group={group}
+                  edge={index % 2 === 0 ? 'crimson' : 'holo'}
+                  motionClass={index === 0 ? 'fx-enter-2' : index === 1 ? 'fx-enter-3' : 'fx-enter-4'}
+                  targetLanguage={targetLanguage}
+                  selectedCardIds={state.selectedCardIds}
+                  onToggleSelected={actions.toggleSelected}
+                />
               ))}
             </ul>
             {state.hasNext && (
               <div className="ww-more">
-                <button type="button" onClick={actions.loadMore} disabled={state.isLoadingMore} className="ww-secondary crystal-chamfer-sm">
+                <button type="button" onClick={actions.loadMore} disabled={state.isLoadingMore} className="ww-secondary crystal-chamfer-sm fx-press">
                   <Trans {...msg({ context: 'webWords.actions.load-more', message: 'Load more' })} />
                 </button>
               </div>

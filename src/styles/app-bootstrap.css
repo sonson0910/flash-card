@@ -27,6 +27,10 @@
   --sf-font-mono: "Geist Mono", ui-monospace, monospace;
   --sf-button-radius: 999px; --sf-card-radius: 20px; --sf-chamfer: none;
 }
+:root.dark:not([data-theme-family="crystal"]) {
+  --sf-button-radius: 16px;
+  --sf-card-radius: 30px;
+}
 :root[data-theme-family=crystal] {
   --font-display: Kanit, Nunito, sans-serif;
   --sf-font-display: Kanit, Nunito, sans-serif;

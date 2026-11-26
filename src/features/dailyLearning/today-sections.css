@@ -1,0 +1,212 @@
+/* Crystal Today below the hero: learning loop, practice, placement invite and the recommended-next bar.
+   The AnimeToday board has no slot for these sections, so each piece takes the nearest board's construction:
+   - panels: AnimeToday's panels (18 px chamfer clip, the board panel fill, ONE 1 px inset edge, no outer shadow,
+     because the clip would cut it off anyway; the edge is clipped by the chamfer, so the cut corners carry no line);
+   - mode cards, their icons and tags: the practice-mode rows of AnimeDlgStudy (10 px chamfer, chip fill, 1 px inset
+     line, a 3 px strip on the left edge, a 46 px hexagon icon);
+   - the length picker: AnimeDlgStudy's skewed preset toggles;
+   - buttons: AnimeDlgStudy's footer buttons (primary, secondary, disabled).
+   The markup keeps its Classic classes, so the liquid-glass and rounded utilities are neutralised here, including the
+   glass sheen and the second hairline that .liquid-glass draws with its pseudo-elements. Classic never matches. */
+:root[data-theme-family="crystal"] .daily-canvas-today {
+  --ts-panel: var(--sf-surface-glass);
+  --ts-edge: var(--sf-panel-edge);
+  --ts-edge2: var(--sf-panel-edge-2);
+  --ts-line: var(--sf-border);
+  --ts-line-strong: var(--sf-edge-highlight);
+  --ts-chip: var(--sf-surface-control);
+  --ts-track: var(--sf-border);
+  --ts-primary: var(--sf-primary-bg);
+  --ts-crimson-grad: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
+  --ts-display: var(--sf-font-display);
+  --ts-body: var(--sf-font-body);
+  --ts-text-strong: var(--sf-text-strong);
+  --ts-text2: var(--sf-text-muted);
+  --ts-crimson: var(--sf-brand-text);
+  --ts-holo: var(--sf-holo-text);
+  /* Board secondaryBg and secondaryText per mode. */
+  --ts-secondary: #e6f5ff;
+  --ts-secondary-text: #081329;
+  /* Board text3 for the disabled button label; light takes text2, as on the hero, because text3 fails 4.5:1 there. */
+  --ts-text3: var(--sf-text-muted);
+  --ts-holo-icon: linear-gradient(180deg, #2bc4e0, #0a8fb0);
+  --ts-holo-icon-ink: #ffffff;
+}
+:root[data-theme-family="crystal"].dark .daily-canvas-today {
+  --ts-secondary: rgb(255 255 255 / .06);
+  --ts-secondary-text: #ffffff;
+  --ts-text3: #7a8397;
+  --ts-holo-icon: linear-gradient(180deg, #9ff9ff, #1aa7c9);
+  --ts-holo-icon-ink: #031820;
+}
+
+/* Panels. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"]) {
+  overflow: hidden;
+  padding: 22px 26px 26px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--ts-panel);
+  box-shadow: inset 0 0 0 1px var(--ts-edge);
+  filter: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="placement-invite-heading"])::before,
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="placement-invite-heading"])::after { content: none; }
+/* The practice and placement panels take the board's second edge colour, as the goals panel does above them. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"]) { box-shadow: inset 0 0 0 1px var(--ts-edge2); }
+
+/* Panel kickers and titles: the board's panel kicker type; practice and placement use the cyan kicker of the goals panel. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"]) .premium-kicker { color: var(--ts-crimson); font-family: var(--ts-display); font-style: italic; font-weight: 800; font-size: 14px; line-height: normal; letter-spacing: .14em; }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"]) .premium-kicker { color: var(--ts-holo); }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] svg.lucide-zap { color: var(--ts-holo); }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"]) h2 { color: var(--ts-text-strong); font-size: clamp(1.25rem, 1.9vw, 1.6rem); letter-spacing: .01em; text-transform: uppercase; }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"]) h2 ~ p { color: var(--ts-text2); }
+
+/* Learning-loop stages and practice modes: AnimeDlgStudy mode rows. The strip is a separate layer on the left edge,
+   as on the board, so the card itself carries exactly one 1 px line. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-journey-stage], .practice-bento-card) {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--ts-chip);
+  box-shadow: inset 0 0 0 1px var(--ts-line);
+  --ts-strip: var(--ts-crimson-grad);
+  --ts-icon: var(--ts-primary);
+  --ts-icon-ink: #ffffff;
+}
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-journey-stage], .practice-bento-card)::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ts-strip); pointer-events: none; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-stage="immerse"] { --ts-strip: #5ef2ff; --ts-icon: var(--ts-holo-icon); --ts-icon-ink: var(--ts-holo-icon-ink); }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-stage="communicate"] { --ts-strip: #ff8fb6; --ts-icon: linear-gradient(180deg, #ff8fb6, #e0457a); }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-stage] { padding: 18px 18px 18px 20px; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-stage] h3 { margin-top: 14px; color: var(--ts-text-strong); font-family: var(--ts-display); font-style: italic; font-weight: 800; font-size: 19px; line-height: normal; letter-spacing: 0; text-transform: uppercase; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-stage] h3 + p { color: var(--ts-text2); font-size: 13px; line-height: 1.5; }
+
+/* The 46 px hexagon icon of a mode row. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-journey-stage] > span:first-child, [data-practice-mode] > div:first-child > div:first-child) {
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: var(--ts-icon);
+  box-shadow: none;
+  color: var(--ts-icon-ink);
+}
+
+/* A practice mode is one board row: icon, name over description, and the tag on the right. The two Classic wrappers
+   step aside (display: contents) so their children sit in the row's grid. */
+:root[data-theme-family="crystal"] .daily-canvas-today .practice-bento-card { min-height: 74px; padding: 12px 16px 12px 12px; color: var(--ts-text-strong); font-family: var(--ts-body); }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: center; align-items: center; gap: 3px 14px; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div { display: contents; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:first-child > div:first-child { grid-area: 1 / 1 / 3 / 2; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:first-child > span { grid-area: 1 / 3 / 3 / 4; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:last-child > span:first-child { grid-area: 1 / 2 / 2 / 3; align-self: end; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:last-child > span:last-child { grid-area: 2 / 2 / 3 / 3; align-self: start; margin: 0; }
+/* Name and description: board mode name (display italic 19 px) and its 13 px text2 line. */
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:last-child > span:first-child,
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-catalog-mode] > span:first-child { color: var(--ts-text-strong); font-family: var(--ts-display); font-style: italic; font-weight: 800; font-size: 19px; line-height: normal; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-catalog-mode] > span:first-child { font-size: 17px; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-catalog-mode] > span:first-child svg { color: var(--ts-crimson); }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-practice-mode] > div:last-child > span:last-child, [data-practice-catalog-mode] > span:last-child) { color: var(--ts-text2); font-size: 13px; line-height: 1.45; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-catalog-mode] { padding-left: 16px; }
+/* The tag: the board's small status chip (10 px chamfer, chip fill, 1 px line, 11.5 px body text). */
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:first-child > span { display: flex; height: 26px; box-sizing: border-box; align-items: center; padding: 0 10px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--ts-chip); box-shadow: inset 0 0 0 1px var(--ts-line); color: var(--ts-text2); font-family: var(--ts-body); font-style: normal; font-weight: 700; font-size: 11.5px; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+/* Hover swaps the line for the board's selected edge; a locked (offline) mode follows the board's locked row. */
+:root[data-theme-family="crystal"] .daily-canvas-today .practice-bento-card:hover:not(:disabled) { transform: none; background: var(--ts-chip); box-shadow: inset 0 0 0 1px var(--ts-edge); }
+:root[data-theme-family="crystal"] .daily-canvas-today .practice-bento-card:disabled { opacity: .55; --ts-strip: var(--ts-track); --ts-icon: var(--ts-track); --ts-icon-ink: var(--ts-text3); }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:first-child > div:first-child { transition: none; transform: none; }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .mt-5.grid { border-top-color: var(--ts-line); }
+
+/* Buttons: AnimeDlgStudy's footer buttons. Every rounded, bordered Classic button becomes the secondary
+   (10 px chamfer, secondary fill, one 1 px lineStrong inset), the brand action the primary (18 px chamfer, primary
+   fill, glow as a drop-shadow so the clip keeps it), and a disabled one the board's "off" button. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"], .today-recommended) button.min-h-11:not([data-journey-action="communicate-ai"]) {
+  display: inline-flex;
+  min-height: 46px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--ts-secondary);
+  box-shadow: inset 0 0 0 1px var(--ts-line-strong);
+  color: var(--ts-secondary-text);
+  filter: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  font-family: var(--ts-display);
+  font-style: italic;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: normal;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  transform: none;
+}
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"], .today-recommended) button.min-h-11:not([data-journey-action="communicate-ai"]):hover:not(:disabled) { background: var(--ts-secondary); box-shadow: inset 0 0 0 1px var(--ts-edge); color: var(--ts-secondary-text); filter: brightness(1.06); }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"], .today-recommended) button.brand-action.min-h-11 { padding: 0 26px; clip-path: var(--nk-chamfer); background: var(--ts-primary); box-shadow: none; color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"], .today-recommended) button.brand-action.min-h-11:hover:not(:disabled) { background: var(--ts-primary); box-shadow: none; color: #ffffff; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)) brightness(1.06); }
+/* The board's primary has no sweeping highlight; the Classic shimmer would run across the clipped slab. */
+:root[data-theme-family="crystal"] .daily-canvas-today button.brand-action.min-h-11::after { content: none; }
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"], .today-recommended) button.min-h-11:not([data-journey-action="communicate-ai"]):disabled { clip-path: var(--nk-chamfer); background: var(--ts-track); box-shadow: none; color: var(--ts-text3); filter: none; opacity: 1; }
+/* A focus outline outside the box would be cut by the chamfer; it sits inside the slab instead. */
+:root[data-theme-family="crystal"] .daily-canvas-today :is([data-learning-journey], [aria-labelledby="practice-mode-heading"], [aria-labelledby="placement-invite-heading"], .today-recommended) :is(button, summary):focus-visible,
+:root[data-theme-family="crystal"] .daily-canvas-today .practice-bento-card:focus-visible { outline: 2px solid currentColor; outline-offset: -5px; }
+
+/* The AI-dialogue link under the communicate button: the hero's text link, no plate and no edge. */
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-action="communicate-ai"] { border-radius: 0; background: none; color: var(--ts-text2); font-family: var(--ts-display); font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+:root[data-theme-family="crystal"] .daily-canvas-today [data-journey-action="communicate-ai"]:hover:not(:disabled) { background: none; color: var(--ts-crimson); text-decoration: none; }
+
+/* Practice length: the board's skewed preset toggles. The skewed plate is a layer behind the label, so the number
+   stays upright and the plate's slanted sides keep their 1 px line, as on the board. */
+:root[data-theme-family="crystal"] .daily-canvas-today .today-length { border-top-color: var(--ts-line); }
+:root[data-theme-family="crystal"] .daily-canvas-today .today-length legend { color: var(--ts-text2); font-family: var(--ts-display); font-style: italic; }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed] {
+  position: relative;
+  isolation: isolate;
+  min-width: 46px;
+  /* The hit area keeps the app's 44 px touch target; the drawn plate is the board's 34 px toggle. */
+  min-height: 44px;
+  height: 44px;
+  padding: 0 14px;
+  clip-path: none;
+  background: none;
+  box-shadow: none;
+  color: var(--ts-text-strong);
+  font-size: 13.5px;
+  letter-spacing: 0;
+}
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed]::before { content: ''; position: absolute; z-index: -1; inset: 5px 0; transform: skewX(-12deg); background: var(--ts-chip); box-shadow: inset 0 0 0 1px var(--ts-line-strong); }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed]:hover:not(:disabled) { background: none; box-shadow: none; color: var(--ts-text-strong); }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed]:hover:not(:disabled)::before { box-shadow: inset 0 0 0 1px var(--ts-edge); }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed="true"],
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed="true"]:hover:not(:disabled) { color: #ffffff; filter: drop-shadow(0 0 10px rgb(255 42 77 / .55)); }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed="true"]::before,
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] .today-length button.min-h-11[aria-pressed="true"]:hover:not(:disabled)::before { background: var(--ts-primary); box-shadow: none; }
+:root[data-theme-family="crystal"] .daily-canvas-today .today-length button:not([aria-pressed]) { margin-left: 6px; }
+
+/* "More lesson modes": a kicker-styled disclosure row with no plate. */
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] summary { border-radius: 0; color: var(--ts-crimson); font-family: var(--ts-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+:root[data-theme-family="crystal"] .daily-canvas-today [aria-labelledby="practice-mode-heading"] summary:hover { background: none; color: var(--ts-text-strong); }
+
+/* Recommended next: a slim board bar (AnimeLangPractice's footer hint: 10 px chamfer, panel fill, one 1 px cyan
+   inset). The background shorthand also drops the chamfer utility's diagonal corner lines, which the board does
+   not draw, and the real border is replaced by the inset. */
+:root[data-theme-family="crystal"] .today-recommended { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); }
+:root[data-theme-family="crystal"] .today-recommended-icon { color: var(--sf-holo-text); }
+:root[data-theme-family="crystal"] .daily-canvas .today-recommended-title { color: var(--sf-text-strong); font-weight: 800; letter-spacing: .02em; }
+:root[data-theme-family="crystal"] .today-recommended-reason { color: var(--sf-text-muted); }
+
+/* At phone width the tag drops under the description, so the mode name keeps the row's full width. */
+@media (max-width: 639px) {
+  :root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] { grid-template-columns: 46px minmax(0, 1fr); grid-template-rows: auto auto auto; }
+  :root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:first-child > div:first-child { grid-area: 1 / 1 / 4 / 2; }
+  :root[data-theme-family="crystal"] .daily-canvas-today [data-practice-mode] > div:first-child > span { grid-area: 3 / 2 / 4 / 3; justify-self: start; margin-top: 4px; }
+}

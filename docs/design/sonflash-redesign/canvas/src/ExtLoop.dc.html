@@ -5,13 +5,13 @@
     <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 15px;">S</span>
     <span style="font-family: Fraunces, Georgia, serif; font-size: 18px;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
     <span style="margin-left: auto; height: 30px; padding: 0 10px 0 8px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12 ngày</span>
-    <a href="#" aria-label="Cài đặt" style="width: 34px; height: 34px; border-radius: 50%; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></a>
+    <a href="#" aria-label="Cài đặt" class="{{t.fx.press}}" style="width: 34px; height: 34px; border-radius: 50%; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg></a>
   </header>
 
   <sc-if value="{{isLoop}}" hint-placeholder-val="{{true}}">
     <div style="position: relative; z-index: 2; flex-grow: 1; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px;">
       <div class="sf-pop" style="box-sizing: border-box; border-radius: {{t.miniR}}px; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 16px 18px;">
-        <span style="height: 24px; width: fit-content; padding: 0 9px; border-radius: 999px; background: {{t.okBg}}; color: {{t.ok}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Đã thêm vào phiên học ngày mai</span>
+        <span class="{{t.fx.correct}}" style="height: 24px; width: fit-content; padding: 0 9px; border-radius: 999px; background: {{t.okBg}}; color: {{t.ok}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Đã thêm vào phiên học ngày mai</span>
         <div style="margin-top: 12px; display: flex; align-items: baseline; gap: 10px;">
           <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 32px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</span>
           <span style="font-family: Fraunces, Georgia, serif; font-size: 17px; color: {{t.accentText}};">kiên cường</span>
@@ -26,7 +26,7 @@
         </div>
         <div style="margin-top: 6px; display: flex; align-items: flex-end; justify-content: space-between;">
           <span style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 34px; line-height: 1; color: {{t.textStrong}};">8 <span style="font-size: 16px; color: {{t.text2}};">từ từ web</span></span>
-          <span aria-hidden="true" style="display: flex; align-items: flex-end; gap: 4px; height: 34px;">
+          <span aria-hidden="true" class="sf-bars" style="display: flex; align-items: flex-end; gap: 4px; height: 34px;">
             <sc-for list="{{week}}" as="w" hint-placeholder-count="7"><span style="width: 9px; height: {{w.h}}px; border-radius: 3px; background: {{w.bg}};"></span></sc-for>
           </span>
         </div>
@@ -41,15 +41,15 @@
       </div>
     </div>
     <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px;">
-      <a href="#" class="sf-press sf-pulse" style="--sf-pulse: {{pulse}}; height: 52px; border-radius: 14px; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">Ôn ngay 3 phút<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg></a>
+      <a href="#" class="{{t.fx.press}}" style="height: 52px; border-radius: 14px; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 650; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">Ôn ngay 3 phút<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg></a>
       <div style="text-align: center; font-size: 11.5px; color: {{t.text3}};">Mở SonFlash · 3 thẻ đến hạn, gồm 2 từ bạn gặp hôm qua</div>
     </footer>
   </sc-if>
 
   <sc-if value="{{isQuota}}" hint-placeholder-val="{{false}}">
     <div style="position: relative; z-index: 2; flex-grow: 1; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px;">
-      <div style="box-sizing: border-box; padding: 14px 16px; border-radius: {{t.miniR}}px; border: 1px solid {{t.warnLine}}; background: {{t.warnBg}};">
-        <div style="font-size: 14px; font-weight: 650; line-height: 1.4; color: {{t.textStrong}};">Hôm nay bạn đã dùng 5/5 lượt AI miễn phí</div>
+      <div class="sf-pop" style="box-sizing: border-box; padding: 14px 16px; border-radius: {{t.miniR}}px; border: 1px solid {{t.warnLine}}; background: {{t.warnBg}};">
+        <div style="font-size: 14px; font-weight: 650; line-height: 1.4; color: {{t.textStrong}};">Hôm nay bạn đã dùng 20/20 lượt AI miễn phí</div>
         <div style="margin-top: 10px; display: flex; gap: 5px;">
           <sc-for list="{{meter}}" as="m" hint-placeholder-count="5"><span style="flex: 1; height: 7px; border-radius: 4px; background: {{m}};"></span></sc-for>
         </div>
@@ -90,7 +90,6 @@ class Component extends DCLogic {
     return {
       t, isLoop: state === 'loop', isQuota: state === 'quota',
       grainId: 'extloop-grain-' + (dark ? 'd' : 'l') + state, amb: { ax: -260, ay: -300, bx: 120, by: 380 },
-      pulse: dark ? 'rgb(40 211 244 / 0.45)' : 'rgb(29 26 22 / 0.25)',
       card: dark
         ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / 0.22), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 20px 40px -20px rgb(0 0 0 / 0.9), 0 0 36px -14px rgb(40 211 244 / 0.5)' }
         : { border: '0', bg: t.cardBg, shadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 12px 24px -16px rgb(60 40 20 / 0.4)' },

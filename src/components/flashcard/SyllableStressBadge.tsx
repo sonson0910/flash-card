@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
-import { resolveLanguagePackId } from '../../features/languagePacks/registry';
+import { cardTargetLanguageKey } from './cardLanguage';
 import { useCourseSession } from '../../features/courses/CourseGate';
 import type { CardData } from '../../types/card';
 import React, { Fragment, useEffect, useMemo, useRef } from 'react';
@@ -26,9 +26,8 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
   const { word, phonetic } = card;
   const targetLanguage = card.language || 'en';
   // English-only: the vowel-cluster heuristic and IPA stress markers below
-  // only model English syllabification. Non-English packs get a reading
-  // toggle (romanization/furigana/pinyin) instead, rendered by CardHeadword.
-  const isEnglishPack = resolveLanguagePackId(card.language) === 'en';
+  // only model English syllabification. Non-English cards never fall back here.
+  const isEnglishPack = cardTargetLanguageKey(card) === 'en';
   const analysis = useMemo(() => parseSyllables(word, phonetic), [word, phonetic]);
   const playbackRef = useRef<WordAudioPlayback | null>(null);
 

@@ -15,6 +15,8 @@ export interface OfflineReadinessProps {
   readonly registration?: ServiceWorkerRegistration | null;
   /** Runs before the shell worker takes the root scope; a failure does not stop the preparation. */
   readonly beforePrepare?: () => Promise<void>;
+  /** Outside My Files the card appears only for a waiting update; preparing offline lives in My Files. */
+  readonly updatesOnly?: boolean;
 }
 
 const statusMessage = (status: OfflineReadinessStatus): MessageDescriptor => {
@@ -140,6 +142,7 @@ export function OfflineReadiness({
   serviceWorker: suppliedServiceWorker,
   registration: suppliedRegistration,
   beforePrepare,
+  updatesOnly = false,
 }: OfflineReadinessProps) {
   const [status, setStatus] = useState<OfflineReadinessStatus>(() => (
     !production
@@ -269,6 +272,13 @@ export function OfflineReadiness({
     };
   }, [production, suppliedRegistration, suppliedServiceWorker]);
 
+  // A preparation the learner started is owed its result. The card shows it in My Files; if they have left, the
+  // hidden status line announces it instead. Seeing the settled card again pays the debt.
+  const [resultOwed, setResultOwed] = useState(false);
+  useEffect(() => {
+    if (!updatesOnly && status !== 'preparing') setResultOwed(false);
+  }, [updatesOnly, status]);
+
   const handlePrepare = async () => {
     if (!mountedRef.current || preparingRef.current || status === 'ready' || status === 'update' || !readConnection()) return;
     const serviceWorker = suppliedServiceWorker ?? globalThis.navigator?.serviceWorker;
@@ -276,6 +286,7 @@ export function OfflineReadiness({
       setStatus('unsupported');
       return;
     }
+    setResultOwed(true);
     preparingRef.current = true;
     preparationRegistrationRef.current = null;
     preparationTimedOutRef.current = false;
@@ -321,6 +332,16 @@ export function OfflineReadiness({
     ? _(msg({ id: 'shell.offline.needs-connection', message: 'You are offline. Reconnect to prepare the app files.' }))
     : _(statusMessage(status));
 
+  if (updatesOnly && status !== 'update') {
+    // The card is hidden here, but a preparation started in My Files can finish after the learner has moved on;
+    // its result is still announced.
+    return (
+      <p data-offline-readiness-status="true" role="status" aria-live="polite" aria-atomic="true" aria-busy={status === 'preparing'} className="sr-only">
+        {resultOwed ? message : ''}
+      </p>
+    );
+  }
+
   return (
     // One compact row: the banner stays available on every workspace view without
     // pushing a phone's primary learning action below the fold.
@@ -333,7 +354,7 @@ export function OfflineReadiness({
         <div className="min-w-0">
           <h2 id="offline-readiness-heading" className="text-xs font-black uppercase tracking-[0.08em]">{_(msg({ id: 'shell.offline.heading', message: 'Offline access' }))}</h2>
           {status === 'idle' || status === 'error' ? (
-            <p className="text-xs text-[var(--sf-text-muted)]">{_(msg({ id: 'shell.offline.size', message: 'app files, up to 6 MiB' }))}</p>
+            <p className="text-xs text-[var(--sf-text-muted)]">{_(msg({ id: 'shell.offline.size', message: 'app files, up to 7 MiB' }))}</p>
           ) : null}
         </div>
         {status !== 'unsupported' ? (

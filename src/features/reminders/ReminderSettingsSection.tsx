@@ -51,7 +51,7 @@ export interface ReminderSettingsSectionProps {
 
 function TimeSelect({ value, label, onChange, step, large = false }: { readonly value: string; readonly label: string; readonly onChange: (value: string) => void; readonly step: number; readonly large?: boolean }) {
   const [hours = '--', minutes = '--'] = value.split(':');
-  return <span className={large ? 'rm-time crystal-chamfer-sm' : 'rm-inline-time'}>
+  return <span className={large ? 'rm-time sf-ease crystal-chamfer-sm' : 'rm-inline-time sf-ease'}>
     <select aria-label={label} value={value} onChange={event => onChange(event.target.value)}>
       {timeChoices(step, value).map(choice => <option key={choice} value={choice}>{choice}</option>)}
     </select>
@@ -157,7 +157,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
   const regionLabel = _(msg({ id: 'settings.reminders.title', message: 'Study reminders' }));
 
   const form = <>
-    <div className="ss-panel rm-card crystal-chamfer">
+    <div className="ss-panel rm-card fx-enter-2 crystal-chamfer">
       <div className="rm-schedule">
         <div className="rm-schedule__time">
           <span className="ss-label rm-schedule__label" aria-hidden="true"><Trans {...msg({ context: 'settings.reminders.daily', message: 'Daily reminder' })} /></span>
@@ -169,7 +169,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
             <input className="rm-zone__input" value={settings.timezone} spellCheck={false} onChange={event => update({ timezone: event.target.value })} />
           </label>
           {deviceZone && deviceZone !== settings.timezone
-            ? <button type="button" className="rm-zone__use" onClick={() => update({ timezone: deviceZone })}><Trans {...msg({ context: 'settings.reminders.timezone.use-device', message: 'Use this device’s time zone' })} /></button>
+            ? <button type="button" className="rm-zone__use fx-press" onClick={() => update({ timezone: deviceZone })}><Trans {...msg({ context: 'settings.reminders.timezone.use-device', message: 'Use this device’s time zone' })} /></button>
             : <span className="rm-zone__note"><Trans {...msg({ context: 'settings.reminders.timezone.note', message: 'Reminders follow this clock.' })} /></span>}
         </div>
       </div>
@@ -178,28 +178,28 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
         <div className="rm-days__list">
           {mondayFirst.map(index => <label key={index} className="rm-day">
             <input type="checkbox" aria-label={uiLocale === 'vi' ? weekdaysVi[index] : weekdays[index]} checked={settings.days.includes(index)} onChange={event => update({ days: event.target.checked ? [...settings.days, index].sort() : settings.days.filter(value => value !== index) })} />
-            <span className="rm-day__face" aria-hidden="true"><span>{uiLocale === 'vi' ? weekdaysVi[index] : weekdayLetters[index]}</span></span>
+            <span className="rm-day__face sf-ease" aria-hidden="true"><span>{uiLocale === 'vi' ? weekdaysVi[index] : weekdayLetters[index]}</span></span>
           </label>)}
         </div>
         <span className="rm-days__count"><Trans {...msg({ context: 'settings.reminders.days.count', message: '{count, plural, one {# day a week} other {# days a week}}' })} values={{ count: settings.days.length }} /></span>
       </fieldset>
       <label className="ss-row ss-switch-row">
         <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.reminders.smart', message: 'Smart reminder' })} /></span><span className="ss-row__sub"><Trans {...msg({ context: 'settings.reminders.only-if-not-studied.description', message: 'Remind me only if I haven’t studied yet today' })} /></span></span>
-        <input type="checkbox" role="switch" checked={settings.onlyIfNotStudiedToday} onChange={event => update({ onlyIfNotStudiedToday: event.target.checked })} />
+        <input type="checkbox" role="switch" className="sf-ease" checked={settings.onlyIfNotStudiedToday} onChange={event => update({ onlyIfNotStudiedToday: event.target.checked })} />
       </label>
       <div className="ss-row">
         <span className="ss-row__text">
           <span className="ss-row__title rm-quiet__title"><Trans {...msg({ context: 'settings.reminders.quiet', message: 'Quiet hours' })} />{quiet && <> <TimeSelect step={30} label={_(msg({ id: 'settings.reminders.quiet-start.label', message: 'From' }))} value={quiet.startLocal} onChange={startLocal => update({ quietHours: { ...quiet, startLocal } })} /><span aria-hidden="true">–</span><TimeSelect step={30} label={_(msg({ id: 'settings.reminders.quiet-end.label', message: 'Until' }))} value={quiet.endLocal} onChange={endLocal => update({ quietHours: { ...quiet, endLocal } })} /></>}</span>
           <span className="ss-row__sub"><Trans {...msg({ context: 'settings.reminders.quiet.description', message: 'Nothing is sent at night, even if cards are due' })} /></span>
         </span>
-        <input type="checkbox" role="switch" aria-label={_(msg({ id: 'settings.reminders.quiet.label', message: 'Quiet hours' }))} checked={quiet !== null} onChange={event => update({ quietHours: event.target.checked ? { startLocal: '22:00', endLocal: '07:00' } : null })} />
+        <input type="checkbox" role="switch" className="sf-ease" aria-label={_(msg({ id: 'settings.reminders.quiet.label', message: 'Quiet hours' }))} checked={quiet !== null} onChange={event => update({ quietHours: event.target.checked ? { startLocal: '22:00', endLocal: '07:00' } : null })} />
       </div>
     </div>
 
-    <h2 className="ss-eyebrow"><Trans {...msg({ context: 'settings.reminders.channels', message: 'Channels' })} /></h2>
-    <div className="rm-channels">
+    <h2 className="ss-eyebrow fx-enter-3"><Trans {...msg({ context: 'settings.reminders.channels', message: 'Channels' })} /></h2>
+    <div className="rm-channels fx-enter-3">
       <label className="rm-channel crystal-chamfer-sm">
-        <span className="rm-channel__top"><span className="rm-channel__icon"><Monitor size={15} aria-hidden="true" /></span><input type="checkbox" role="switch" checked={settings.channels.push} disabled={(!pushAvailable || pushPermissionDenied) && !settings.channels.push} onChange={event => update({ channels: { ...settings.channels, push: event.target.checked } })} /></span>
+        <span className="rm-channel__top"><span className="rm-channel__icon"><Monitor size={15} aria-hidden="true" /></span><input type="checkbox" role="switch" className="sf-ease" checked={settings.channels.push} disabled={(!pushAvailable || pushPermissionDenied) && !settings.channels.push} onChange={event => update({ channels: { ...settings.channels, push: event.target.checked } })} /></span>
         <span className="rm-channel__title"><Trans {...msg({ context: 'settings.reminders.push', message: 'Browser push' })} /></span>
         <span className="rm-channel__sub"><Trans {...msg({ context: 'settings.reminders.push.description', message: 'One notification with the due count' })} /></span>
         {pushPermissionDenied
@@ -207,7 +207,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
           : !pushAvailable && !settings.channels.push && <span className="rm-channel__hint"><Trans {...msg({ context: 'settings.reminders.push-unavailable', message: 'Push needs a supported browser and configured web push key.' })} /></span>}
       </label>
       <label className="rm-channel crystal-chamfer-sm">
-        <span className="rm-channel__top"><span className="rm-channel__icon"><Mail size={15} aria-hidden="true" /></span><input type="checkbox" role="switch" checked={settings.channels.emailDigest} disabled={!emailAvailable && !settings.channels.emailDigest} onChange={event => update({ channels: { ...settings.channels, emailDigest: event.target.checked } })} /></span>
+        <span className="rm-channel__top"><span className="rm-channel__icon"><Mail size={15} aria-hidden="true" /></span><input type="checkbox" role="switch" className="sf-ease" checked={settings.channels.emailDigest} disabled={!emailAvailable && !settings.channels.emailDigest} onChange={event => update({ channels: { ...settings.channels, emailDigest: event.target.checked } })} /></span>
         <span className="rm-channel__title"><Trans {...msg({ context: 'settings.reminders.email.title', message: 'Weekly digest' })} /></span>
         <span className="rm-channel__sub"><Trans {...msg({ context: 'settings.reminders.email.description', message: 'Sunday email with your recap' })} /></span>
         {!emailAvailable && <span className="rm-channel__hint"><Trans {...msg({ context: 'settings.reminders.email-unavailable', message: 'Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled.' })} /></span>}
@@ -221,8 +221,8 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
 
     {error && <p role="alert" className="ss-alert">{error}</p>}
     <div className="rm-actions">
-      <button type="button" className="ss-primary" disabled={saving || settings.days.length === 0 || !protectedFunctionsAvailable()} onClick={() => void save()}><span className="ss-primary__label"><Trans {...msg({ context: 'settings.reminders.save', message: 'Save reminders' })} /></span></button>
-      {saveFailed && onSkip && <button type="button" className="ss-secondary" onClick={() => { setSaveFailed(false); setError(null); onSkip(); }}><Trans {...msg({ context: 'settings.reminders.skip', message: 'Skip for now' })} /></button>}
+      <button type="button" className="ss-primary fx-press" disabled={saving || settings.days.length === 0 || !protectedFunctionsAvailable()} onClick={() => void save()}><span className="ss-primary__label"><Trans {...msg({ context: 'settings.reminders.save', message: 'Save reminders' })} /></span></button>
+      {saveFailed && onSkip && <button type="button" className="ss-secondary fx-press" onClick={() => { setSaveFailed(false); setError(null); onSkip(); }}><Trans {...msg({ context: 'settings.reminders.skip', message: 'Skip for now' })} /></button>}
       {saved && <p role="status" className="ss-status"><Trans {...msg({ context: 'settings.reminders.saved', message: 'Reminder settings saved.' })} /></p>}
     </div>
   </>;
@@ -232,7 +232,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
     : status === 'loading'
       ? <p className="ss-panel rm-message crystal-chamfer"><Trans {...msg({ context: 'settings.reminders.loading', message: 'Loading reminders…' })} /></p>
       : status === 'error'
-        ? <div role="alert" className="ss-panel rm-message crystal-chamfer"><p><Trans {...msg({ context: 'settings.reminders.unavailable', message: 'Reminders are unavailable right now. Try again later.' })} /></p><button type="button" className="ss-secondary" onClick={() => setLoadAttempt(attempt => attempt + 1)}><Trans {...msg({ context: 'common.retry', message: 'Retry' })} /></button></div>
+        ? <div role="alert" className="ss-panel rm-message crystal-chamfer"><p><Trans {...msg({ context: 'settings.reminders.unavailable', message: 'Reminders are unavailable right now. Try again later.' })} /></p><button type="button" className="ss-secondary fx-press" onClick={() => setLoadAttempt(attempt => attempt + 1)}><Trans {...msg({ context: 'common.retry', message: 'Retry' })} /></button></div>
         : null;
 
   if (embedded) return <section aria-label={regionLabel} className="sf-settings-scope rm-embedded">
@@ -248,8 +248,8 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
       {footer}
     </div>
     <aside aria-label={_(msg({ id: 'settings.reminders.preview.label', message: 'Live preview' }))} className="ss-split__aside rm-preview">
-      <h2 className="ss-eyebrow rm-preview__title"><Trans {...msg({ context: 'settings.reminders.preview.title', message: 'Live preview' })} /></h2>
-      <div className="rm-os crystal-chamfer-sm">
+      <h2 className="ss-eyebrow rm-preview__title fx-enter"><Trans {...msg({ context: 'settings.reminders.preview.title', message: 'Live preview' })} /></h2>
+      <div className="rm-os sf-pop">
         <div className="rm-os__head"><span className="rm-os__app"><span className="rm-mark" aria-hidden="true">S</span>SonFlash{host && <> · {host}</>}</span><span>{settings.sendAtLocal}</span></div>
         <p className="rm-os__title">SonFlash</p>
         <p className="rm-os__body">{dueCount === null
@@ -258,7 +258,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
             ? <Trans {...msg({ context: 'settings.reminders.preview.body-none', message: 'Nothing is due right now, so no reminder is sent.' })} />
             : <Trans {...msg({ context: 'settings.reminders.preview.body', message: '{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}' })} values={{ count: dueCount }} />}</p>
       </div>
-      <div className="rm-mail crystal-chamfer-sm">
+      <div className="rm-mail fx-enter-4 crystal-chamfer-sm">
         <div className="rm-mail__head"><span><strong>SonFlash</strong> · <Trans {...msg({ context: 'settings.reminders.preview.mail-subject', message: 'Your SonFlash weekly recap' })} /></span><span><Trans {...msg({ context: 'settings.reminders.preview.mail-day', message: 'Sun' })} /></span></div>
         <div className="rm-mail__hero">
           <span className="rm-mail__eyebrow"><Trans {...msg({ context: 'settings.reminders.preview.mail-eyebrow', message: 'Weekly recap' })} /></span>
@@ -268,7 +268,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
         </div>
         <div className="rm-mail__foot"><span className="rm-mail__link"><Trans {...msg({ context: 'settings.reminders.preview.mail-link', message: 'Continue on SonFlash →' })} /></span></div>
       </div>
-      <div className="rm-toolbar crystal-chamfer-sm">
+      <div className="rm-toolbar fx-enter-4 crystal-chamfer-sm">
         <div className="rm-toolbar__bar"><span className="rm-toolbar__url" /><span className="rm-toolbar__ext" /><span className="rm-toolbar__icon"><span className="rm-mark" aria-hidden="true">S</span>{badge && <span className="rm-toolbar__badge">{badge}</span>}</span></div>
         <p className="rm-toolbar__caption"><Trans {...msg({ context: 'settings.reminders.preview.badge', message: 'Extension badge shows cards due, right in your toolbar.' })} /></p>
       </div>

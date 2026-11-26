@@ -46,11 +46,14 @@ describe('WorkspaceLoadingPanel', () => {
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).toContain("html[data-motion='reduced'] .workspace-loading-lumi");
 
-    const classicLightSkeleton = css.match(/html\[data-theme-family='classic'\] \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
-    const classicDarkSkeleton = css.match(/html\[data-theme-family='classic'\]\.dark \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
-    expect(classicLightSkeleton).toContain('rgb(29 26 22 / 0.05)');
-    expect(classicLightSkeleton).toContain('rgb(29 26 22 / 0.1)');
-    expect(classicDarkSkeleton).toContain('rgb(255 255 255 / 0.04)');
-    expect(classicDarkSkeleton).toContain('rgb(255 255 255 / 0.09)');
+    // Classic skeleton bars stay solid at rest and apply the SystemStates sf-shimmer sheen only when motion is allowed.
+    const classicSkeletonRest = css.match(/:where\(html:not\(\[data-theme-family=crystal\]\)\) \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(classicSkeletonRest).toContain('background: none;');
+    expect(classicSkeletonRest).toContain('background-color: var(--sf-track, var(--sf-surface-raised));');
+    expect(classicSkeletonRest).toContain('animation: none;');
+    const classicSkeletonShimmer = css.match(/:where\(html:not\(\[data-theme-family=crystal\]\):not\(\[data-motion='reduced'\]\)\) \.workspace-loading-panel \.skeleton-sheen\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(classicSkeletonShimmer).toContain('background-image: linear-gradient(90deg, transparent 0 50%, rgb(255 255 255 / 0.2) 75%, transparent 100%);');
+    expect(classicSkeletonShimmer).toContain('background-size: 200% 100%;');
+    expect(classicSkeletonShimmer).toContain('animation: sf-shimmer-k 1.6s linear infinite;');
   });
 });

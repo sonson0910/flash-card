@@ -166,6 +166,9 @@ const installMinimalReactDom = () => {
   documentLike.documentElement = container;
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("window", globalThis);
+  // A browser window is an event target; components subscribe to settings changes on it.
+  vi.stubGlobal("addEventListener", () => {});
+  vi.stubGlobal("removeEventListener", () => {});
   vi.stubGlobal("self", globalThis);
   vi.stubGlobal("top", globalThis);
   vi.stubGlobal("document", documentLike);
@@ -614,7 +617,7 @@ describe("practice view accessibility contracts", () => {
     expect(typingHtml).toContain("0.6× slow");
 
     expect(wrongHtml.match(/data-state="correct"/g)?.length).toBeGreaterThanOrEqual(4);
-    expect(wrongHtml).toMatch(/data-state="missing"[^>]*>l</);
+    expect(wrongHtml).toMatch(/data-state="missing"[^>]*><span class="practice-tile__glyph">l</);
     expect(wrongHtml).toContain("Missing letter");
     expect(wrongHtml).not.toContain(">Reveal</button>");
     expect(wrongHtml).toMatch(/<input[^>]*disabled=""/);

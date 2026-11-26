@@ -7,7 +7,6 @@ import { useIeltsGoalProgress, type IeltsGoalProgressOptions } from './useIeltsG
 import './ielts-goal-panel.css';
 
 const RING_RADIUS = 44;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export interface IeltsGoalPanelActions {
   /** Opens the IELTS path in Paths. */
@@ -58,10 +57,11 @@ function PanelLink({ onClick, children }: { readonly onClick: () => void; readon
 
 function OpenPathPrompt({ onOpenPath }: { readonly onOpenPath: () => void }) {
   const { _ } = useLingui();
+  const { family } = useTheme();
   return (
     <div className="ielts-goal-panel__prompt">
       <p>{_(msg({ id: 'exam-progress.not-started', message: 'Start the SonFlash IELTS path to see your progress here.' }))}</p>
-      <button type="button" className="ielts-goal-panel__button" onClick={onOpenPath}>
+      <button type="button" className={family === 'crystal' ? 'ielts-goal-panel__button' : 'ielts-goal-panel__button fx-press'} onClick={onOpenPath}>
         {_(msg({ id: 'exam-progress.open-path', message: 'Open the IELTS path' }))}
       </button>
     </div>
@@ -70,7 +70,8 @@ function OpenPathPrompt({ onOpenPath }: { readonly onOpenPath: () => void }) {
 
 function ClassicPanel({ model, onOpenPath, onSetTargetBand, onEditLatestScore, headingId }: IeltsGoalPanelViewProps & { readonly headingId: string }) {
   const { _, i18n } = useLingui();
-  const dash = (model.percent / 100) * RING_CIRCUMFERENCE;
+  const angle = (model.percent / 100) * 2 * Math.PI;
+  const arc = `M${52 + RING_RADIUS} 52 A${RING_RADIUS} ${RING_RADIUS} 0 ${model.percent > 50 ? 1 : 0} 1 ${(52 + RING_RADIUS * Math.cos(angle)).toFixed(2)} ${(52 + RING_RADIUS * Math.sin(angle)).toFixed(2)}`;
   return (
     <>
       <h2 id={headingId} className="ielts-goal-panel__heading">{_(msg({ id: 'exam-progress.classic.heading', message: 'Toward your IELTS goal' }))}</h2>
@@ -83,18 +84,13 @@ function ClassicPanel({ model, onOpenPath, onSetTargetBand, onEditLatestScore, h
           >
             <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
               <circle className="ielts-goal-ring__track" cx="52" cy="52" r={RING_RADIUS} fill="none" strokeWidth="8" />
-              <circle
-                className="ielts-goal-ring__value"
-                cx="52"
-                cy="52"
-                r={RING_RADIUS}
-                fill="none"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={`${dash.toFixed(2)} ${RING_CIRCUMFERENCE.toFixed(2)}`}
-              />
+              {model.percent >= 100 ? (
+                <circle className="ielts-goal-ring__value sf-draw sf-late" cx="52" cy="52" r={RING_RADIUS} fill="none" strokeWidth="8" pathLength={1} />
+              ) : model.percent > 0 ? (
+                <path className="ielts-goal-ring__value sf-draw sf-late" d={arc} fill="none" strokeWidth="8" strokeLinecap="round" pathLength={1} />
+              ) : null}
             </svg>
-            <span className="ielts-goal-ring__percent" aria-hidden="true" data-percent={model.percent}>
+            <span className="ielts-goal-ring__percent sf-tick" aria-hidden="true" data-percent={model.percent}>
               {_({ ...msg({ id: 'exam-progress.ring.percent', message: '{percent}%' }), values: { percent: model.percent } })}
             </span>
           </div>

@@ -32,11 +32,11 @@
     </a>
     <nav aria-label="Main" style="margin-left: 24px; display: flex; gap: 4px;">
       <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
-        <a href="#" aria-current="{{n.current}}" style="height: 38px; padding: 0 16px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 550; color: {{n.color}}; background: {{n.bg}};">{{n.label}}</a>
+        <a href="#" aria-current="{{n.current}}" class="sf-ease" style="height: 38px; padding: 0 16px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 550; color: {{n.color}}; background: {{n.bg}};">{{n.label}}</a>
       </sc-for>
     </nav>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" class="{{fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
         <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
       </button>
@@ -47,28 +47,28 @@
       <span style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
         <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">Lv</span>7
       </span>
-      <button aria-label="Account" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; cursor: pointer;">KB</button>
+      <button aria-label="Account" class="{{fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; cursor: pointer;">KB</button>
     </div>
   </header>
 
   <main style="position: relative; z-index: 2; height: 824px; box-sizing: border-box; padding: 64px 56px 48px 96px; display: grid; grid-template-columns: 1fr 520px; gap: 64px;">
     <section style="display: flex; flex-direction: column;">
-      <p style="margin: 0; font-size: 14px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: {{t.text2}};">Wednesday · 23 September</p>
-      <h1 style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 72px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">12 words are ready<br>to <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">remember.</span></h1>
-      <p style="margin: 22px 0 0; max-width: 520px; font-size: 17px; line-height: 1.6; color: {{t.body}};">Review them now, just before they fade, and they stay with you for weeks. About 6 minutes.</p>
-      <div style="margin-top: 34px; display: flex; align-items: center; gap: 12px;">
-        <button class="sf-press" style="height: 56px; padding: 0 22px 0 26px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 14px; cursor: pointer;">
+      <p class="{{fx.enter}}" style="margin: 0; font-size: 14px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: {{t.text2}};">Wednesday · 23 September</p>
+      <h1 class="{{fx.title}}" style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 72px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">12 words are ready<br>to <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">remember.</span></h1>
+      <p class="{{fx.enter}}" style="margin: 22px 0 0; max-width: 520px; font-size: 17px; line-height: 1.6; color: {{t.body}};">Review them now, just before they fade, and they stay with you for weeks. About 6 minutes.</p>
+      <div class="{{fx.enter2}}" style="margin-top: 34px; display: flex; align-items: center; gap: 12px;">
+        <button class="{{fx.press}}" style="height: 56px; padding: 0 22px 0 26px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 14px; cursor: pointer;">
           Start review
           <span style="height: 26px; padding: 0 9px; border-radius: 8px; background: {{t.primaryKbdBg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; display: flex; align-items: center;">Enter</span>
         </button>
-        <button class="sf-press" style="height: 56px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: {{t.secondaryShadow}};">Learn 5 new words</button>
+        <button class="{{fx.press}}" style="height: 56px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: {{t.secondaryShadow}};">Learn 5 new words</button>
       </div>
 
-      <div style="margin-top: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+      <div class="{{fx.stagger}}" style="margin-top: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
         <div style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
           <div style="font-size: 13px; color: {{t.text2}};">Streak</div>
-          <div style="margin-top: 6px; display: flex; align-items: baseline; gap: 8px;"><span style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">12</span><span style="font-size: 14px; color: {{t.text2}};">days</span></div>
-          <div style="margin-top: 16px; display: flex; justify-content: space-between;">
+          <div style="margin-top: 6px; display: flex; align-items: baseline; gap: 8px;"><span class="sf-tick" style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">12</span><span style="font-size: 14px; color: {{t.text2}};">days</span></div>
+          <div class="{{fx.stagger}}" style="margin-top: 16px; display: flex; justify-content: space-between;">
             <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
               <span style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: {{t.text3}};">
                 <span style="width: 22px; height: 22px; border-radius: 50%; box-sizing: border-box; background: {{d.bg}}; border: {{d.border}}; box-shadow: {{d.glow}};"></span>{{d.l}}
@@ -78,17 +78,17 @@
         </div>
         <div style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
           <div style="font-size: 13px; color: {{t.text2}};">Recall rate · 30 days</div>
-          <div style="margin-top: 6px; display: flex; align-items: baseline; gap: 8px;"><span style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">92<span style="font-size: 24px;">%</span></span><span style="font-size: 13px; font-weight: 600; color: {{t.good}};">+4</span></div>
+          <div style="margin-top: 6px; display: flex; align-items: baseline; gap: 8px;"><span class="sf-tick" style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">92<span style="font-size: 24px;">%</span></span><span style="font-size: 13px; font-weight: 600; color: {{t.good}};">+4</span></div>
           <svg aria-hidden="true" width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none" style="margin-top: 14px; display: block;">
             <path d="M0 30 L25 26 L50 28 L75 20 L100 22 L125 15 L150 16 L175 9 L200 6 L200 40 L0 40 Z" fill="{{t.sparkFill}}"></path>
-            <path d="M0 30 L25 26 L50 28 L75 20 L100 22 L125 15 L150 16 L175 9 L200 6" fill="none" stroke="{{t.accent}}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"></path>
+            <path class="sf-draw" pathLength="1" d="M0 30 L25 26 L50 28 L75 20 L100 22 L125 15 L150 16 L175 9 L200 6" fill="none" stroke="{{t.accent}}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"></path>
           </svg>
         </div>
-        <a href="#" style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; text-decoration: none; color: {{t.text}}; display: flex; flex-direction: column;">
+        <a href="#" class="{{fx.lift}}" style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; text-decoration: none; color: {{t.text}}; display: flex; flex-direction: column;">
           <div style="font-size: 13px; color: {{t.text2}}; display: flex; justify-content: space-between;">Path<span style="color: {{t.accentText}};">Continue →</span></div>
           <div style="margin-top: 8px; font-family: Fraunces, Georgia, serif; font-size: 24px; font-weight: {{t.displayWeight}}; line-height: 1.15; color: {{t.textStrong}};">IELTS <span style="font-style: {{t.emStyle}};">core</span></div>
           <div style="margin-top: auto; padding-top: 14px;">
-            <div style="height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div style="width: 28%; height: 100%; border-radius: 6px; background: {{t.accent}};"></div></div>
+            <div style="height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 28%; height: 100%; border-radius: 6px; background: {{t.accent}};"></div></div>
             <div style="margin-top: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">34 / 120 words</div>
           </div>
         </a>
@@ -96,7 +96,7 @@
     </section>
 
     <section aria-label="Due cards" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <div onMouseEnter="{{fanOpen}}" onMouseLeave="{{fanClose}}" style="position: relative; width: 360px; height: 500px; cursor: pointer;">
+      <div class="sf-deal-2" onMouseEnter="{{fanOpen}}" onMouseLeave="{{fanClose}}" style="position: relative; width: 360px; height: 500px; cursor: pointer;">
         <div aria-hidden="true" style="position: absolute; inset: -40px; border-radius: 80px; filter: blur(50px); background: {{t.stackAura}}; opacity: {{auraOpacity}}; transition: opacity 400ms ease;"></div>
         <sc-for list="{{stack}}" as="c" hint-placeholder-count="2">
           <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: {{t.cardRadius}}px; background: {{t.ghostBg}}; border: 1px solid {{t.ghostLine}}; box-shadow: {{t.ghostShadow}}; transform: {{c.transform}}; transition: transform 520ms cubic-bezier(.16,1,.3,1); overflow: hidden;">
@@ -120,7 +120,7 @@
           </div>
         </div>
       </div>
-      <p style="margin: 40px 0 0; font-size: 14px; color: {{t.text2}}; text-align: center;">Up next: <span style="color: {{t.text}};">Immediate, Spelling, Instant</span> and 9 more</p>
+      <p class="{{fx.enter4}}" style="margin: 40px 0 0; font-size: 14px; color: {{t.text2}}; text-align: center;">Up next: <span style="color: {{t.text}};">Immediate, Spelling, Instant</span> and 9 more</p>
     </section>
   </main>
 </div>
@@ -173,12 +173,15 @@ class Component extends DCLogic {
       imgMargin: '14px 14px 0', imgRadius: '10px', imgInset: '14px 14px auto 14px', imgW: 'calc(100% - 28px)', imgMask: 'none',
       dueBg: '#fffcf5', dueText: '#97400d', dueLine: 'rgb(151 64 13 / 0.25)',
     };
+    const fx = dark
+      ? { enter: 'au-in', enter2: 'au-in-2', enter4: 'au-in-4', title: 'au-in', stagger: 'au-stagger', lift: 'au-lift', press: 'au-press' }
+      : { enter: 'ip-in', enter2: 'ip-in-2', enter4: 'ip-in-4', title: 'ip-ink', stagger: 'ip-stagger', lift: 'ip-lift', press: 'ip-press' };
     const fan = this.state.fan;
     const navItems = ['Today', 'Paths', 'Vocabulary', 'Progress'];
     const done = [true, true, true, true, true, false, false];
     const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return {
-      t,
+      t, fx,
       toggleTheme: this.props.onToggleTheme ?? (() => {}),
       nav: navItems.map((label, i) => ({ label, current: i === 0 ? 'page' : 'false', bg: i === 0 ? t.navActiveBg : 'transparent', color: i === 0 ? t.navActiveText : t.navText })),
       week: labels.map((l, i) => {

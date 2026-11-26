@@ -1,9 +1,11 @@
 import { ChevronLeft, ChevronRight, Focus, Keyboard, ListChecks, Moon, Sun, X } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Flashcard } from '../../components/Flashcard';
+import { cloneElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { Flashcard, type FlashcardProps } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
+import { isLanguagePackCard } from '../../components/flashcard/cardLanguage';
+import { CardTierName, CardTierStatus, type CardTier } from '../../components/flashcard/CardFront';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
 import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
@@ -12,14 +14,21 @@ import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerHaptic } from '../../lib/haptics';
 import { triggerConfetti } from '../../lib/confetti';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+import { getEffectiveReducedMotion } from '../../lib/motionPreference';
+import { getZenGlassMode } from '../../lib/useZenGlassMode';
 import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
+import { buildDailyGoals } from '../dailyGoals/dailyGoalsModel';
+import { resolveStudyTimeZone } from '../dailyGoals/studyDayCountdown';
+import { useMinuteClock } from '../dailyGoals/useMinuteClock';
 import { buildStreakView } from '../gamification/streakView';
+import { readDailyPace } from '../settings/dailyPacePreference';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { readFocusModeEnabled, useFocusModePreference } from '../settings/focus-mode-preference';
 import { useTheme } from '../theme/ThemeProvider';
 import { SessionRecapModal } from './SessionRecapModal';
 import './study-shell.css';
-import type { RecallMode } from '../../lib/recall';
+import { resolveRecallMode, type RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
 import type { StudyRatingSettlement } from './usePracticeSession';
@@ -115,6 +124,39 @@ export function resolveStudyRecallMode(
   return requestedMode;
 }
 
+/**
+ * Brings in the next card. Classic deals it the way its seed boards do (Aurora.dc.html and Atelier.dc.html,
+ * au-deal-a 560 ms and ip-deal-a 600 ms in study-shell.css); Crystal keeps its GSAP step.
+ */
+function StudyCardEntrance({ index, direction, children }: { index: number; direction: 1 | -1; children: ReactNode }) {
+  if (globalThis.document?.documentElement.dataset.themeFamily !== 'crystal') {
+    return <div key={index} data-study-deal className="study-shell-deal">{children}</div>;
+  }
+  return <GsapEntrance animationKey={index} direction={direction} variant="step">{children}</GsapEntrance>;
+}
+
+/**
+ * True when revealing the answer turns the Crystal card over, as the AnimeReview board turns the revealed card
+ * 180deg; the card's own flip then plays the flip sound. Classic, Zen glass and reduced motion show the answer side
+ * at once.
+ */
+export function revealTurnsCard(root: { dataset?: { themeFamily?: string } } | null | undefined): boolean {
+  return root?.dataset?.themeFamily === 'crystal' && !getZenGlassMode() && !getEffectiveReducedMotion();
+}
+
+/**
+ * Starts the revealed card's turn through the card's own flip, by tapping its face as a learner would, so the turn,
+ * light pillar, sound and side announcement are the card's. Does nothing unless the card still rests on the side
+ * the prompt asked from.
+ */
+export function turnRevealedCard(studyCard: Pick<ParentNode, 'querySelector'> | null | undefined, fromSide: 'front' | 'back'): boolean {
+  const shell = studyCard?.querySelector<HTMLElement>('[data-card-side][data-card-flipping]');
+  if (!shell || shell.dataset.cardSide !== fromSide || shell.dataset.cardFlipping !== 'false') return false;
+  const stage = shell.querySelector<HTMLElement>('[data-flashcard-stage]');
+  stage?.click();
+  return Boolean(stage);
+}
+
 function formatStudyElapsedTime(elapsedSeconds: number): string {
   const minutes = Math.floor(elapsedSeconds / 60);
   const seconds = elapsedSeconds % 60;
@@ -197,6 +239,10 @@ export function StudyView({
   const ratingRef = useRef<HTMLDivElement | null>(null);
   const studySurfaceRef = useRef<HTMLDivElement | null>(null);
   const recallTransitionPendingRef = useRef(false);
+  // The card whose recall prompt was last on screen; its reveal is the one that turns the card over.
+  const promptCardIdRef = useRef<string | null>(null);
+  // Whether that prompt hid the picture; the turned card starts with the same blind front, as the board keeps its blind state across the turn.
+  const promptBlindRef = useRef(false);
 
   useEffect(() => {
     if (needsIntroduction || !recallTransitionPendingRef.current) return;
@@ -245,10 +291,22 @@ export function StudyView({
   const [sessionStudyTimeMs, setSessionStudyTimeMs] = useState(0);
   const answeredCount = summary?.saved ?? (externalGoodCount ?? sessionGoodCount) + (externalAgainCount ?? sessionAgainCount);
   const progressRatio = answeredCount / Math.max(cards.length, 1);
+  const completeSegments = Array.from({ length: 12 }, (_, segment) => segment).filter(segment => (segment + 1) / 12 <= progressRatio).length;
+  // The segment the next answer fills is marked while cards remain, as the board marks the card in hand.
+  const currentSegment = answeredCount < cards.length ? completeSegments : -1;
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
   const [lumiReaction, setLumiReaction] = useState<LumiPose | null>(null);
+  // Crystal's combo banner counts the answers remembered in a row this session; Again breaks the run, as on the board.
+  const [comboRun, setComboRun] = useState(0);
+  const [xpPop, setXpPop] = useState<StudyXpPop | null>(null);
   const ratingInFlightRef = useRef(false);
+
+  useEffect(() => {
+    if (!xpPop) return;
+    const timer = window.setTimeout(() => setXpPop(null), 1400);
+    return () => window.clearTimeout(timer);
+  }, [xpPop]);
 
   useEffect(() => {
     if (!lumiReaction) return;
@@ -332,6 +390,8 @@ export function StudyView({
 
       const isPositive = effectiveRating === 'good' || effectiveRating === 'easy';
       setSessionXpEarned(previous => previous + settlement.xpAwarded);
+      setComboRun(previous => (effectiveRating === 'again' ? 0 : previous + 1));
+      if (settlement.xpAwarded > 0) setXpPop(previous => ({ id: (previous?.id ?? 0) + 1, xp: settlement.xpAwarded }));
       if (settlement.studyTimeMs) setSessionStudyTimeMs(previous => previous + (settlement.studyTimeMs ?? 0));
       if (isPositive) {
         setSessionGoodCount(prev => prev + 1);
@@ -361,7 +421,7 @@ export function StudyView({
     if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
       event.preventDefault();
       if (!revealed) {
-        playFlipSound();
+        if (!revealTurnsCard(surface.ownerDocument?.documentElement)) playFlipSound();
         onReveal();
       } else surface.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
     } else if (noModifiers && event.key === 'ArrowRight') {
@@ -388,21 +448,35 @@ export function StudyView({
   }, [needsIntroduction, _, card?.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, paused, revealed]);
 
   if (!card) return null;
+  const isPackCard = isLanguagePackCard(card);
+  if (!revealed && !needsIntroduction) {
+    promptCardIdRef.current = card.id;
+    promptBlindRef.current = !(resolveRecallMode(card, activeRecallMode) === 'image-to-word' && imageRecallAvailable);
+  }
+  // Classic counts every saved answer; Crystal counts the run its board banner shows.
+  const comboCount = globalThis.document?.documentElement.dataset.themeFamily === 'crystal' ? comboRun : answeredCount;
 
+  // Above the card in the classic shells; Crystal keeps the board's card slot clear and puts it in the session footer.
+  const learnFirst = !needsIntroduction && onLearnFirst
+    ? <button type="button" onClick={onLearnFirst} className="study-shell-learn-first my-4 min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>
+    : null;
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study study-shell mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-      <div data-study-header className="study-shell-header mb-3 flex w-full items-center gap-3">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-kind={isPackCard ? 'language' : undefined} data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study study-shell mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div data-study-header className={`study-shell-header${isPackCard ? ' fx-enter' : ''} mb-3 flex w-full items-center gap-3`}>
         <div className="study-shell-start">
-          <button type="button" onClick={onClose} disabled={paused} className="study-shell-close crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
+          <button type="button" onClick={onClose} disabled={paused} className="study-shell-close crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
             <X size={18} strokeWidth={1.9} aria-hidden="true" />
           </button>
-          <p data-study-title className="study-shell-title"><Trans {...msg({ context: 'study.title', message: 'Review' })} /></p>
+          <p data-study-title className="study-shell-title">
+            <span className="study-shell-title__kicker" aria-hidden="true"><Trans {...msg({ context: 'practice.topbar.kicker', message: 'Practice' })} /> <span className="study-shell-title__slashes">//</span> </span>
+            <Trans {...msg({ context: 'study.title', message: 'Review' })} />
+          </p>
         </div>
         <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={answeredCount} className="study-shell-progress">
           <div data-study-progress-segments aria-hidden="true">
             {Array.from({ length: 12 }, (_, segment) => (
-              <span key={segment} data-study-progress-segment={(segment + 1) / 12 <= progressRatio ? 'complete' : 'pending'} />
+              <span key={segment} data-study-progress-segment={segment < completeSegments ? 'complete' : segment === currentSegment ? 'current' : 'pending'} />
             ))}
           </div>
           <span data-study-count className="study-shell-count">
@@ -414,10 +488,10 @@ export function StudyView({
           <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="study-shell-timer">
             {elapsedTime}
           </span>
-          <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`study-shell-tool grid min-h-11 min-w-11 place-items-center rounded-xl border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
+          <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`study-shell-tool grid min-h-11 min-w-11 place-items-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-full border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
             <Focus size={18} aria-hidden="true" />
           </button>
-          <button type="button" data-study-summary onClick={() => setSummaryOpen(true)} className="study-shell-summary min-h-11 min-w-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2">
+          <button type="button" data-study-summary onClick={() => setSummaryOpen(true)} className="study-shell-summary min-h-11 min-w-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] px-3 text-sm font-bold focus-visible:outline-2">
             <ListChecks size={18} aria-hidden="true" className="study-shell-summary__icon" />
             <span className="study-shell-summary__label"><Trans {...msg({ context: 'study-view.summary', message: 'Summary' })} /></span>
           </button>
@@ -425,13 +499,18 @@ export function StudyView({
         </div>
       </div>
 
+      <StudyLumiAside quiet={needsIntroduction} revealed={revealed} pose={lumiReaction ?? (needsIntroduction ? 'study' : revealed ? 'hint' : 'idle')} />
+
+      {/* Crystal lifts these two into the board's right column on wide screens; elsewhere the wrapper adds no box. */}
+      <div className="study-shell-aside" data-study-aside>
+      <StudyBoardColumn combo={comboRun} xpPop={xpPop} showCombo={!focusModeEnabled} />
       <div className="study-shell-combo mb-2 flex min-h-7 w-full justify-end" aria-live="polite">
-        {!focusModeEnabled && answeredCount >= 2 && <span data-study-combo={answeredCount} className="rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} /></span>}
+        {!focusModeEnabled && comboCount >= 2 && <span data-study-combo={comboCount} className="rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><span className="study-shell-combo__text"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: comboCount }} /></span></span>}
       </div>
 
       <label data-study-recall-mode className="mb-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
-        <Trans {...msg({ context: 'study.recall-mode', message: 'Recall mode' })} />
-        <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
+        <span className="study-shell-recall__label"><Trans {...msg({ context: 'study.recall-mode', message: 'Recall mode' })} /></span>
+        <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="study-shell-recall__select min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
           <option value="target-to-native"><Trans {...msg({ context: 'study.recall-mode.target-to-native', message: '{targetLanguage} → {nativeLanguage}' })} values={{ targetLanguage, nativeLanguage }} /></option>
           <option value="adaptive"><Trans {...msg({ context: 'study.recall-mode.adaptive', message: 'Adaptive difficulty' })} /></option>
           <option value="native-to-target"><Trans {...msg({ context: 'study.recall-mode.native-to-target', message: '{nativeLanguage} → {targetLanguage}' })} values={{ targetLanguage, nativeLanguage }} /></option>
@@ -440,28 +519,29 @@ export function StudyView({
           <option value="cloze"><Trans {...msg({ context: 'study.recall-mode.cloze', message: 'Fill the sentence' })} /></option>
         </select>
       </label>
+      </div>
 
       {/* Swipeable Flashcard Container */}
       <div ref={studyCardRef} data-study-card className="relative mb-5 w-full max-w-3xl touch-pan-y select-none transition-transform duration-100 ease-out motion-reduce:transition-none" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={resetTouch}>
         {/* Swipe Feedback Badges */}
         {swipeBadge === 'good' && (
-          <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+          <div className="absolute left-6 top-6 z-50 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             <Trans {...msg({ context: 'study.swipe.good', message: 'GOOD 👍' })} />
           </div>
         )}
         {swipeBadge === 'again' && (
-          <div className="absolute right-6 top-6 z-50 rounded-2xl border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+          <div className="absolute right-6 top-6 z-50 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             <Trans {...msg({ context: 'study.swipe.again', message: 'AGAIN 👎' })} />
           </div>
         )}
 
-        {!needsIntroduction && onLearnFirst && <button type="button" onClick={onLearnFirst} className="study-shell-learn-first my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>}
-        <GsapEntrance animationKey={index} direction={direction} variant="step">
+        <CrystalFamilySlot crystal={false}>{learnFirst}</CrystalFamilySlot>
+        <StudyCardEntrance index={index} direction={direction}>
           {needsIntroduction ? (
-            <section data-study-introduction className="mx-auto w-full max-w-2xl rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
-              <div className="mb-4 text-center">
-                <h2 id="study-introduction-heading" className="text-lg font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'study-view.meet-this-word', message: 'Meet this word' })} /></h2>
-                <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'study-view.take-a-moment-to-review-the-card-before-recall-practice', message: 'Take a moment to review the card before recall practice.' })} /></p>
+            <section data-study-introduction className="study-shell-intro mx-auto w-full max-w-2xl rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-card-radius,22px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
+              <div className="study-shell-intro__head mb-4 text-center">
+                <h2 id="study-introduction-heading" className="study-shell-intro__title text-lg font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'study-view.meet-this-word', message: 'Meet this word' })} /></h2>
+                <p className="study-shell-intro__lede mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'study-view.take-a-moment-to-review-the-card-before-recall-practice', message: 'Take a moment to review the card before recall practice.' })} /></p>
               </div>
               <Flashcard
                 data={card}
@@ -478,10 +558,11 @@ export function StudyView({
                   recallTransitionPendingRef.current = true;
                   onBeginStudyRecall?.();
                 }}
-                className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
+                className="study-shell-intro__begin mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
               ><Trans {...msg({ context: 'study-view.i-ve-reviewed-it-start-recall', message: 'I’ve reviewed it — start recall' })} /></button>
             </section>
           ) : revealed ? (
+            <CrystalRevealTurn studyCard={studyCardRef} fromPrompt={promptCardIdRef.current === card.id} promptBlind={promptBlindRef.current}>
             <Flashcard
               data={card}
               initialSide={activeRecallMode === 'target-to-native' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
@@ -494,23 +575,25 @@ export function StudyView({
               onEditOpenChange={open => onEditorOpenChange?.(card.id, open)}
               editorContext={{ kind: 'review', current: index + 1, total: cards.length }}
             />
+            </CrystalRevealTurn>
           ) : (
             <ActiveRecallPrompt
               card={card}
               mode={activeRecallMode}
               onReveal={onReveal}
               onImageUnavailable={handleImageUnavailable}
+              onToggleBookmark={onBookmark}
             />
           )}
-        </GsapEntrance>
+        </StudyCardEntrance>
         {lumiReaction && (
-          <div className="pointer-events-none absolute -bottom-5 -right-1 z-20 hidden sm:block" aria-hidden="true">
+          <div className="study-shell-reaction pointer-events-none absolute -bottom-5 -right-1 z-20 hidden sm:block" aria-hidden="true">
             <Lumi pose={lumiReaction} size={72} className="crystal-ornament drop-shadow-[0_8px_16px_var(--sf-shadow)]" />
           </div>
         )}
       </div>
 
-      {!needsIntroduction && !revealed && <p data-study-hint className="study-shell-hint">
+      {!needsIntroduction && !revealed && <p data-study-hint className={`study-shell-hint${isPackCard ? ' fx-enter-4' : ''}`}>
         <Trans {...msg({ context: 'study.hint', message: 'Say it out loud first, then reveal <0>Space</0>' })} components={{ 0: <kbd className="study-shell-kbd crystal-chamfer-sm" /> }} />
       </p>}
 
@@ -521,16 +604,19 @@ export function StudyView({
           saving={reviewStatus === 'saving'}
           error={reviewError}
           lastRating={card.reviewHistory?.at(-1)?.rating}
+          cardKind={isPackCard ? 'language' : undefined}
           onRate={handleRating}
         />
       </div>}
 
-      <div className="flex items-center gap-4 sm:gap-6">
-        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
+      <CrystalFamilySlot crystal>{learnFirst}</CrystalFamilySlot>
+
+      <div className="study-shell-nav flex items-center gap-4 sm:gap-6">
+        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:transition hover:border-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transform-none [html[data-theme-family=crystal]_&]:motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
           <ChevronLeft size={24} aria-hidden="true" />
         </button>
-        <div className="crystal-chamfer-sm border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
-        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="crystal-chamfer-sm min-h-11 min-w-11 bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
+        <div className="study-shell-nav__position crystal-chamfer-sm [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
+        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:transition hover:bg-[var(--sf-brand-hover)] hover:text-white [html[data-theme-family=crystal]_&]:active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transform-none [html[data-theme-family=crystal]_&]:motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>
@@ -550,8 +636,8 @@ export function StudyView({
         targetLanguage={cards[0]?.language ?? 'en'}
       />
 
-      <div className="mx-auto mt-8 hidden w-full max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
-        <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span><Trans {...msg({ context: 'study.shortcuts', message: 'Study shortcuts' })} /></span></div>
+      <div className="study-shell-shortcuts mx-auto mt-8 hidden w-full max-w-sm rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
+        <div className="study-shell-shortcuts__title mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span><Trans {...msg({ context: 'study.shortcuts', message: 'Study shortcuts' })} /></span></div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[10px] text-[var(--sf-text-muted)] font-medium text-left">
           <Shortcut keys="Space" label={_(msg({ id: 'study.shortcut.flip-card', message: 'Flip card' }))} />
           <Shortcut keys="← / →" label={_(msg({ id: 'study.shortcut.previous-next', message: 'Previous / next' }))} />
@@ -573,7 +659,7 @@ function StudyShellPreferences() {
   const verifiedState = useVerifiedStats()?.state ?? null;
   const streak = useMemo(() => (verifiedState ? buildStreakView(verifiedState, new Date()).length : 0), [verifiedState]);
   return <>
-    <button type="button" data-study-theme onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} aria-pressed={themeMode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))} className="study-shell-theme claude-theme-quick-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+    <button type="button" data-study-theme onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} aria-pressed={themeMode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))} className="study-shell-theme claude-theme-quick-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:motion-reduce:transition-none">
       {themeMode === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
     </button>
     {streak > 0 && <span data-study-streak role="img" className="study-shell-streak claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}>
@@ -583,6 +669,193 @@ function StudyShellPreferences() {
   </>;
 }
 
+/** Drops the key cap from the reveal hint where Lumi says the line. */
+function NoKeyCap() {
+  return null;
+}
+
+/**
+ * The revealed answer card. When the reveal turns the card over (see revealTurnsCard), it mounts on the side the
+ * prompt asked from and turns to the answer side on the next frame; otherwise it mounts on the answer side as before.
+ * The start side is fixed at mount, because the card reads its initial side only once.
+ */
+export function CrystalRevealTurn({ studyCard, fromPrompt, promptBlind = false, children }: {
+  studyCard: RefObject<HTMLDivElement | null>;
+  fromPrompt: boolean;
+  /** The prompt hid the picture: a turn that starts on the front starts on the same blind front. */
+  promptBlind?: boolean;
+  children: ReactElement<FlashcardProps>;
+}) {
+  const answerSide = children.props.initialSide ?? 'front';
+  const [startSide] = useState<'front' | 'back'>(() => (
+    fromPrompt && revealTurnsCard(globalThis.document?.documentElement)
+      ? (answerSide === 'back' ? 'front' : 'back')
+      : answerSide
+  ));
+  const turnPendingRef = useRef(startSide !== answerSide);
+
+  useEffect(() => {
+    if (!turnPendingRef.current) return;
+    const frame = window.requestAnimationFrame(() => {
+      turnPendingRef.current = false;
+      turnRevealedCard(studyCard.current, startSide);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [startSide, studyCard]);
+
+  const [startBlind] = useState(() => startSide !== answerSide && startSide === 'front' && promptBlind);
+  return cloneElement(children, startBlind ? { initialSide: startSide, initialBlind: true } : { initialSide: startSide });
+}
+
+/** Renders its children only in the Crystal family (crystal) or only outside it (crystal={false}). */
+function CrystalFamilySlot({ crystal, children }: { crystal: boolean; children: ReactNode }) {
+  const { family } = useTheme();
+  return (family === 'crystal') === crystal ? <>{children}</> : null;
+}
+
+/**
+ * Crystal's left column on wide screens: Lumi under her LUMI · LINK panel, as on the AnimeReview board. Before the
+ * answer she gives the reveal hint; on the answer she asks how well the card was remembered, the question the grade
+ * row answers. The panel keeps its place while it has nothing to say, so Lumi does not jump.
+ */
+function StudyLumiAside({ quiet, revealed, pose }: { quiet: boolean; revealed: boolean; pose: LumiPose }) {
+  const { family } = useTheme();
+  if (family !== 'crystal' || !readLumiEnabled()) return null;
+  return (
+    <aside data-study-lumi className="study-shell-lumi" aria-hidden="true">
+      <div className="study-shell-lumi__panel" data-quiet={quiet ? 'true' : undefined}>
+        <span className="study-shell-lumi__strip" />
+        <p className="study-shell-lumi__label"><Trans {...msg({ context: 'practice.lumi.label', message: 'Lumi · Link' })} /></p>
+        <p className="study-shell-lumi__line">{revealed
+          ? <Trans {...msg({ id: 'review.prompt', message: 'How well did you remember this card?' })} />
+          : <Trans {...msg({ context: 'study.hint', message: 'Say it out loud first, then reveal <0>Space</0>' })} components={{ 0: <NoKeyCap /> }} />}</p>
+      </div>
+      <Lumi pose={pose} className="study-shell-lumi__art crystal-ornament pointer-events-none" />
+    </aside>
+  );
+}
+
+/** The XP the server granted for the last saved review; `id` restarts the pop when a new grant arrives. */
+interface StudyXpPop {
+  readonly id: number;
+  readonly xp: number;
+}
+
+/** The board's combo names, from no answer in a row to five or more. */
+const COMBO_NAMES = [
+  msg({ context: 'study.combo-name.ready', message: 'Ready' }),
+  msg({ context: 'study.combo-name.nice', message: 'Nice' }),
+  msg({ context: 'study.combo-name.sweet', message: 'Sweet' }),
+  msg({ context: 'study.combo-name.lovely', message: 'Lovely' }),
+  msg({ context: 'study.combo-name.sparkly', message: 'Sparkly' }),
+  msg({ context: 'study.combo-name.dreamy', message: 'Dreamy' }),
+] as const;
+
+const COMBO_STAR_POINTS = [
+  ['50.0,52.0 38.2,35.7 50.0,4.0', '#ff5470'], ['50.0,52.0 50.0,4.0 61.8,35.7', '#7a0820'],
+  ['50.0,52.0 61.8,35.7 95.7,37.2', '#ff5470'], ['50.0,52.0 95.7,37.2 69.2,58.2', '#7a0820'],
+  ['50.0,52.0 69.2,58.2 78.2,90.8', '#ff5470'], ['50.0,52.0 78.2,90.8 50.0,72.2', '#7a0820'],
+  ['50.0,52.0 50.0,72.2 21.8,90.8', '#ff5470'], ['50.0,52.0 21.8,90.8 30.8,58.2', '#7a0820'],
+  ['50.0,52.0 30.8,58.2 4.3,37.2', '#ff5470'], ['50.0,52.0 4.3,37.2 38.2,35.7', '#7a0820'],
+] as const;
+
+const LEGEND_TIERS: readonly CardTier[] = ['new', 'learning', 'mastered'];
+
+/**
+ * Crystal's right column on wide screens, as on the AnimeReview board: the combo banner, today's card goal and the
+ * Bud, Bloom and Star legend. Focus mode hides the banner, as it hides every combo banner.
+ */
+function StudyBoardColumn({ combo, xpPop, showCombo }: { combo: number; xpPop: StudyXpPop | null; showCombo: boolean }) {
+  const { family } = useTheme();
+  if (family !== 'crystal') return null;
+  return <>
+    {showCombo && <StudyComboBanner combo={combo} xpPop={xpPop} />}
+    <StudyDailyGoal />
+    <ul data-study-tier-legend className="study-shell-legend">
+      {LEGEND_TIERS.map(tier => (
+        <li key={tier} className="study-shell-legend__row">
+          <span className="study-shell-legend__grade" data-tier={tier}><CardTierName tier={tier} /></span>
+          <span className="study-shell-legend__label"><CardTierStatus tier={tier} /></span>
+        </li>
+      ))}
+    </ul>
+  </>;
+}
+
+/** The combo name and count over the slanted crimson banner, with the XP the server granted popping under it. */
+function StudyComboBanner({ combo, xpPop }: { combo: number; xpPop: StudyXpPop | null }) {
+  return (
+    <div data-study-combo-banner={combo} data-xp-pop={xpPop ? 'true' : undefined} className="study-shell-combo-banner" aria-live="polite">
+      <span className="study-shell-combo-banner__band" aria-hidden="true" />
+      <span className="study-shell-combo-banner__star" aria-hidden="true">
+        <svg viewBox="0 0 100 100" width="100%" height="100%" focusable="false">
+          {COMBO_STAR_POINTS.map(([points, fill]) => <polygon key={points} points={points} fill={fill} />)}
+        </svg>
+      </span>
+      <span className="study-shell-combo-banner__name"><Trans {...COMBO_NAMES[Math.min(combo, COMBO_NAMES.length - 1)]} /></span>
+      <span className="study-shell-combo-banner__count"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: combo }} /></span>
+      {xpPop && <span key={xpPop.id} className="study-shell-combo-banner__xp"><Trans {...msg({ id: 'daily-goals.xp', message: '+{xp} XP' })} values={{ xp: xpPop.xp }} /></span>}
+    </div>
+  );
+}
+
+/**
+ * Today's card goal from the verified counters the Today screen reads: the daily pace sets the target and the
+ * server's count of studied cards fills the bar. Until those counters arrive the count reads as a dash, never a
+ * number the server did not write.
+ */
+function StudyDailyGoal() {
+  const { _ } = useLingui();
+  const verifiedState = useVerifiedStats()?.state ?? null;
+  const pace = useMemo(() => readDailyPace(), []);
+  // A session left open past midnight moves to the new study day's goal.
+  const now = useMinuteClock();
+  // The goal wording lives with the Today screen's messages; load them when the study screen opens first.
+  useEffect(() => { void loadCatalog(getActiveUiLocale(), 'today').catch(() => undefined); }, []);
+  const goal = buildDailyGoals({
+    now,
+    timeZone: resolveStudyTimeZone(verifiedState?.rewardTimeZone),
+    dailyPace: pace,
+    planHasMatch: false,
+    xpHistory: verifiedState?.xpHistory ?? {},
+    streak: verifiedState?.streak ?? 0,
+    lastStudyDay: verifiedState?.lastStudyDay,
+    dailyGoals: verifiedState?.dailyGoals,
+    hydrated: verifiedState ? verifiedState.hydrated : false,
+    streakState: verifiedState?.streakState,
+    rewards: verifiedState?.rewards,
+    hydrationFailed: verifiedState?.hydrationFailed,
+  }).goals[0];
+  if (goal.id !== 'study-cards') return null;
+  const label = _({ ...msg({ id: 'daily-goals.goal.study-cards', message: '{count, plural, one {Study # card} other {Study # cards}}' }), values: { count: goal.cards } });
+  const { progress } = goal;
+  return (
+    <section data-study-daily-goal={progress.state} className="study-shell-goal" aria-label={_(msg({ id: 'daily-goals.heading', message: 'Daily goals' }))}>
+      <p className="study-shell-goal__kicker" aria-hidden="true">{_(msg({ id: 'daily-goals.heading', message: 'Daily goals' }))}</p>
+      <p className="study-shell-goal__title">{label}</p>
+      {progress.state === 'counted' ? (
+        <span
+          className="study-shell-goal__bar"
+          role="progressbar"
+          aria-label={label}
+          aria-valuemin={0}
+          aria-valuemax={progress.target}
+          aria-valuenow={progress.done}
+          aria-valuetext={_({ ...msg({ id: 'daily-goals.progress-value', message: '{done} of {target}' }), values: { done: progress.done, target: progress.target } })}
+        ><span className="study-shell-goal__fill" style={{ width: `${progress.percent}%` }} /></span>
+      ) : (
+        <span className="study-shell-goal__bar" aria-hidden="true"><span className="study-shell-goal__fill" style={{ width: '0%' }} /></span>
+      )}
+      <p className="study-shell-goal__foot">
+        {progress.state === 'counted'
+          ? <span aria-hidden="true">{progress.done} / {progress.target}</span>
+          : <span><span aria-hidden="true">— / {progress.target}</span><span className="sr-only">{_(msg({ id: 'daily-goals.not-counted', message: 'Not counted yet today' }))}</span></span>}
+        <span className="study-shell-goal__xp">{_({ ...msg({ id: 'daily-goals.xp', message: '+{xp} XP' }), values: { xp: goal.xp } })}</span>
+      </p>
+    </section>
+  );
+}
+
 function Shortcut({ keys, label }: { keys: string; label: string }) {
-  return <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--sf-surface)] border border-[var(--sf-border)] rounded shadow-xs font-mono font-bold text-[var(--sf-text)]">{keys}</kbd><span>{label}</span></div>;
+  return <div className="flex items-center gap-1.5"><kbd className="study-shell-shortcuts__key px-1.5 py-0.5 bg-[var(--sf-surface)] border border-[var(--sf-border)] rounded shadow-xs font-mono font-bold text-[var(--sf-text)]">{keys}</kbd><span>{label}</span></div>;
 }

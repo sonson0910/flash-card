@@ -10,6 +10,7 @@ import {
   normalizeCardData,
   normalizeCardTag,
   normalizeCardTags,
+  normalizeLanguageDetails,
 } from './cardNormalization';
 
 describe('normalizeCardData', () => {
@@ -334,5 +335,78 @@ describe('normalizeCardData', () => {
   it('sanitizes an unsafe fallback document id', () => {
     const card = normalizeCardData({ word: 'safe' }, 'folder/card id');
     expect(card.id).toBe('folder_card_id');
+  });
+
+  it('normalizes structured languageDetails on a card and drops empty or invalid subfields', () => {
+    const card = normalizeCardData({
+      word: '  la décision  ',
+      languageDetails: {
+        pronunciations: [
+          { tag: '  UK  ', ipa: '  /ɪˈmiː.di.ət/  ' },
+          { tag: '', ipa: '/bad/' },
+          { tag: 'US', ipa: '   ' },
+          'bad' as never,
+        ],
+        syllables: ['  dé ', '', 'ci', 'sion '],
+        stressIndex: 2,
+        article: '  la  ',
+        indefiniteArticle: '  une ',
+        gender: 'f',
+        plural: '  les décisions  ',
+        sinoForm: { source: ' 決斷 ', reading: ' quyet doan ' },
+        measureWord: { word: ' 个 ', reading: '' },
+        spokenForm: '  spoken  ',
+        exampleReading: '  lē-zi  ',
+        hints: ['  Ghi chú 1  ', '', 'x'.repeat(150)],
+      },
+    }, 'lang-details');
+
+    expect(card.languageDetails).toEqual({
+      pronunciations: [{ tag: 'UK', ipa: '/ɪˈmiː.di.ət/' }],
+      syllables: ['dé', 'ci', 'sion'],
+      stressIndex: 2,
+      article: 'la',
+      indefiniteArticle: 'une',
+      gender: 'f',
+      plural: 'les décisions',
+      sinoForm: { source: '決斷', reading: 'quyet doan' },
+      measureWord: { word: '个' },
+      spokenForm: 'spoken',
+      exampleReading: 'lē-zi',
+      hints: ['Ghi chú 1', 'x'.repeat(120)],
+    });
+
+    expect(normalizeLanguageDetails({
+      syllables: ['im', 'me', 'di', 'ate'],
+      stressIndex: 4,
+      gender: 'x' as never,
+      sinoForm: { source: '   ', reading: 'orphan' },
+      measureWord: 'invalid' as never,
+    })).toEqual({
+      syllables: ['im', 'me', 'di', 'ate'],
+    });
+
+    expect(normalizeLanguageDetails({
+      syllables: ['a', 'b'],
+      stressIndex: -1,
+    })).toEqual({
+      syllables: ['a', 'b'],
+    });
+
+    expect(normalizeLanguageDetails({
+      syllables: ['a', 'b'],
+      stressIndex: 1.5,
+    })).toEqual({
+      syllables: ['a', 'b'],
+    });
+
+    expect(normalizeLanguageDetails({
+      syllables: [],
+      stressIndex: 0,
+    })).toBeUndefined();
+
+    expect(normalizeLanguageDetails(null)).toBeUndefined();
+    expect(normalizeLanguageDetails(['bad'])).toBeUndefined();
+    expect(normalizeLanguageDetails({ article: '   ', hints: ['   '] })).toBeUndefined();
   });
 });

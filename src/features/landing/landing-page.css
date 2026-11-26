@@ -9,7 +9,7 @@
 
 /* Classic hero (Midnight Aurora and Ink & Paper), ported from the LandingScreen board. */
 html[data-theme-family="classic"] .landing-canvas {
-  --landing-body: color-mix(in srgb, var(--sf-text) 59%, var(--sf-text-muted));
+  --landing-body: var(--sf-text-body);
   --landing-warm: var(--sf-brand-text);
   --landing-btn-radius: 999px;
   --landing-card-radius: 20px;
@@ -18,13 +18,13 @@ html[data-theme-family="classic"] .landing-canvas {
   --landing-primary-shadow: 0 14px 28px -14px color-mix(in srgb, var(--sf-text) 90%, transparent);
   --landing-secondary-shadow: 0 1px 2px color-mix(in srgb, var(--sf-shadow) 27%, transparent);
   --landing-float-bg: color-mix(in srgb, var(--sf-surface) 92%, transparent);
-  --landing-float-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-shadow) 100%, transparent);
+  --landing-float-shadow: 0 10px 24px -14px rgb(60 40 20 / .45);
   --landing-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
   --landing-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
   --landing-warm-line: color-mix(in srgb, var(--sf-brand-text) 22%, transparent);
 }
 html[data-theme-family="classic"].dark .landing-canvas {
-  --landing-body: color-mix(in srgb, var(--sf-text) 37%, var(--sf-text-muted));
+  --landing-body: var(--sf-text-body);
   --landing-warm: var(--sf-reward);
   --landing-btn-radius: 16px;
   --landing-card-radius: 30px;
@@ -32,7 +32,7 @@ html[data-theme-family="classic"].dark .landing-canvas {
   --landing-primary-bg: var(--sf-brand);
   --landing-primary-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 rgb(255 255 255 / .5);
   --landing-secondary-shadow: none;
-  --landing-float-bg: color-mix(in srgb, var(--sf-surface) 70%, transparent);
+  --landing-float-bg: rgb(12 30 40 / .7);
   --landing-float-shadow: 0 16px 40px -16px rgb(0 0 0 / .8);
   --landing-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
   --landing-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
@@ -45,6 +45,13 @@ html[data-theme-family="classic"].dark .landing-canvas {
 html[data-theme-family="classic"].dark .landing-ambient > span { display: block; }
 .landing-ambient > span:first-child { top: -60px; left: calc(50% + 100px); width: 560px; height: 560px; background: color-mix(in srgb, var(--sf-second) 40%, transparent); }
 .landing-ambient > span:last-child { top: 360px; left: calc(50% + 260px); width: 520px; height: 520px; background: color-mix(in srgb, var(--sf-brand) 34%, transparent); }
+@keyframes au-drift-a { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(60px, 40px, 0) scale(1.12); } }
+@keyframes au-drift-b { 0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); } 50% { transform: translate3d(-70px, -30px, 0) scale(.94); } }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-family="classic"].dark:not([data-motion="reduced"]) .landing-ambient > span:first-child { animation: au-drift-a 22s ease-in-out infinite; }
+  html[data-theme-family="classic"].dark:not([data-motion="reduced"]) .landing-ambient > span:last-child { animation: au-drift-b 26s ease-in-out infinite; }
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .landing-sign-in-notice { animation: sf-toast-k 420ms cubic-bezier(.16, 1, .3, 1) both; }
+}
 html[data-theme-family="classic"]:not(.dark) .landing-ambient { background-image: radial-gradient(color-mix(in srgb, var(--sf-text) 8%, transparent) 1px, transparent 1.2px); background-size: 28px 28px; -webkit-mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%); mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%); }
 .landing-grain { opacity: var(--sf-grain-opacity); mix-blend-mode: var(--sf-grain-blend); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3e%3cfilter id='g'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23g)'/%3e%3c/svg%3e"); }
 html.dark .landing-grain { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3e%3cfilter id='g'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23g)'/%3e%3c/svg%3e"); }
@@ -71,27 +78,33 @@ html[data-theme-family="classic"] .landing-hero { display: grid; flex: none; gri
 .landing-classic-title { margin: 22px 0 0; color: var(--sf-text); font-family: var(--sf-font-display); font-optical-sizing: auto; font-size: 104px; font-weight: var(--landing-display-weight); line-height: .95; letter-spacing: -.04em; }
 .landing-classic-lead { max-width: 540px; margin: 26px 0 0; color: var(--landing-body); font-size: 18px; line-height: 1.6; text-wrap: pretty; }
 .landing-classic-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 34px; }
-.landing-primary-action, .landing-secondary-action { display: inline-flex; align-items: center; height: 58px; border-radius: var(--landing-btn-radius); cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+.landing-primary-action, .landing-secondary-action { display: inline-flex; align-items: center; height: 58px; border-radius: var(--landing-btn-radius); cursor: pointer; }
 .landing-primary-action { padding: 0 28px; border: 0; background: var(--landing-primary-bg); box-shadow: var(--landing-primary-shadow); color: var(--sf-on-brand); font-size: 16px; font-weight: 650; }
 .landing-secondary-action { gap: 10px; padding: 0 22px; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--landing-secondary-shadow); color: var(--sf-text); font-size: 15px; font-weight: 600; }
-.landing-primary-action:hover, .landing-secondary-action:hover { transform: translateY(-1px); }
 .landing-secondary-action:hover { border-color: var(--sf-brand); }
 :is(.landing-primary-action, .landing-secondary-action):focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
 .landing-fine-print { margin: 22px 0 0; color: var(--sf-text-muted); font-size: 13.5px; }
 
 .landing-card { position: relative; display: flex; min-width: 0; align-items: center; justify-content: center; }
-.landing-float-chip { position: absolute; z-index: 3; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--landing-float-bg); box-shadow: var(--landing-float-shadow); color: var(--sf-text); font-size: 13px; white-space: nowrap; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-.landing-demo-pronunciation { top: 110px; left: 0; }
+.landing-float-chip-slot { position: absolute; z-index: 3; display: flex; }
+.landing-demo-pronunciation-slot { top: 110px; left: 0; }
+.landing-float-chip-review-slot { top: 190px; right: 0; }
+.landing-float-chip-source-slot { bottom: 60px; left: 20px; }
+.landing-float-chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--landing-float-bg); box-shadow: var(--landing-float-shadow); color: var(--sf-text); font-size: 13px; white-space: nowrap; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .landing-demo-pronunciation > span:first-child { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--landing-accent-soft); color: var(--sf-brand-text); }
 .landing-demo-pronunciation > span:last-child { font-family: var(--sf-font-mono); }
-.landing-float-chip-review { top: 190px; right: 0; border-color: var(--landing-warm-line); color: var(--landing-warm); font-weight: 600; }
-.landing-float-chip-source { bottom: 60px; left: 20px; color: var(--sf-text-muted); }
+.landing-float-chip-review { border-color: var(--landing-warm-line); color: var(--landing-warm); font-weight: 600; }
+.landing-float-chip-source { color: var(--sf-text-muted); }
 .landing-float-chip-source strong { color: var(--sf-text); font-weight: 600; }
+@keyframes sf-bob-k { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -8px, 0); } }
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion="reduced"]) .landing-float-chip { animation: landing-chip-bob 6s ease-in-out infinite; }
-  html:not([data-motion="reduced"]) .landing-float-chip-review { animation-delay: -3s; }
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .landing-float-chip.sf-bob-a { animation: sf-bob-k 5s ease-in-out infinite; }
+  html:not([data-theme-family="crystal"]):not([data-motion="reduced"]) .landing-float-chip.sf-bob-b { animation: sf-bob-k 6s ease-in-out 1s infinite; }
 }
-@keyframes landing-chip-bob { 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-theme-family="crystal"]) :is(.landing-ambient > span, .landing-float-chip-slot, .landing-float-chip, .landing-card-stage, .landing-sign-in-notice) { animation: none; }
+}
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) :is(.landing-ambient > span, .landing-float-chip-slot, .landing-float-chip, .landing-card-stage, .landing-sign-in-notice) { animation: none; }
 .landing-card-stage { position: relative; width: 380px; height: 520px; }
 .landing-card-aura { position: absolute; inset: -40px; border-radius: 80px; background: radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--sf-brand) 35%, transparent), color-mix(in srgb, var(--sf-confetti-4) 25%, transparent) 55%, transparent 80%); opacity: .3; filter: blur(44px); transition: opacity 400ms ease; }
 html.dark .landing-card-aura { background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--sf-second) 80%, transparent), color-mix(in srgb, var(--sf-brand) 50%, transparent) 50%, transparent 80%); }
@@ -126,6 +139,27 @@ html.dark .landing-card-back { --back-text: var(--sf-text); --back-title: var(--
 .landing-classic-features h3 { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--landing-display-weight); line-height: 1.25; }
 .landing-classic-features p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14.5px; line-height: 1.55; }
 
+/* LandingScreen values the hero rules above missed. Board boxes are content-box, so the 32px eyebrow, the 58px
+   secondary action and the 40px float chips each render 2px taller with their 1px line. Text with no line height on
+   the board keeps the normal one. Headline and card word are textStrong. The fine print is text3, which fails AA
+   on the page: dark takes the AA text3 token, light keeps text2 (the AA text3 measures 4.3:1 where it sits). The
+   light card face takes the board's cardShadow. The feature titles are textStrong at normal line height. */
+:where(html:not([data-theme-family=crystal])) .landing-classic-brand { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .landing-eyebrow { height: 34px; }
+:where(html:not([data-theme-family=crystal])) :is(.landing-classic-title, .landing-card-word, .landing-classic-features h3) { color: var(--sf-text-strong, var(--sf-text)); }
+:where(html:not([data-theme-family=crystal])) .landing-classic-features h3 { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .landing-secondary-action { height: 60px; }
+:where(html:not([data-theme-family=crystal])) .landing-fine-print { line-height: normal; }
+:where(html:not([data-theme-family=crystal])).dark .landing-fine-print { color: var(--sf-text-tertiary); }
+:where(html:not([data-theme-family=crystal])) .landing-float-chip { height: 42px; }
+:where(html:not([data-theme-family=crystal])) :is(.landing-card-kicker, .landing-card-prompt) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])):not(.dark) .landing-card-face { box-shadow: var(--sf-card-shadow); }
+/* LandingScreen card back (its script's back colours): light ink #1c2a21 with the brand glow, text heroText, muted
+   #b7ad9b, highlight #f0b48f; dark title textStrong. The translation keeps the normal line height. */
+:where(html:not([data-theme-family=crystal])):not(.dark) .landing-card-back { --back-text: var(--sf-hero-text, #efe8da); --back-muted: #b7ad9b; --back-hl: #f0b48f; background: radial-gradient(ellipse 80% 50% at 50% 10%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent 70%), #1c2a21; }
+:where(html:not([data-theme-family=crystal])).dark .landing-card-back.landing-card-back { --back-title: var(--sf-text-strong, var(--sf-text)); }
+:where(html:not([data-theme-family=crystal])) .landing-card-example-translation { line-height: normal; }
+
 @media (min-width: 1024px) { .landing-header { padding-inline: 16px; } html[data-theme-family="classic"] .landing-header { margin-top: -20px; } }
 @media (min-width: 1024px) and (max-width: 1379px) { html[data-theme-family="classic"] .landing-hero { grid-template-columns: minmax(0, 1fr) 470px; gap: 24px; padding-left: 16px; } .landing-classic-title { font-size: clamp(80px, 7.4vw, 104px); } .landing-classic-features { width: calc(100% - 32px); margin-left: 16px; } }
 @media (max-width: 1023px) {
@@ -143,7 +177,7 @@ html.dark .landing-card-back { --back-text: var(--sf-text); --back-title: var(--
   .landing-classic-actions { margin-top: 26px; }
   .landing-primary-action, .landing-secondary-action { height: 52px; }
   .landing-card { min-height: 0; }
-  .landing-float-chip { display: none; }
+  .landing-float-chip-slot, .landing-float-chip { display: none; }
   .landing-card-stage { width: min(100%, 320px); height: 440px; }
   .landing-card-image { height: 190px; }
   .landing-card-body { padding-inline: 22px; }
@@ -161,36 +195,48 @@ html[data-theme-family="crystal"] .landing-canvas {
   --wing-mid: color-mix(in srgb, var(--sf-brand) 70%, var(--sf-brand-hover));
   --wing-light: color-mix(in srgb, var(--sf-brand) 80%, #fff);
   --wing-edge: color-mix(in srgb, var(--sf-brand) 30%, #fff);
-  --crystal-cta-bg: linear-gradient(180deg, var(--sf-brand) 0%, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-brand-hover)) 50%, var(--sf-brand-hover) 100%);
+  /* White 13-15px labels sit on this fill (badge, header button, kicker tags). Its light end is the board crimson
+     #e0173f rather than the brand #ff2a4d: on #ff2a4d the top of each glyph measured 4.2:1, on #e0173f every glyph
+     row is at least 4.5:1. */
+  --crystal-cta-bg: linear-gradient(180deg, #e0173f 0%, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-brand-hover)) 50%, var(--sf-brand-hover) 100%);
+  /* Small crimson text drawn straight on the page. The pale board sky behind the light page is darker than the
+     canvas, so light mode takes the board's deeper crimson there to stay above 4.5:1. */
+  --crystal-page-crimson: #a30c2d;
+  /* The Free vs Pro note is the board's text3 (#7a8397) in dark mode. Light text3 (#627392) measured 4.0:1 on the
+     lower end of the panel face, so light mode takes the next board grey, text2. */
+  --crystal-panel-note: #3f5272;
   --crystal-ribbon-bg: linear-gradient(180deg, var(--wing-light) 0%, var(--sf-brand) 45%, var(--sf-brand-hover) 100%);
   --crystal-body: color-mix(in srgb, var(--sf-text) 55%, var(--sf-text-muted));
   --crystal-card-front: linear-gradient(180deg, color-mix(in srgb, var(--sf-canvas) 45%, #fff), var(--sf-canvas));
   --crystal-holo: color-mix(in srgb, var(--sf-second) 45%, var(--sf-text));
   --crystal-pink: color-mix(in srgb, var(--sf-brand-text) 70%, var(--sf-text));
-  --crystal-beam: rgb(255 255 255 / .5);
 }
 html[data-theme-family="crystal"].dark .landing-canvas {
   --crystal-body: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
   --crystal-card-front: var(--sf-card-bg);
   --crystal-holo: var(--sf-second);
   --crystal-pink: color-mix(in srgb, var(--sf-brand-text) 65%, var(--sf-text));
-  --crystal-beam: rgb(255 255 255 / .08);
+  --crystal-page-crimson: var(--sf-brand-text);
+  --crystal-panel-note: #7a8397;
 }
-.crystal-backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%); }
-html.dark .crystal-backdrop { background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, color-mix(in srgb, var(--sf-brand-hover) 30%, transparent), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, color-mix(in srgb, var(--wing-deep) 35%, transparent), transparent 70%), var(--sf-canvas); }
-.crystal-backdrop::before { position: absolute; inset: 0; content: ""; background: var(--nk-stars); }
-.crystal-beam { position: absolute; top: -20%; left: 18%; width: 160px; height: 140%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, var(--crystal-beam), transparent); filter: blur(4px); }
-.crystal-beam + .crystal-beam { left: 58%; width: 90px; filter: blur(3px); }
-.crystal-backdrop-wings { position: absolute; bottom: -120px; left: -150px; width: 640px; height: 430px; opacity: var(--nk-wing-opacity); transform: rotate(-12deg); filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 55%, transparent)); }
-.crystal-backdrop-wings-end { top: -60px; right: -150px; bottom: auto; left: auto; transform: scaleX(-1) rotate(-18deg); }
-@media (max-width: 900px) { .crystal-backdrop-wings-end { display: none; } }
-:is(.crystal-backdrop-wings, .crystal-stage-wings) svg { display: block; overflow: visible; }
+/* The hero sits on the same painted nebula as the signed-in app (light and dark art come from --sf-space).
+   The painting already carries the light beams, corner shards and stars, so no CSS layers are drawn over it.
+   Its last 120px fade into the canvas colour that the sections below the hero sit on, so it has no hard edge.
+   Copy and links sit on the painting without a halo, as on the board: the painting stays dark (pale in light
+   mode) behind the copy column, so the text keeps AA contrast everywhere except single star pixels. */
+.crystal-backdrop { position: absolute; inset: 0; pointer-events: none; background: var(--sf-space), var(--sf-canvas); -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 120px), transparent); }
+.crystal-stage-wings svg { display: block; overflow: visible; }
+/* Dark control tints are a few percent of white, which the board draws on a near-black page: on the painting
+   the controls drawn over it (theme toggle, menu button, secondary action, proof chip) take the glass fill. */
+html[data-theme-family="crystal"] .landing-header summary { background-color: var(--sf-glass-surface); }
 
-html[data-theme-family="crystal"] .landing-header { min-height: 80px; gap: 30px; font-family: var(--sf-font-display); font-style: italic; letter-spacing: .02em; transform: translateY(-20px); }
+/* The transform makes the header its own stacking context, so it needs a z-index above the hero copy (2), Lumi
+   and the ribbon (5): otherwise the open mobile menu is drawn underneath the headline. */
+html[data-theme-family="crystal"] .landing-header { position: relative; z-index: 20; min-height: 80px; gap: 30px; font-family: var(--sf-font-display); font-style: italic; letter-spacing: .02em; transform: translateY(-20px); }
 html[data-theme-family="crystal"] .landing-desktop-nav { gap: 28px; margin-left: 20px; }
 html[data-theme-family="crystal"] .landing-desktop-nav :is(a, button) { min-height: 44px; padding-inline: 0; color: var(--sf-text-muted); font-size: 15px; font-weight: 700; letter-spacing: .06em; }
 html[data-theme-family="crystal"] .landing-desktop-nav :is(a, button):hover { color: var(--sf-text); }
-html[data-theme-family="crystal"] .landing-theme-toggle { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family="crystal"] .landing-theme-toggle { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-glass-surface); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
 html[data-theme-family="crystal"] .landing-sign-in { padding-inline: 8px; color: var(--sf-text); font-size: 15px; font-weight: 700; }
 html[data-theme-family="crystal"] .landing-header-start { height: 44px; padding-inline: 22px; background: var(--crystal-cta-bg); box-shadow: none; color: var(--sf-on-primary); font-size: 15px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .landing-crystal-mark,.landing-crystal-brand { display: none; }
@@ -198,9 +244,10 @@ html[data-theme-family="crystal"] .landing-classic-mark,html[data-theme-family="
 html[data-theme-family="crystal"] .landing-crystal-mark { display: block; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
 html[data-theme-family="crystal"] .landing-crystal-brand { display: inline; color: var(--sf-text); font: italic 900 26px var(--sf-font-display); letter-spacing: .01em; }
 html[data-theme-family="crystal"] .landing-crystal-brand em { color: var(--sf-brand-text); font-style: inherit; }
-html[data-theme-family="crystal"] .landing-atmospheres { display: none; }
 
-.crystal-landing-hero { position: relative; flex: none; width: calc(100% + 96px); height: calc(100svh - 100px); min-height: 760px; margin-inline: -48px; display: grid; grid-template-columns: 640px minmax(0, 1fr); align-items: start; overflow: hidden; padding: 36px 0 0 80px; box-sizing: border-box; }
+/* The hero does not clip: the ribbon has to run past the 92rem column to both viewport edges. The #top section
+   around it clips at the viewport and the canvas root keeps the page from scrolling sideways. */
+.crystal-landing-hero { position: relative; flex: none; width: calc(100% + 96px); height: calc(100svh - 100px); min-height: 760px; margin-inline: -48px; display: grid; grid-template-columns: 640px minmax(0, 1fr); align-items: start; padding: 36px 0 0 80px; box-sizing: border-box; }
 .crystal-copy { position: relative; z-index: 2; max-width: 620px; padding: 0; }
 .crystal-badge { display: inline-flex; height: 32px; align-items: center; padding: 0 18px; transform: skewX(-16deg); background: var(--crystal-cta-bg); }
 .crystal-badge > span { transform: skewX(16deg); color: #fff; font: italic 800 13px/1 var(--sf-font-display); letter-spacing: .16em; text-transform: uppercase; }
@@ -220,12 +267,11 @@ html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0
 .crystal-primary, .crystal-secondary { position: relative; display: inline-flex; align-items: center; height: 62px; border: 0; overflow: hidden; clip-path: var(--nk-chamfer); font-family: var(--sf-font-display); font-style: italic; cursor: pointer; }
 .crystal-primary { gap: 12px; padding: 0 40px; background: var(--crystal-cta-bg); color: #fff; font-size: 21px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .crystal-primary > :not(.crystal-shine) { position: relative; }
-.crystal-shine { position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / .4); opacity: 0; transform: translateX(-80px) skewX(-20deg); }
-@media (prefers-reduced-motion: no-preference) { html:not([data-motion="reduced"]) .crystal-shine { opacity: 1; animation: crystal-cta-shine 3.2s ease-in-out infinite; } }
-@keyframes crystal-cta-shine { 0%, 55% { transform: translateX(-80px) skewX(-20deg); } 100% { transform: translateX(420px) skewX(-20deg); } }
-.crystal-secondary { padding: 0 28px; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text); font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+/* The band rests at the left edge, as the board's reduced-motion render shows it; its nk-shine sweep is in crystal-motion.css. */
+.crystal-shine { position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / .4); }
+.crystal-secondary { padding: 0 28px; background: var(--sf-glass-surface); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text); font-size: 18px; font-weight: 700; letter-spacing: .04em; }
 :is(.crystal-primary, .crystal-secondary):focus-visible { outline: 2px solid var(--sf-text); outline-offset: 3px; }
-.crystal-proof { display: inline-flex; align-items: center; gap: 8px; height: 36px; margin: 30px 0 0; padding: 0 14px; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); font-size: 14px; font-weight: 700; }
+.crystal-proof { display: inline-flex; align-items: center; gap: 8px; height: 36px; margin: 30px 0 0; padding: 0 14px; clip-path: var(--nk-chamfer-sm); background: var(--sf-glass-surface); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); font-size: 14px; font-weight: 700; }
 .crystal-proof > span { width: 8px; height: 8px; transform: rotate(45deg); background: var(--sf-second); box-shadow: 0 0 8px var(--sf-second); }
 .crystal-proof strong { color: var(--sf-text); font-weight: 900; }
 
@@ -247,25 +293,202 @@ html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0
 .crystal-demo-right { top: 60px; left: 330px; z-index: 2; transform: rotate(14deg); }
 .crystal-demo-main { top: 0; left: 165px; z-index: 3; transform: none; }
 .crystal-demo-face { position: absolute; inset: 3px; display: flex; flex-direction: column; overflow: hidden; clip-path: var(--nk-chamfer); background: var(--crystal-card-front); }
-.crystal-demo-art { position: relative; height: 150px; flex: none; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%); }
+/* The art repeats the face's top-left chamfer in its own clip, so the photo follows the card silhouette by
+   itself instead of relying on the face's clip alone. */
+.crystal-demo-art { position: relative; height: 150px; flex: none; overflow: hidden; clip-path: polygon(18px 0, 100% 0, 100% 80%, 0 100%, 0 18px); }
 .crystal-demo-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .crystal-demo-art > span { position: absolute; top: 12px; left: 12px; display: flex; height: 28px; align-items: center; gap: 6px; padding: 0 10px; clip-path: var(--nk-chamfer-sm); background: var(--tier-rim); color: var(--sf-on-brand); font: italic 700 11px/1 var(--sf-font-display); }
 .crystal-demo-art > span i { color: #fff; font-size: 16px; font-weight: 900; text-shadow: 0 2px 0 var(--wing-deep); }
 .crystal-demo-face > strong { padding: 4px 16px 0; color: var(--sf-text); font: italic 900 32px/1.05 var(--sf-font-display); }
 .crystal-demo-face > small { margin-top: 2px; padding: 0 16px; color: var(--sf-text-muted); font: 12px/1.3 var(--sf-font-mono); }
 .crystal-demo-face > b { margin-top: auto; padding: 0 16px 16px; color: var(--tier-text); font: italic 800 19px/1.2 var(--sf-font-display); }
-.crystal-hero-lumi { position: absolute; z-index: 5; top: 130px; left: -70px; width: 200px; height: 544px; max-width: none; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); transform: scale(.3); transform-origin: 50% 100%; transition: transform 700ms var(--nk-snap); }
+/* The wrapper places Lumi and carries her nk-float (crystal-motion.css), turning on its centre as on the board;
+   the image keeps its own grow-in transform. */
+/* At rest her box starts just right of the headline's last letter and ends before the first demo word. */
+.crystal-hero-lumi-wrap { position: absolute; z-index: 5; top: 130px; left: -70px; width: 200px; height: 544px; }
+.crystal-hero-lumi { display: block; width: 100%; height: 100%; max-width: none; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); transform: scale(.3); transform-origin: 50% 100%; transition: transform 700ms var(--nk-snap); }
 .crystal-hero-lumi[data-revealed] { transform: none; }
-.crystal-ribbon { position: absolute; right: -40px; bottom: 28px; left: -40px; z-index: 5; display: flex; height: 64px; align-items: center; overflow: hidden; transform: skewY(-1.5deg); background: var(--crystal-ribbon-bg); box-shadow: 0 0 40px -6px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+/* The hero is centred in the viewport, so 50% - 50vw reaches both viewport edges at every width. */
+.crystal-ribbon { position: absolute; right: calc(50% - 50vw); bottom: 28px; left: calc(50% - 50vw); z-index: 5; display: flex; height: 64px; align-items: center; overflow: hidden; transform: skewY(-1.5deg); background: var(--crystal-ribbon-bg); box-shadow: 0 0 40px -6px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 .crystal-ribbon-track { display: flex; flex: none; white-space: nowrap; }
 .crystal-ribbon-track > span { display: flex; align-items: center; gap: 18px; padding: 0 18px; color: #fff; font: italic 800 19px/1 var(--sf-font-display); letter-spacing: .06em; }
 .crystal-ribbon-track svg { flex: none; color: var(--sf-reward); }
-@media (prefers-reduced-motion: no-preference) { html:not([data-motion="reduced"]) .crystal-ribbon-track { animation: crystal-ribbon-marquee 48s linear infinite; } }
+/* The track holds six copies of the items and loops by half its length (three copies), so each half is wider
+   than a 4K viewport; 144s keeps the old pace of one copy every 48s. */
+@media (prefers-reduced-motion: no-preference) { html:not([data-motion="reduced"]) .crystal-ribbon-track { animation: crystal-ribbon-marquee 144s linear infinite; } }
 @keyframes crystal-ribbon-marquee { to { transform: translateX(-50%); } }
+/* Sections below the hero are ported from the AnimeLandingSales board (canvas/src/AnimeLandingSales.dc.html).
+   The page glows are the board's ABG partial (space glows, starfield, two beams) on a layer fixed to the viewport,
+   so every screen of the page shows the board's composition behind the copy and the hero painting fades into it.
+   The ABG flares are left out: copy scrolls over every point of a fixed layer, and a white flare under 13-16px
+   text falls below 4.5:1 (the board itself hides a flare that would sit under copy). */
+html[data-theme-family="crystal"] .landing-canvas { isolation: isolate; }
+html[data-theme-family="crystal"] #top { border-bottom-color: transparent; }
+.crystal-page-glow { --crystal-beam: rgb(255 255 255 / .5); position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, rgb(255 84 112 / .18), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%); }
+html.dark .crystal-page-glow { --crystal-beam: rgb(255 255 255 / .08); background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%); }
+.crystal-page-glow > .nk-starfield { position: absolute; inset: 0; background: var(--nk-stars); }
+.crystal-page-glow > .nk-beam { position: absolute; top: -20%; height: 140%; opacity: .45; transform: rotate(24deg); background: linear-gradient(90deg, transparent, var(--crystal-beam), transparent); }
+.crystal-page-glow > .nk-beam:nth-child(2) { left: 18%; width: 160px; filter: blur(4px); }
+.crystal-page-glow > .nk-beam:nth-child(3) { left: 58%; width: 90px; filter: blur(3px); }
+
+/* Section rhythm from the board: 72px side padding at 1440 (content up to 1296px wide, centred beyond that); a
+   section starts 30px down like the board's top block, after the 28px the board leaves under its ribbon; rows inside
+   a section are 22px apart. No bands or rules between sections. */
+html[data-theme-family="crystal"] .landing-canvas main > section:not(#top) { padding-block: 30px 28px; border-width: 0; background: transparent; }
+@media (min-width: 1024px) {
+  html[data-theme-family="crystal"] .landing-canvas main > section:not(#top) { max-width: none; margin-inline: 0; padding-inline: max(72px, calc((100% - 1296px) / 2)); }
+  html[data-theme-family="crystal"] .landing-canvas main > section:not(#top) > .mx-auto { max-width: none; }
+  html[data-theme-family="crystal"] .landing-section-title { font-size: 54px; }
+  html[data-theme-family="crystal"] .landing-extension-grid { grid-template-columns: minmax(0, 680px) minmax(0, 1fr); gap: 40px; align-items: center; }
+  html[data-theme-family="crystal"] .landing-methods-grid { grid-template-columns: minmax(0, 1fr) 470px; gap: 28px; }
+  html[data-theme-family="crystal"] .landing-language-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+html[data-theme-family="crystal"] .landing-section-title { color: var(--sf-text-strong); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; line-height: 1.04; letter-spacing: 0; text-transform: uppercase; }
+html[data-theme-family="crystal"] .landing-section-title + p { max-width: 540px; margin-top: 14px; color: var(--sf-text-body); font-size: 15.5px; line-height: 1.55; }
+/* Kickers are the board's skewed crimson tag; the slab is a pseudo-element so the label itself stays upright. */
+html[data-theme-family="crystal"] .landing-kicker { position: relative; isolation: isolate; display: flex; width: fit-content; min-height: 30px; align-items: center; margin-top: 0; padding: 0 14px; color: #fff; font: italic 900 13px/1.2 var(--sf-font-display); letter-spacing: .14em; text-transform: uppercase; }
+html[data-theme-family="crystal"] .landing-kicker::before { position: absolute; z-index: -1; inset: 0; content: ""; transform: skewX(-14deg); background: var(--crystal-cta-bg); }
+html[data-theme-family="crystal"] .landing-kicker + .landing-section-title { margin-top: 16px; }
+html[data-theme-family="crystal"] .text-center > .landing-kicker { margin-inline: auto; }
+/* Inside a panel the board labels are plain crimson text, not tags. */
+html[data-theme-family="crystal"] .landing-methods-panel .landing-kicker { display: block; min-height: 0; padding: 0; color: var(--sf-brand-text); font-size: 12px; font-weight: 800; }
+html[data-theme-family="crystal"] .landing-methods-panel .landing-kicker::before { content: none; }
+html[data-theme-family="crystal"] .landing-icon-tile { display: none; }
+html[data-theme-family="crystal"] .landing-canvas .font-serif-hero { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
+html[data-theme-family="crystal"] .landing-extension-index { color: var(--crystal-page-crimson); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .1em; }
+.landing-step-badge { clip-path: var(--nk-chamfer-sm); background: var(--sf-glass-surface); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); font: italic 900 20px/1 var(--sf-font-display); }
+/* Panels and cards take the board's glass panel with a 1px inset edge. */
+html[data-theme-family="crystal"] .landing-language-list > li { border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family="crystal"] .landing-methods-panel { padding: 22px 22px 20px; border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+html[data-theme-family="crystal"] .landing-canvas .landing-methods-quote { margin-top: 16px; color: var(--sf-text-strong); font: 700 21px/1.42 var(--sf-font-body); }
+/* Board tags are skewed slabs; the slab is a pseudo-element so the label itself stays upright. */
+html[data-theme-family="crystal"] .landing-status-tag { position: relative; isolation: isolate; border-radius: 0; background: none; color: var(--crystal-page-crimson); font-family: var(--sf-font-display); font-style: italic; letter-spacing: .04em; }
+html[data-theme-family="crystal"] .landing-status-tag::before { position: absolute; z-index: -1; inset: 0; content: ""; transform: skewX(-14deg); background: color-mix(in srgb, var(--sf-brand) 10%, transparent); }
+
+/* Free vs Pro: the mastered tier rim fills the chamfered panel and the face is a second chamfer 3px inside it, so the
+   rim also runs along both cut corners. The board's glow sits on the wrapper: on the panel it would be cut by the
+   panel's own clip-path. */
+html[data-theme-family="crystal"] .landing-pricing-glow { position: relative; filter: drop-shadow(0 0 22px rgb(255 42 77 / .6)); }
+html[data-theme-family="crystal"] .landing-pricing-panel { position: relative; isolation: isolate; padding: 16px 22px 18px; border: 0; background: var(--sf-gold-rim); box-shadow: none; }
+html[data-theme-family="crystal"] .landing-pricing-panel::before { position: absolute; z-index: -1; inset: 3px; content: ""; clip-path: var(--nk-chamfer); background: var(--sf-card-front); }
+html[data-theme-family="crystal"] .landing-pricing-head { grid-template-columns: 1fr 90px 100px; gap: 0; height: 30px; align-items: center; padding-bottom: 0; border-bottom: 0; }
+html[data-theme-family="crystal"] .landing-pricing-head > span { font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+html[data-theme-family="crystal"] .landing-pricing-head > span:first-child { color: var(--sf-text-muted); font-weight: 900; }
+html[data-theme-family="crystal"] .landing-pricing-head > span:nth-child(2) { color: var(--sf-holo-text); }
+html[data-theme-family="crystal"] .landing-pricing-head ~ div { grid-template-columns: 1fr 90px 100px; gap: 0; min-height: 33px; padding-block: 0; border-top: 1px solid var(--sf-border); border-bottom: 0; font-size: 13.5px; }
+html[data-theme-family="crystal"] .landing-pricing-head ~ div > span:first-child { color: var(--sf-text); font-weight: 700; }
+html[data-theme-family="crystal"] .landing-pricing-panel .font-mono { font-family: inherit; font-size: 13.5px; font-weight: 800; }
+html[data-theme-family="crystal"] .landing-pricing-panel .font-mono.font-semibold { color: var(--sf-text-strong); font-weight: 900; }
+html[data-theme-family="crystal"] .landing-pricing-price { margin-top: 12px; color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .landing-pricing-note { margin-top: 8px; color: var(--crystal-panel-note); font-size: 12px; line-height: 1.5; }
+/* At desktop widths the pricing block is the board's panel row (copy | 470px panel, 28px apart) with the answers as
+   a row of rule-led columns 22px under it (170px heading column, three answers, 24px gaps). */
+@media (min-width: 1024px) {
+  html[data-theme-family="crystal"] .landing-pricing-layout { display: grid; grid-template-columns: minmax(0, 1fr) 470px; grid-template-rows: 1fr auto auto 1fr auto; column-gap: 28px; }
+  html[data-theme-family="crystal"] .landing-pricing-layout > .landing-kicker { grid-area: 2 / 1; }
+  html[data-theme-family="crystal"] .landing-pricing-layout > .landing-section-title { grid-area: 3 / 1; }
+  html[data-theme-family="crystal"] .landing-pricing-grid { display: contents; }
+  html[data-theme-family="crystal"] .landing-pricing-glow { grid-area: 1 / 2 / 5 / 3; }
+  html[data-theme-family="crystal"] .landing-pricing-faq { grid-area: 5 / 1 / 6 / 3; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 24px; margin-top: 22px; }
+  html[data-theme-family="crystal"] .landing-pricing-faq > .landing-faq { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 0; }
+}
+html[data-theme-family="crystal"] .landing-faq-title { margin: 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 28px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-transform: uppercase; }
+html[data-theme-family="crystal"] :is(.landing-faq, .landing-methods-points) { display: grid; gap: 16px; padding-left: 0; border-left: 0; }
+html[data-theme-family="crystal"] :is(.landing-faq, .landing-methods-points) > div { margin-block: 0; padding-left: 14px; border-left: 3px solid var(--sf-brand); }
+html[data-theme-family="crystal"] :is(.landing-faq, .landing-methods-points) > div:nth-child(3n + 2) { border-left-color: var(--sf-second); }
+html[data-theme-family="crystal"] :is(.landing-faq, .landing-methods-points) > div:nth-child(3n) { border-left-color: var(--sf-reward); }
+html[data-theme-family="crystal"] :is(.landing-faq, .landing-methods-points) dt { color: var(--sf-text-strong); font-size: 15px; font-weight: 900; line-height: normal; }
+html[data-theme-family="crystal"] :is(.landing-faq, .landing-methods-points) dd { margin-top: 6px; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
+html[data-theme-family="crystal"] .landing-closing-start { background: var(--crystal-cta-bg); box-shadow: none; color: #fff; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Footer from the board: one 60px row under a strong rule, 13px bold muted text 26px apart, the star mark with its
+   glow and the two-tone Kanit wordmark. */
+html[data-theme-family="crystal"] .landing-footer { border-top-color: var(--sf-edge-highlight); font-size: 13px; font-weight: 700; }
+html[data-theme-family="crystal"] .landing-footer :is(nav, p) { font-size: 13px; font-weight: 700; }
+html[data-theme-family="crystal"] .landing-footer-brand { color: var(--sf-text-strong); font: italic 900 18px var(--sf-font-display); letter-spacing: 0; text-transform: uppercase; }
+html[data-theme-family="crystal"] .landing-footer-brand em { color: var(--crystal-page-crimson); font-style: inherit; }
+.landing-footer-mark { display: inline-block; margin-right: 10px; vertical-align: middle; filter: drop-shadow(0 0 8px rgb(255 42 77 / .7)); }
+@media (min-width: 640px) {
+  html[data-theme-family="crystal"] .landing-footer { padding-block: 0; }
+  html[data-theme-family="crystal"] .landing-footer > div { min-height: 60px; justify-content: flex-start; gap: 26px; }
+  html[data-theme-family="crystal"] .landing-footer > div > p:last-child { margin-left: auto; }
+  /* The board centres the mark and the wordmark on the row; a flex line does that independent of font metrics. */
+  html[data-theme-family="crystal"] .landing-footer > div > p:first-child { display: flex; flex-wrap: wrap; align-items: center; }
+  html[data-theme-family="crystal"] .landing-footer-tagline { margin-left: .3em; }
+}
+@media (min-width: 1024px) {
+  html[data-theme-family="crystal"] .landing-footer { padding-inline: max(72px, calc((100% - 1296px) / 2)); }
+  html[data-theme-family="crystal"] .landing-footer > div { max-width: none; }
+}
 @media (min-width: 1280px) and (max-width: 1439px) { html[data-theme-family="crystal"] .landing-header { gap: 6px; padding-inline: 0; } html[data-theme-family="crystal"] .landing-desktop-nav { gap: 14px; margin-left: 8px; } html[data-theme-family="crystal"] .landing-header nav :is(a, button) { font-size: .78rem; } html[data-theme-family="crystal"] .landing-header .brand-action { padding-inline: 10px; font-size: .78rem; } }
 /* Below 1400px the hero grid has too little width for Lumi to sit beside the
    headline and demo cards without overlapping either, so it is hidden. */
-@media (max-width: 1399px) { .crystal-hero-lumi { display: none; } .crystal-card-deck { left: 40px; transform: scale(.86); transform-origin: top left; } }
+@media (max-width: 1399px) { .crystal-hero-lumi-wrap { display: none; } .crystal-card-deck { left: 40px; transform: scale(.86); transform-origin: top left; } }
 @media (max-width: 1279px) { .crystal-landing-hero { grid-template-columns: 520px minmax(0, 1fr); padding-left: 48px; } .crystal-copy h1 { font-size: 96px; } .crystal-card-deck { left: 0; transform: scale(.7); } .crystal-stage-wings { left: -220px; transform: scale(.75); transform-origin: top left; } }
 @media (max-width: 900px) { .crystal-landing-hero { width: 100%; height: auto; min-height: 720px; margin: 0; grid-template-columns: 1fr; row-gap: 28px; padding: 42px 0 104px; } .crystal-card-stage { min-height: 330px; margin-top: 0; overflow: hidden; } .crystal-card-deck { top: 4px; left: 50%; transform: translateX(-50%) scale(.72); transform-origin: top center; } .crystal-stage-wings { top: -40px; left: 50%; transform: translateX(-50%) scale(.6); transform-origin: top center; } .crystal-hero-flare { display: none; } }
 @media (max-width: 639px) { .crystal-landing-hero { min-height: 720px; padding-bottom: 96px; } .crystal-copy { min-width: 0; padding-left: 0; } .crystal-copy h1 { max-width: 100%; font-size: clamp(3rem, 16vw, 4rem); overflow-wrap: anywhere; } .crystal-tagline { font-size: 1.35rem; } .crystal-description { max-width: 21rem; font-size: .93rem; } .crystal-actions { display: grid; grid-template-columns: 1fr; max-width: 18rem; margin-top: 20px; } .crystal-primary, .crystal-secondary { width: 100%; height: 52px; padding-inline: 14px; font-size: .95rem; white-space: nowrap; justify-content: center; } .crystal-proof { margin-top: 20px; } .crystal-card-stage { min-width: 0; min-height: 270px; overflow: hidden; } .crystal-card-deck { transform: translateX(-50%) scale(.56); } .crystal-ribbon { bottom: 20px; height: 52px; } .crystal-ribbon-track > span { gap: 12px; padding: 0 12px; font-size: 14px; } }
+
+/* Edges follow the boards: a panel's edge is a 1px inset shadow that the chamfer clips, so the cut corners carry no
+   line. Tailwind's real border on these controls is swapped for that inset edge, and text-only controls take the
+   board's square corners (the boards round nothing). */
+html[data-theme-family="crystal"] :is(.landing-sign-in, .landing-header > a, .landing-desktop-nav :is(a, button), .landing-footer a) { border-radius: 0; }
+html[data-theme-family="crystal"] .landing-action { border: 0; background: var(--sf-glass-surface); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer); }
+html[data-theme-family="crystal"] .landing-header summary.landing-action { clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] .landing-mobile-menu { border: 0; box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+
+/* Classic below-the-fold sections and navigation controls (excluding pricing comparison). */
+html[data-theme-family="classic"] .landing-canvas main > section:not(#top) { border-top-color: var(--sf-nav-line, var(--sf-border)); }
+html[data-theme-family="classic"] .landing-action { border-radius: var(--landing-btn-radius); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); }
+html[data-theme-family="classic"] .landing-header summary.landing-action { width: 42px; height: 42px; border-radius: 50%; }
+html[data-theme-family="classic"] .landing-mobile-menu { border: var(--sf-dialog-border, 1px solid var(--sf-border)); border-radius: var(--sf-panel-radius, 18px); background: var(--sf-dialog-bg, var(--sf-surface)); box-shadow: var(--sf-dialog-shadow, var(--sf-panel-shadow)); }
+html[data-theme-family="classic"] .landing-mobile-menu :is(a, button) { border-radius: calc(var(--sf-panel-radius, 18px) - 6px); }
+html[data-theme-family="classic"] .landing-kicker { color: var(--sf-brand-text); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+html[data-theme-family="classic"] .landing-section-title { color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-optical-sizing: auto; font-weight: var(--landing-display-weight); line-height: 1.05; letter-spacing: -.03em; }
+html[data-theme-family="classic"] .landing-section-title em { color: var(--sf-brand); font-style: var(--sf-em-style, italic); text-shadow: var(--sf-em-glow, none); }
+html[data-theme-family="classic"] .landing-section-title + p { color: var(--landing-body); }
+html[data-theme-family="classic"] .landing-step-badge { clip-path: none; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-raised); box-shadow: none; color: var(--sf-brand-text); font: var(--sf-em-style, italic) 400 20px/1 var(--sf-font-display); }
+html[data-theme-family="classic"] .landing-extension-index { color: var(--sf-brand-text); font-family: var(--sf-font-mono); font-weight: 600; letter-spacing: .08em; }
+html[data-theme-family="classic"] .landing-icon-tile { border: 1px solid var(--landing-accent-line); border-radius: 14px; background: var(--landing-accent-soft); }
+html[data-theme-family="classic"] .landing-language-list > li { border-color: var(--sf-border); border-radius: var(--sf-panel-radius, 18px); background: var(--sf-surface-glass); box-shadow: var(--sf-panel-shadow); -webkit-backdrop-filter: var(--sf-panel-blur, none); backdrop-filter: var(--sf-panel-blur, none); }
+html[data-theme-family="classic"] .landing-status-tag { border: 1px solid var(--landing-accent-line); border-radius: 999px; background: var(--landing-accent-soft); color: var(--sf-brand-text); }
+html[data-theme-family="classic"] .landing-methods-points { border-left-color: var(--sf-brand); }
+html[data-theme-family="classic"] .landing-methods-points dt { color: var(--sf-text-strong, var(--sf-text)); }
+html[data-theme-family="classic"] .landing-methods-points dd { color: var(--sf-text-muted); }
+html[data-theme-family="classic"] .landing-methods-panel { border-color: var(--sf-border); border-radius: var(--sf-card-radius, 20px); background: var(--sf-surface-glass); box-shadow: var(--sf-panel-shadow); -webkit-backdrop-filter: var(--sf-panel-blur, none); backdrop-filter: var(--sf-panel-blur, none); }
+html[data-theme-family="classic"].dark .landing-methods-panel { background: var(--sf-card-bg); box-shadow: var(--sf-card-shadow); }
+html[data-theme-family="classic"] .landing-methods-quote { color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-weight: var(--landing-display-weight); }
+html[data-theme-family="classic"] .landing-closing-start { border-radius: var(--landing-btn-radius); background: var(--landing-primary-bg); box-shadow: var(--landing-primary-shadow); color: var(--sf-on-brand); font-weight: 650; }
+html[data-theme-family="classic"] .landing-closing-start:hover { background: var(--landing-primary-bg); }
+/* LandingSales footer: one 68px row under the navLine, 13px text2 items 28px apart, the 26px logo mark 9px before
+   the 18px display wordmark, and the copyright 12px at the row's end. The board's text3 copyright fails AA on the
+   light page, so light keeps text2; dark takes the AA text3 token. The links drop the underline as the board does
+   and show it on hover. The app's tagline and language links are app-only and take the row's text style. */
+html[data-theme-family="classic"] .landing-footer { border-top-color: var(--sf-nav-line, var(--sf-border)); color: var(--sf-text-muted); font-size: 13px; line-height: normal; }
+html[data-theme-family="classic"] .landing-footer :is(nav, p) { font-size: 13px; font-weight: 400; line-height: normal; }
+html[data-theme-family="classic"] .landing-footer-brand { color: var(--sf-text); font: 400 18px var(--sf-font-display); letter-spacing: normal; }
+html[data-theme-family="classic"] .landing-footer-brand em { color: var(--sf-brand); font-style: var(--sf-em-style, italic); }
+html[data-theme-family="classic"] .landing-footer a { border-radius: var(--landing-btn-radius); text-decoration-line: none; }
+html[data-theme-family="classic"] .landing-footer a:hover { text-decoration-line: underline; }
+:where(html:not([data-theme-family=crystal])) .landing-footer-classic-mark { display: inline-flex; width: 26px; height: 26px; margin-right: 9px; flex: none; align-items: center; justify-content: center; vertical-align: middle; border-radius: 8px; background: var(--sf-logo-bg); box-shadow: var(--sf-logo-shadow); color: var(--sf-logo-text); font: italic 400 15px var(--sf-font-display); }
+:where(html:not([data-theme-family=crystal])).dark .landing-footer > div > p:last-child > span { color: var(--sf-text-tertiary); }
+:where(html:not([data-theme-family=crystal])) .landing-footer > div > p:last-child > span { font-size: 12px; }
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .landing-footer.landing-footer { padding-block: 0; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div { min-height: 68px; flex-wrap: wrap; justify-content: flex-start; gap: 12px 28px; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div > p:first-child { display: flex; flex-wrap: wrap; align-items: center; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer-tagline { margin-left: .3em; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div > p:last-child { display: contents; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div > p:last-child > span { margin-left: auto; }
+}
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .landing-footer.landing-footer { padding-inline: max(72px, calc((100% - 1296px) / 2)); }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div { max-width: none; }
+}
+/* LandingSales FAQ: the "Questions" title in the display face, and each item under a lineStrong rule with its
+   question 14.5px/650 textStrong and its answer 13px/1.55 text2. The items stay stacked in the pricing grid's
+   second column beside the Free vs Pro panel, which is not rebuilt. */
+html[data-theme-family="classic"] .landing-faq-title { margin: 0; color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-size: 26px; font-weight: var(--landing-display-weight); line-height: 1.1; letter-spacing: normal; }
+html[data-theme-family="classic"] .landing-faq { padding-left: 0; border-left: 0; }
+html[data-theme-family="classic"] .landing-faq > div { padding-top: 4px; border-top: 1px solid var(--sf-panel-edge-2, var(--sf-border)); }
+html[data-theme-family="classic"] .landing-faq dt { margin-top: 10px; color: var(--sf-text-strong, var(--sf-text)); font-size: 14.5px; font-weight: 650; line-height: normal; }
+html[data-theme-family="classic"] .landing-faq dd { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.55; }

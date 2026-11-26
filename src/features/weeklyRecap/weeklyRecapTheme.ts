@@ -31,9 +31,9 @@ const CARD_PALETTES = {
     heatLevels: ['rgb(251 246 236 / .08)', 'rgb(232 160 117 / .3)', 'rgb(232 160 117 / .55)', '#e8a075', '#f3c7a4'] as const,
   },
   classicDark: {
-    cardBackground: '#1e2b46', cardBackgroundEnd: '#0d4656', cardText: '#f1f6f9', cardMuted: '#a9b7c0',
+    cardBackground: '#0f2a38', cardBackgroundEnd: '#07161f', cardText: '#f1f6f9', cardMuted: '#99a7b0',
     cardChip: 'rgb(255 255 255 / .05)', cardAccent: '#28d3f4',
-    heatLevels: ['#13495a', '#1a6f84', '#1f8ca6', '#28d3f4', '#7ee6fa'] as const,
+    heatLevels: ['rgb(255 255 255 / .06)', 'rgb(40 211 244 / .3)', 'rgb(40 211 244 / .55)', '#28d3f4', '#7ee6fa'] as const,
   },
   crystalLight: {
     cardBackground: '#fff6f8', cardBackgroundEnd: '#f1ecfb', cardText: '#0d1a33', cardMuted: '#3f5272',
@@ -60,8 +60,8 @@ export function resolveWeeklyRecapExportTheme(
     const value = computed?.getPropertyValue(variable)?.trim();
     return value ? value : fallback;
   };
-  // Only the light page's ink card keeps its own heat steps; every other card draws the page heat scale.
-  const pageHeat = family === 'crystal' || dark;
+  // Both Classic cards keep their own heat steps (the WeeklyRecap board's heatC); Crystal cards draw the page heat scale.
+  const pageHeat = family === 'crystal';
   const heatLevels = pageHeat
     ? card.heatLevels.map((fallback, level) => read(`--sf-heat-${level}`, fallback)) as unknown as WeeklyRecapExportTheme['heatLevels']
     : card.heatLevels;

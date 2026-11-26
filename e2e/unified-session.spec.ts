@@ -271,9 +271,9 @@ for (const theme of themes) {
 
       await signIn(page, '/?view=today&locale=en');
       await expect(page.locator('#daily-today-heading')).toBeVisible();
-      // Desktop states the planned size in the session card, the phone composition in the
-      // heading and Crystal in its lede; each reads the same real plan count.
-      await expect(page.getByText(new RegExp(`^${cards.length} (cards planned|words ready to remember\\.|cards are waiting)`)).first()).toBeVisible();
+      // Desktop states the planned size in the session card, the phone composition in the heading, Crystal in
+      // its lede and the Crystal phone in Lumi's bubble, which replaces the lede; each reads the same real plan count.
+      await expect(page.getByText(new RegExp(`^(Hi[^!]*! )?${cards.length} (cards planned|words ready to remember\\.|cards are waiting)`)).filter({ visible: true }).first()).toBeVisible();
       await page.evaluate(() => {
         let seed = 0x51f1a5;
         Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x100000000);
@@ -301,7 +301,14 @@ for (const theme of themes) {
       await expect(page.locator('.claude-topbar')).toBeHidden();
       await expect(page.locator('.claude-mobile-nav')).toBeHidden();
       await expect(page.getByRole('list', { name: 'Session progress' })).toBeVisible();
-      await expect(page.locator('.session-bridge-card')).toHaveCSS('transform', 'none');
+      // The Classic board rests the preview card at -2 degrees in every motion setting; Crystal's stands upright.
+      // Browsers print the rotation matrix with different precision, so the angle is compared.
+      await expect.poll(() => page.locator('.session-bridge-card').evaluate(element => {
+        const transform = getComputedStyle(element).transform;
+        if (transform === 'none') return 0;
+        const matrix = new DOMMatrixReadOnly(transform);
+        return Math.round(Math.atan2(matrix.b, matrix.a) * 180 / Math.PI * 100) / 100;
+      })).toBe(theme.family === 'classic' ? -2 : 0);
       const bridgeEdges = await page.locator('[data-session-shell="bridge"]').evaluate(element => {
         const bounds = element.getBoundingClientRect();
         return { left: bounds.left, right: bounds.right, viewport: window.innerWidth };

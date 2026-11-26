@@ -78,13 +78,19 @@ describe('WeeklyRecapScreen', () => {
     });
     try {
       const crystal = render(<ThemeProvider><WeeklyRecapScreen {...props()} /></ThemeProvider>);
-      expect(crystal).toMatch(/<div class="weekly-recap-stage"><span class="weekly-recap-stage__wings crystal-wing-art" aria-hidden="true"><\/span><span class="weekly-recap-stage__back crystal-chamfer" aria-hidden="true"><\/span><section class="weekly-recap-card weekly-recap-card--crystal"/);
+      expect(crystal).toMatch(/<div class="weekly-recap-stage"><span class="weekly-recap-stage__wings crystal-wing-art" aria-hidden="true"><\/span><span class="weekly-recap-stage__back" aria-hidden="true"><\/span><section class="weekly-recap-card weekly-recap-card--crystal"/);
+      // The board's figure: a conic rim layer behind a chamfered face that holds the beam, header and content.
+      expect(crystal).toContain('<span class="weekly-recap-card__rim" aria-hidden="true"><span class="weekly-recap-card__rim-spin"></span></span><div class="weekly-recap-card__face"><span class="weekly-recap-card__beam" aria-hidden="true"></span><header class="weekly-recap-card__header">');
+      expect(crystal).toContain('<span class="weekly-recap-card__kicker">My week</span> <span class="weekly-recap-card__heading-sep" aria-hidden="true">//</span> <span class="weekly-recap-card__range">16 – 22 Nov</span>');
+      // The headline is two runs on two lines, and still reads as one sentence.
+      expect(crystal).toContain('<h1><span class="weekly-recap-controls__headline-metal">Your week </span><br/><em>so far.</em></h1>');
+      expect(crystal).toContain('<span class="weekly-recap-controls__action-label">Share</span>');
     } finally {
       vi.unstubAllGlobals();
     }
     const classic = render(<WeeklyRecapScreen {...props()} />);
     expect(classic).not.toContain('weekly-recap-stage');
-    expect(classic).toMatch(/^<div class="weekly-recap-screen" data-family="classic"><section class="weekly-recap-card"/);
+    expect(classic).toMatch(/^<div class="weekly-recap-screen" data-family="classic"><div class="weekly-recap-card-deck"><section class="weekly-recap-card sf-deal-1"/);
   });
 
   it('shows an honest empty state instead of zero metrics', () => {

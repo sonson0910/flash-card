@@ -32,14 +32,15 @@
               <p style="margin: 6px 0 0; font-size: 13.5px; color: {{t.text2}};"><span style="font-family: {{t.fMono}}; color: {{t.textStrong}};">/ɪˈmiːdiət/</span> · adjective · <strong style="color: {{t.crimsonText}};">ngay lập tức</strong></p>
             </sc-if>
           </div>
-          <button aria-label="Close" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+          <button aria-label="Close" class="nk-press" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
         </header>
 
         <!-- Practice mode -->
         <sc-if value="{{isPractice}}" hint-placeholder-val="{{true}}">
           <div style="padding: 4px 26px 18px; display: flex; flex-direction: column; gap: 8px;">
             <sc-for list="{{modes}}" as="m" hint-placeholder-count="5">
-              <button aria-disabled="{{m.locked}}" class="nk-lift" style="position: relative; height: 74px; box-sizing: border-box; padding: 0 16px 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{m.bg}}; box-shadow: inset 0 0 0 1px {{m.line}}; opacity: {{m.opacity}}; cursor: {{m.cursor}}; display: flex; align-items: center; gap: 14px; text-align: left; color: {{t.text}}; font-family: {{t.fBody}};">
+              <div class="{{m.enter}}" style="display: flex; flex-direction: column;">
+              <button aria-disabled="{{m.locked}}" class="{{m.cls}}" style="position: relative; height: 74px; box-sizing: border-box; padding: 0 16px 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{m.bg}}; box-shadow: inset 0 0 0 1px {{m.line}}; opacity: {{m.opacity}}; cursor: {{m.cursor}}; display: flex; align-items: center; gap: 14px; text-align: left; color: {{t.text}}; font-family: {{t.fBody}};">
                 <span aria-hidden="true" style="position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: {{m.strip}};"></span>
                 <span aria-hidden="true" style="flex-shrink: 0; width: 46px; height: 46px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{m.iconBg}}; color: {{m.iconColor}}; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg></span>
                 <span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
@@ -56,6 +57,7 @@
                   <span style="flex-shrink: 0; width: 30px; height: 30px; transform: skewX(-12deg); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; box-shadow: {{t.primaryGlow}};">{{m.key}}</span>
                 </sc-if>
               </button>
+              </div>
             </sc-for>
           </div>
         </sc-if>
@@ -65,14 +67,14 @@
           <div style="padding: 4px 26px 18px; display: flex; flex-direction: column; gap: 14px;">
             <div role="group" aria-label="Suggested questions" style="display: flex; flex-wrap: wrap; gap: 8px;">
               <sc-for list="{{presets}}" as="p" hint-placeholder-count="3">
-                <button aria-pressed="{{p.on}}" style="height: 34px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{p.bg}}; box-shadow: inset 0 0 0 1px {{p.line}}; color: {{p.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; cursor: pointer; filter: {{p.glow}};"><span style="display: inline-block; transform: skewX(12deg);">{{p.label}}</span></button>
+                <button aria-pressed="{{p.on}}" class="sf-ease" style="height: 34px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{p.bg}}; box-shadow: inset 0 0 0 1px {{p.line}}; color: {{p.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; cursor: pointer; filter: {{p.glow}};"><span style="display: inline-block; transform: skewX(12deg);">{{p.label}}</span></button>
               </sc-for>
             </div>
             <div class="nk-rise" style="clip-path: {{t.chamfer}}; background: {{m.inner}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 18px 14px;">
               <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; color: {{t.holoText}};"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2H22l-6 4.6 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.6h7.6z"></path></svg>THREE WAYS YOU'D HEAR IT AT WORK</div>
               <ol style="margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px;">
                 <sc-for list="{{examples}}" as="e" hint-placeholder-count="3">
-                  <li style="display: flex; gap: 12px;">
+                  <li class="{{e.enter}}" style="display: flex; gap: 12px;">
                     <span style="flex-shrink: 0; width: 26px; height: 26px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px;">{{e.n}}</span>
                     <span style="display: flex; flex-direction: column; gap: 2px;">
                       <span style="font-size: 14.5px; line-height: 1.45; color: {{t.body}};">{{e.a}}<strong style="color: {{t.crimsonText}}; font-weight: 900;">{{e.w}}</strong>{{e.b}}</span>
@@ -85,7 +87,7 @@
             </div>
             <form style="margin: 0; height: 48px; box-sizing: border-box; padding: 0 5px 0 16px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}}; display: flex; align-items: center; gap: 8px;">
               <input aria-label="Ask a question about this word" placeholder="Ask Lumi anything — “Is it formal?”, “immediate vs. instant”" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: {{t.fBody}}; font-size: 14px;">
-              <button aria-label="Send" style="width: 38px; height: 38px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+              <button aria-label="Send" class="nk-press" style="width: 38px; height: 38px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
             </form>
           </div>
         </sc-if>
@@ -99,7 +101,7 @@
             </div>
             <div role="radiogroup" aria-label="Part of speech" style="display: flex; gap: 6px;">
               <sc-for list="{{pos}}" as="p" hint-placeholder-count="5">
-                <button role="radio" aria-checked="{{p.on}}" style="height: 32px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{p.bg}}; box-shadow: inset 0 0 0 1px {{p.line}}; color: {{p.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-block; transform: skewX(12deg);">{{p.label}}</span></button>
+                <button role="radio" aria-checked="{{p.on}}" class="sf-ease" style="height: 32px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{p.bg}}; box-shadow: inset 0 0 0 1px {{p.line}}; color: {{p.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-block; transform: skewX(12deg);">{{p.label}}</span></button>
               </sc-for>
             </div>
             <div class="nk-rise" style="position: relative; filter: drop-shadow(0 0 16px {{tierA.soft}});">
@@ -113,7 +115,7 @@
                 </div>
                 <div style="flex-grow: 1; min-width: 0;">
                   <div style="display: flex; justify-content: space-between; align-items: center;"><span style="display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.14em; color: {{t.holoText}};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2H22l-6 4.6 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.6h7.6z"></path></svg>AI DRAFT</span><span style="font-size: 11.5px; color: {{t.text3}};">Click any field to edit</span></div>
-                  <div style="margin-top: 4px; display: flex; align-items: center; gap: 10px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; color: {{t.textStrong}};">re<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">sil</span>ient</span><button aria-label="Play pronunciation" style="width: 32px; height: 32px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button></div>
+                  <div style="margin-top: 4px; display: flex; align-items: center; gap: 10px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; color: {{t.textStrong}};">re<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">sil</span>ient</span><button aria-label="Play pronunciation" class="nk-press" style="width: 32px; height: 32px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button></div>
                   <div style="margin-top: 2px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: {{t.fMono}};">/rɪˈzɪliənt/</span> · adjective · C1</div>
                   <div style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 20px; color: {{t.crimsonText}};">kiên cường, mau phục hồi</div>
                   <p style="margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: {{t.body}};">“Children are often more <strong style="color: {{t.textStrong}};">resilient</strong> than we expect.”</p>
@@ -123,7 +125,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="{{cap}}">Save to</span>
-              <button style="height: 34px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;">IELTS <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+              <button class="nk-press" style="height: 34px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;">IELTS <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
               <span style="margin-left: auto; font-size: 12.5px; color: {{t.text2}};">First review: <strong style="color: {{t.holoText}};">tomorrow</strong></span>
             </div>
           </div>
@@ -149,10 +151,10 @@
               <span style="{{cap}}">Difficulty</span>
               <div role="radiogroup" aria-label="Difficulty" style="display: flex; gap: 6px;">
                 <sc-for list="{{diff}}" as="d" hint-placeholder-count="3">
-                  <button role="radio" aria-checked="{{d.on}}" style="height: 32px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: {{d.bg}}; box-shadow: inset 0 0 0 1px {{d.line}}; color: {{d.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-flex; align-items: center; gap: 6px; transform: skewX(12deg);"><span style="width: 7px; height: 7px; transform: rotate(45deg); background: {{d.dot}};"></span>{{d.label}}</span></button>
+                  <button role="radio" aria-checked="{{d.on}}" class="sf-ease" style="height: 32px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: {{d.bg}}; box-shadow: inset 0 0 0 1px {{d.line}}; color: {{d.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-flex; align-items: center; gap: 6px; transform: skewX(12deg);"><span style="width: 7px; height: 7px; transform: rotate(45deg); background: {{d.dot}};"></span>{{d.label}}</span></button>
                 </sc-for>
               </div>
-              <button aria-pressed="true" style="margin-left: auto; height: 32px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{goldBg}}; box-shadow: inset 0 0 0 1px {{goldLine}}; color: {{t.goldText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"></path></svg>Starred</button>
+              <button aria-pressed="true" class="sf-ease" style="margin-left: auto; height: 32px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{goldBg}}; box-shadow: inset 0 0 0 1px {{goldLine}}; color: {{t.goldText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"></path></svg>Starred</button>
             </div>
           </div>
         </sc-if>
@@ -182,10 +184,10 @@
                     <p class="nk-rise-2" style="margin: 3px 0 0; font-size: 12.5px; line-height: 1.4; color: {{t.body}};">Able to recover quickly after something difficult.</p>
                     <div style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.14em; color: {{t.goldText}};">EXAMPLE</div>
                     <p aria-live="polite" style="margin: 2px 0 0; font-size: 12.5px; line-height: 1.4; color: {{t.body}};">“Small businesses proved surprisingly <b style="color: {{t.textStrong}};">resilient</b> during the<span class="nk-spark" aria-hidden="true" style="display: inline-block; width: 8px; height: 13px; margin-left: 3px; vertical-align: -2px; background: {{t.crimson}};"></span></p>
-                    <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;"><span class="sf-shimmer" style="height: 8px; width: 90%; background: {{t.track}};"></span><span class="sf-shimmer" style="height: 8px; width: 60%; background: {{t.track}};"></span></div>
+                    <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;"><span class="sf-shimmer" style="height: 8px; width: 90%; background-color: {{t.track}};"></span><span class="sf-shimmer" style="height: 8px; width: 60%; background-color: {{t.track}};"></span></div>
                   </div>
                   <div style="flex-shrink: 0; width: 92px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                    <div class="sf-shimmer" style="width: 92px; height: 110px; clip-path: {{t.chamferSm}}; background: {{t.track}}; display: flex; align-items: center; justify-content: center; color: {{t.text3}};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></div>
+                    <div class="sf-shimmer" style="width: 92px; height: 110px; clip-path: {{t.chamferSm}}; background-color: {{t.track}}; display: flex; align-items: center; justify-content: center; color: {{t.text3}};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></div>
                     <div style="font-size: 11px; color: {{t.text3}}; text-align: center;">Finding an image…</div>
                   </div>
                 </div>
@@ -208,11 +210,11 @@
             <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: {{t.text3}};"><span style="font-family: {{t.fMono}}; padding: 2px 6px; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}};">{{noteKey}}</span>{{note}}</span>
           </sc-if>
           <sc-for list="{{lefts}}" as="b" hint-placeholder-count="0">
-            <button class="nk-lift" style="{{b.css}}">{{b.label}}</button>
+            <button class="{{b.cls}}" style="{{b.css}}">{{b.label}}</button>
           </sc-for>
           <span style="flex-grow: 1;"></span>
           <sc-for list="{{rights}}" as="b" hint-placeholder-count="2">
-            <button class="nk-lift" aria-disabled="{{b.dis}}" style="{{b.css}}">{{b.label}}</button>
+            <button class="{{b.cls}}" aria-disabled="{{b.dis}}" style="{{b.css}}">{{b.label}}</button>
           </sc-for>
         </footer>
       </div>
@@ -237,13 +239,14 @@ class Component extends DCLogic {
     };
     const cap = 'font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: ' + t.text2 + ';';
     const field = 'height: 42px; box-sizing: border-box; padding: 0 14px; clip-path: ' + t.chamferSm + '; background: ' + t.chip + '; box-shadow: inset 0 0 0 1px ' + t.lineStrong + '; display: flex; align-items: center; gap: 8px; color: ' + t.textStrong + '; font-size: 14px; font-weight: 700;';
+    const slide = (i) => ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4'][Math.min(i, 3)];
     const btnBase = 'height: 46px; border: 0; cursor: pointer; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 7px;';
     const B = {
-      p: (label, extra) => ({ label, dis: 'false', css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: ' + t.primaryBg + '; color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));' + (extra || '') }),
-      s: (label) => ({ label, dis: 'false', css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + t.secondaryBg + '; box-shadow: inset 0 0 0 1px ' + t.lineStrong + '; color: ' + t.secondaryText + ';' }),
-      g: (label, color) => ({ label, dis: 'false', css: btnBase + ' padding: 0 14px; clip-path: ' + t.chamferSm + '; background: transparent; box-shadow: inset 0 0 0 1px ' + (color === 'danger' ? t.panelEdge : t.line) + '; color: ' + (color === 'danger' ? t.crimsonText : t.text2) + ';' }),
-      gold: (label) => ({ label, dis: 'false', css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + (dark ? 'rgb(255 209 102 / 0.14)' : 'rgb(255 209 102 / 0.35)') + '; box-shadow: inset 0 0 0 1px ' + (dark ? 'rgb(255 209 102 / 0.5)' : 'rgb(180 120 0 / 0.45)') + '; color: ' + t.goldText + ';' }),
-      off: (label) => ({ label, dis: 'true', css: btnBase + ' padding: 0 24px; clip-path: ' + t.chamfer + '; background: ' + t.track + '; color: ' + t.text3 + '; cursor: not-allowed;' }),
+      p: (label, extra) => ({ label, dis: 'false', cls: 'nk-lift', css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: ' + t.primaryBg + '; color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));' + (extra || '') }),
+      s: (label) => ({ label, dis: 'false', cls: 'nk-lift', css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + t.secondaryBg + '; box-shadow: inset 0 0 0 1px ' + t.lineStrong + '; color: ' + t.secondaryText + ';' }),
+      g: (label, color) => ({ label, dis: 'false', cls: 'nk-lift', css: btnBase + ' padding: 0 14px; clip-path: ' + t.chamferSm + '; background: transparent; box-shadow: inset 0 0 0 1px ' + (color === 'danger' ? t.panelEdge : t.line) + '; color: ' + (color === 'danger' ? t.crimsonText : t.text2) + ';' }),
+      gold: (label) => ({ label, dis: 'false', cls: 'nk-lift', css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + (dark ? 'rgb(255 209 102 / 0.14)' : 'rgb(255 209 102 / 0.35)') + '; box-shadow: inset 0 0 0 1px ' + (dark ? 'rgb(255 209 102 / 0.5)' : 'rgb(180 120 0 / 0.45)') + '; color: ' + t.goldText + ';' }),
+      off: (label) => ({ label, dis: 'true', cls: '', css: btnBase + ' padding: 0 24px; clip-path: ' + t.chamfer + '; background: ' + t.track + '; color: ' + t.text3 + '; cursor: not-allowed;' }),
     };
     const I = {
       quiz: 'M4 5h16v14H4zM8 9h8M8 13h5',
@@ -259,9 +262,10 @@ class Component extends DCLogic {
       { name: 'Shadowing', desc: 'Say the example sentence, then compare word by word.', time: '~5 min', icon: I.shadow, state: 'ready', key: '4' },
       { name: 'Story', desc: 'A short AI story woven from the words you are learning.', time: '~6 min', icon: I.story, state: 'locked', lockText: 'Needs 5 cards · you have 3', key: '5' },
     ];
-    const modes = rows.map(r => {
+    const modes = rows.map((r, i) => {
       const loading = r.state === 'loading', locked = r.state === 'locked';
       return { ...r, isLoading: loading, locked, ready: r.state === 'ready', lockText: r.lockText || '',
+        enter: slide(i), cls: locked ? '' : 'nk-lift',
         bg: loading ? (dark ? 'rgb(94 242 255 / 0.1)' : 'rgb(255 255 255 / 0.85)') : t.chip,
         line: loading ? t.panelEdge2 : t.line, strip: loading ? t.holo : locked ? t.track : t.crimsonGrad,
         opacity: locked ? 0.55 : 1, cursor: locked ? 'not-allowed' : 'pointer',
@@ -274,7 +278,7 @@ class Component extends DCLogic {
       { n: 1, a: 'We need an ', w: 'immediate', b: ' fix before the release goes out.', vi: 'Chúng ta cần sửa ngay trước khi phát hành.' },
       { n: 2, a: 'The new policy takes effect with ', w: 'immediate', b: ' effect.', vi: 'Chính sách mới có hiệu lực ngay lập tức.' },
       { n: 3, a: 'Please flag anything that needs ', w: 'immediate', b: ' attention.', vi: 'Hãy đánh dấu mọi thứ cần xử lý ngay.' },
-    ];
+    ].map((e, i) => ({ ...e, enter: slide(i + 1) }));
     const skewOpt = (on) => ({ bg: on ? (dark ? 'rgb(255 42 77 / 0.2)' : '#ffffff') : 'transparent', line: on ? t.panelEdge : t.line, color: on ? t.textStrong : t.text2 });
     const pos = ['Auto', 'noun', 'verb', 'adjective', 'adverb'].map(label => ({ label, on: String(label === 'adjective'), ...skewOpt(label === 'adjective') }));
     const diff = [['Easy', t.good], ['Medium', t.easy], ['Hard', t.hard]].map(([label, dot]) => ({ label, dot, on: String(label === 'Medium'), ...skewOpt(label === 'Medium') }));

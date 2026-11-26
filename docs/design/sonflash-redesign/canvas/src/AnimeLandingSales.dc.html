@@ -6,13 +6,13 @@
   </sc-if>
 
   <section style="position: relative; z-index: 3; padding: 30px 72px 0; display: flex; align-items: center; gap: 40px;">
-    <div style="flex-grow: 1; max-width: 680px;">
+    <div class="nk-rise" style="flex-grow: 1; max-width: 680px;">
       <span style="display: inline-flex; height: 30px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.14em; color: #ffffff;">TRY IT — NO SIGN-UP</span></span>
       <h2 style="margin: 16px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1.04; color: {{t.textStrong}};">FLIP THIS CARD.<br><span style="white-space: nowrap; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">THAT’S THE WHOLE TRICK.</span></h2>
-      <p style="margin: 14px 0 0; max-width: 540px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">Click the card or press <span style="padding: 1px 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 13px; color: {{t.textStrong}};">Space</span>. SonFlash decides when you’ll see it again, so every review lands just before you’d forget.</p>
+      <p style="margin: 14px 0 0; max-width: 540px; font-size: 15.5px; line-height: 1.55; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">Click the card or press <span style="padding: 1px 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 13px; color: {{t.textStrong}};">Space</span>. SonFlash decides when you’ll see it again, so every review lands just before you’d forget.</p>
       <div style="margin-top: 22px; display: flex; gap: 12px;">
         <sc-for list="{{proof}}" as="p" hint-placeholder-count="3">
-          <div style="padding: 10px 18px 12px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{p.edge}};">
+          <div class="{{p.enter}}" style="padding: 10px 18px 12px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{p.edge}};">
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: {{p.color}};">{{p.value}}</div>
             <div style="margin-top: 4px; font-size: 12.5px; font-weight: 700; color: {{t.text2}};">{{p.label}}</div>
           </div>
@@ -27,7 +27,7 @@
       <div class="nk-float" style="position: absolute; left: -10px; bottom: -8px; width: 170px; height: 196px; z-index: 5;">
 <!--#MASCOT $-->
       </div>
-      <span class="nk-float" style="position: absolute; z-index: 6; left: 108px; top: 64px; height: 30px; padding: 0 12px; transform: skewX(-12deg); background: {{t.panelSolid}}; box-shadow: inset 0 0 0 1.5px {{t.holo}}, 0 0 16px rgb(94 242 255 / 0.4); display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.holoText}};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>{{hint}}</span></span>
+      <span class="nk-float" style="position: absolute; z-index: 6; left: 108px; top: 64px; display: flex;"><span style="height: 30px; padding: 0 12px; transform: skewX(-12deg); background: {{t.panelSolid}}; box-shadow: inset 0 0 0 1.5px {{t.holo}}, 0 0 16px rgb(94 242 255 / 0.4); display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.holoText}};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>{{hint}}</span></span></span>
 
       <div style="position: absolute; left: 190px; top: 0; width: 240px; height: 320px; perspective: 1200px;">
         <button onClick="{{flip}}" onMouseEnter="{{enter}}" onMouseLeave="{{leave}}" aria-label="Flip the demo card" aria-pressed="{{flipped}}" style="position: absolute; inset: 0; padding: 0; border: 0; background: transparent; cursor: pointer; transform-style: preserve-3d; transform: rotateY({{ry}}deg); transition: transform 650ms cubic-bezier(.2,1.4,.4,1);">
@@ -92,10 +92,10 @@
     </div>
   </section>
 
-  <section style="position: relative; z-index: 3; margin-top: 22px; padding: 0 72px; display: grid; grid-template-columns: 170px repeat(3, minmax(0, 1fr)); gap: 24px;">
+  <section class="nk-rise-3" style="position: relative; z-index: 3; margin-top: 22px; padding: 0 72px; display: grid; grid-template-columns: 170px repeat(3, minmax(0, 1fr)); gap: 24px;">
     <h3 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; color: {{t.textStrong}};">QUICK<br><span style="color: {{t.crimsonText}};">ANSWERS</span></h3>
     <sc-for list="{{faq}}" as="f" hint-placeholder-count="3">
-      <div style="padding-left: 14px; border-left: 3px solid {{f.line}};">
+      <div style="padding-left: 14px; border-left: 3px solid {{f.line}}; text-shadow: {{t.onArtHalo}};">
         <div style="font-weight: 900; font-size: 15px; color: {{t.textStrong}};">{{f.q}}</div>
         <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{f.a}}</p>
       </div>
@@ -106,8 +106,8 @@
     <span style="display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="width: 26px; height: 26px; filter: drop-shadow(0 0 8px rgb(255 42 77 / 0.7));">
 <!--#STAR5-->
     </span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">SON<span style="color: {{t.crimsonText}};">FLASH</span></span></span>
-    <a href="#" style="color: {{t.text2}}; text-decoration: none;">Pricing</a><a href="#" style="color: {{t.text2}}; text-decoration: none;">Chrome extension</a><a href="#" style="color: {{t.text2}}; text-decoration: none;">For teachers</a><a href="#" style="color: {{t.text2}}; text-decoration: none;">Privacy</a>
-    <span style="margin-left: auto; color: {{t.text3}};">© 2026 SonFlash · Made in Hà Nội</span>
+    <a href="#" class="nk-press" style="color: {{t.text2}}; text-decoration: none; text-shadow: {{t.onArtHalo}};">Pricing</a><a href="#" class="nk-press" style="color: {{t.text2}}; text-decoration: none; text-shadow: {{t.onArtHalo}};">Chrome extension</a><a href="#" class="nk-press" style="color: {{t.text2}}; text-decoration: none; text-shadow: {{t.onArtHalo}};">For teachers</a><a href="#" class="nk-press" style="color: {{t.text2}}; text-decoration: none; text-shadow: {{t.onArtHalo}};">Privacy</a>
+    <span style="margin-left: auto; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">© 2026 SonFlash · Made in Hà Nội</span>
   </footer>
 </div>
 </x-dc>
@@ -142,9 +142,9 @@ class Component extends DCLogic {
       enter: () => this.setState({ hover: true }),
       leave: () => this.setState({ hover: false }),
       proof: [
-        { value: '48k', label: 'learners this year', color: t.crimsonText, edge: t.panelEdge },
-        { value: '2.1M', label: 'cards reviewed', color: t.holoText, edge: t.panelEdge2 },
-        { value: '4.8★', label: 'Chrome Web Store', color: t.goldText, edge: 'rgb(255 209 102 / 0.55)' },
+        { value: '48k', label: 'learners this year', color: t.crimsonText, edge: t.panelEdge, enter: 'nk-pop' },
+        { value: '2.1M', label: 'cards reviewed', color: t.holoText, edge: t.panelEdge2, enter: 'nk-pop-2' },
+        { value: '4.8★', label: 'Chrome Web Store', color: t.goldText, edge: 'rgb(255 209 102 / 0.55)', enter: 'nk-pop-3' },
       ],
       quotes: Q.map(([text, name, role, init], i) => ({ text, name, role, init, bg: av[i], edge: edges[i], cls: ['nk-rise', 'nk-rise-2', 'nk-rise-3'][i] })),
       rows: [

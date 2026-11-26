@@ -130,7 +130,7 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
           updatePause();
         }
       }}
-      className={`notification-toast undo-toast pointer-events-auto ${positionClasses}`}
+      className={`notification-toast undo-toast sf-toast pointer-events-auto ${positionClasses}`}
     >
       {/* The undo window is only offered after a deletion, so the toast leads with the delete glyph. */}
       <Trash2 size={15} aria-hidden="true" className="undo-toast-icon" />
@@ -151,7 +151,7 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
             if (dismissOnce()) onUndoRef.current?.();
           }}
           aria-keyshortcuts="Meta+Z Control+Z"
-          className="undo-toast-action"
+          className="undo-toast-action fx-press"
         >
           <span><Trans {...msg({ context: 'shell.undo.action', message: 'Undo' })} /></span>
           <kbd className="undo-toast-shortcut">{shortcut}</kbd>
@@ -159,7 +159,7 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
         <button
           type="button"
           onClick={dismissOnce}
-          className="undo-toast-dismiss"
+          className="undo-toast-dismiss fx-press"
           aria-label={_(msg({ id: 'shell.undo.dismiss', message: 'Dismiss notification' }))}
         >
           <X size={14} aria-hidden="true" />
@@ -172,7 +172,7 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
       <div className="undo-toast-progress-track" aria-hidden="true">
         <div
           key={`${toast.id}:${duration}`}
-          className="undo-toast-progress"
+          className="undo-toast-progress sf-drain"
           style={{ animationDuration: `${duration}ms`, animationPlayState: paused ? 'paused' : 'running' }}
         />
       </div>

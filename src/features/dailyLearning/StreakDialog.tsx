@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Check, X } from 'lucide-react';
 import { STREAK_FREEZE_EARN_EVERY_DAYS, STREAK_MILESTONE_XP, STREAK_MILESTONES, type StreakMilestone } from '../../../functions/src/streak-rules';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
+import { CrystalStar } from '../../components/stats/CrystalStar';
 import type { StreakView, StreakWeekDayState } from '../gamification/streakView';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
@@ -81,7 +82,7 @@ function StudyWeek({ days }: { readonly days: readonly DayEntry[] }) {
     return _(msg({ id: 'today.streak.day.future', message: 'still ahead' }));
   };
   return (
-    <ol className="streak-dialog-week" aria-label={_(msg({ id: 'today.streak.week', message: 'This week' }))}>
+    <ol className="streak-dialog-week fx-stagger" aria-label={_(msg({ id: 'today.streak.week', message: 'This week' }))}>
       {days.map(day => (
         <li key={day.day} data-state={day.state} data-today={day.isToday || undefined} aria-current={day.isToday ? 'date' : undefined} aria-label={`${long.format(dayDate(day.day))}: ${stateLabel(day.state)}`}>
           <span className="streak-dialog-day-label" aria-hidden="true">{short.format(dayDate(day.day))}</span>
@@ -282,24 +283,34 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
         <button type="button" className={className} data-streak-chip={state}>{chip}</button>
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="streak-dialog-overlay" />
-        <Dialog.Content className="streak-dialog" data-family={family} data-streak-state={state}>
-          <span className="streak-dialog-rim" aria-hidden="true" />
-          {state === 'milestone' && (
+        <Dialog.Overlay className="streak-dialog-overlay sf-scrim" />
+        {crystal && state === 'milestone' && (
+          // Crystal Star marks a milestone with the board's light beam and crimson wings behind the dialog.
+          <span className="streak-dialog-ceremony" aria-hidden="true">
+            <span className="streak-dialog-beam" />
+            <span className="streak-dialog-stage">
+              <span className="streak-dialog-wing crystal-wing-art" />
+              <span className="streak-dialog-wing crystal-wing-art" data-mirrored="" />
+            </span>
+          </span>
+        )}
+        <Dialog.Content className="streak-dialog fx-dialog" data-family={family} data-streak-state={state}>
+          <span className="streak-dialog-rim" aria-hidden="true">{crystal && <span className="streak-dialog-rim-spin" />}</span>
+          {state === 'milestone' && !crystal && (
             <span className="streak-dialog-confetti" aria-hidden="true">
               {confetti.map((piece, index) => <span key={index} style={piece} />)}
             </span>
           )}
-          <Dialog.Close className="streak-dialog-close" aria-label={_(msg({ id: 'today.streak.close', message: 'Close streak details' }))}>
+          <Dialog.Close className="streak-dialog-close fx-press" aria-label={_(msg({ id: 'today.streak.close', message: 'Close streak details' }))}>
             <X size={15} strokeWidth={2.2} aria-hidden="true" />
           </Dialog.Close>
           <div className="streak-dialog-head">
             <div className="streak-dialog-hero">
-              {showLumi && <Lumi pose={lumiPose} size={140} className="streak-dialog-lumi" />}
-              <span className="streak-dialog-emblem" aria-hidden="true">
+              {showLumi && <span className="streak-dialog-mascot"><Lumi pose={lumiPose} size="100%" className="streak-dialog-lumi" /></span>}
+              <span className={`streak-dialog-emblem${!crystal && state === 'milestone' ? ' fx-reward' : ''}`} aria-hidden="true">
                 {crystal && state === 'milestone' ? (
                   <>
-                    <svg className="streak-dialog-star" viewBox="0 0 100 100"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /></svg>
+                    <span className="streak-dialog-star"><CrystalStar /></span>
                     <span className="streak-dialog-star-count">{number(length)}</span>
                   </>
                 ) : (
@@ -341,14 +352,14 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
           <footer className="streak-dialog-footer">
             <p>{note}</p>
             {state === 'repair' && (
-              <Dialog.Close className="streak-dialog-secondary">
+              <Dialog.Close className="streak-dialog-secondary fx-press">
                 <span><Trans {...msg({ id: 'today.streak.repair.start-fresh', message: 'Start fresh' })} /></span>
               </Dialog.Close>
             )}
             {startsSession ? (
-              <Dialog.Close className="streak-dialog-primary" onClick={onStartSession}><span>{primaryLabel}</span></Dialog.Close>
+              <Dialog.Close className="streak-dialog-primary fx-press" onClick={onStartSession}><span>{primaryLabel}</span></Dialog.Close>
             ) : state !== 'repair' ? (
-              <Dialog.Close className="streak-dialog-primary"><span>{primaryLabel}</span></Dialog.Close>
+              <Dialog.Close className="streak-dialog-primary fx-press"><span>{primaryLabel}</span></Dialog.Close>
             ) : null}
           </footer>
         </Dialog.Content>

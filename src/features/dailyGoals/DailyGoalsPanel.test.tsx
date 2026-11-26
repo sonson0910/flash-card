@@ -38,21 +38,30 @@ describe('daily goals panel', () => {
     theme.family = family;
     const html = render(<DailyGoalsPanel {...props()} />);
     const visible = text(html);
+    // Crystal sets the count as the board does ("3 / 10"); classic keeps the compact form.
+    const count = (done: number, target: number) => (family === 'crystal' ? `${done} / ${target}` : `${done}/${target}`);
     expect(html).toContain(`daily-goals-panel--${family}`);
     expect(visible).toContain('Daily goals');
     expect(visible).toContain('Resets in 1 h 45 min');
     expect(visible).toContain('Study 10 cards');
     expect(visible).toContain(`+${10 * REVIEW_CARD_XP} XP`);
-    expect(visible).toContain('3/10');
+    expect(visible).toContain(count(3, 10));
     expect(visible).toContain('Win a word match');
     expect(visible).toContain(`+${MATCH_WIN_XP} XP`);
-    expect(visible).toContain('1/1');
+    expect(visible).toContain(count(1, 1));
     expect(visible).toContain('Keep your 12-day streak');
-    expect(visible).toContain('0/1');
+    expect(visible).toContain(count(0, 1));
     expect(html).toContain('aria-valuetext="3 of 10"');
     expect(html).toContain('style="width:30%"');
     expect(visible).not.toMatch(/claim|combo|bonus|lesson/i);
     expect(visible.match(/\+\d+ XP/g)).toEqual([`+${10 * REVIEW_CARD_XP} XP`, `+${MATCH_WIN_XP} XP`]);
+  });
+
+  it('keeps each countdown number with its unit in crystal so the label only wraps between words', () => {
+    theme.family = 'crystal';
+    expect(render(<DailyGoalsPanel {...props()} />)).toContain('Resets in 1\u00a0h 45\u00a0min');
+    theme.family = 'classic';
+    expect(render(<DailyGoalsPanel {...props()} />)).toContain('Resets in 1 h 45 min');
   });
 
   it('shows a dash with a text alternative when today began before the counters', () => {
