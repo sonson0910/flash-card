@@ -23,8 +23,10 @@ export const fileDownloadUrlPrefixes = (ownerId: string, fileId: string): string
 ));
 
 /**
- * Card photos in Firestore. `find` is one query over `users/{uid}/cards` on the `imageUrl` field
- * index: a read per card found, and one read when none is. `clear` reads the library epoch once,
+ * Card photos in Firestore. `find` is one range query over `users/{uid}/cards` on `imageUrl`.
+ * A Standard database answers it from its single-field index on the field: a read per card found,
+ * and one read when none is. An Enterprise database has no such index and scans the owner's
+ * cards, billed by the bytes it reads. `clear` reads the library epoch once,
  * then saves each card with the same transaction a card edit uses (the library state and the card
  * read, the card written), re-reading a card that changed since the lookup.
  */

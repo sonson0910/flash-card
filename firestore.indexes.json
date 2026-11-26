@@ -4214,16 +4214,6 @@
     },
     {
       "collectionGroup": "cards",
-      "fieldPath": "imageUrl",
-      "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "cards",
       "fieldPath": "audioUrl",
       "indexes": []
     },

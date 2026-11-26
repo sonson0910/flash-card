@@ -44,6 +44,20 @@ describe('Firestore rules source invariants', () => {
     expect(overrides.has('shared_deck_owners:ownerUid')).toBe(false);
   });
 
+  it('declares only field overrides an Enterprise edition database accepts', () => {
+    // Production runs Firestore Enterprise edition, which rejects any update that turns a
+    // single-field index on ("does not support updating field index configuration"). A field
+    // override may only exempt a field or carry a TTL policy; a query on such a field runs as
+    // a collection scan there, while a Standard database keeps its automatic single-field index.
+    const indexes = JSON.parse(readFileSync(new URL('./firestore.indexes.json', import.meta.url), 'utf8')) as {
+      fieldOverrides: { collectionGroup: string; fieldPath: string; indexes: unknown[] }[];
+    };
+    const enabling = indexes.fieldOverrides
+      .filter(override => override.indexes.length > 0)
+      .map(override => `${override.collectionGroup}:${override.fieldPath}`);
+    expect(enabling).toEqual([]);
+  });
+
   it('keeps library facet writes server-only while preserving owner reads', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const facetsMatch = rules.match(
