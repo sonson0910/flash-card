@@ -72,6 +72,11 @@ test(practiceDecorationTest, async ({ page, signIn }) => {
 
 test(dailyPlanTest, async ({ page, signIn }) => {
   test.setTimeout(60_000);
+  // This journey opens three practice modes and a lesson in one test, and every click waits for two
+  // painted frames. Playwright's WebKit paints in software on Linux, and while the Aurora entrances
+  // and the looping XP glint run, a busy runner can go tens of seconds without a frame. The motion
+  // itself is asserted in motion-remediation.spec.ts; this test checks the learning flow.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=today');
 
   await expect(page.locator('#daily-today-heading')).toBeVisible();
