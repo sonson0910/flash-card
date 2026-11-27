@@ -59,16 +59,25 @@ test('a reminder click makes the messaging worker hand its path to the open page
     const { worker, registrationId } = await registerMessagingWorker(page, cdp);
 
     // A real push event: the worker turns the message link into the path the click will open.
-    await cdp.send('ServiceWorker.deliverPushMessage', {
-      origin: APP_ORIGIN,
-      registrationId,
-      data: JSON.stringify({
-        notification: { title: 'SonFlash', body: '3 cards are ready' },
-        fcmOptions: { link: `${APP_ORIGIN}${REMINDER_PATH}` },
-      }),
-    });
-    await expect.poll(() => worker.evaluate(async () => (await (globalThis as unknown as WorkerScope).registration
-      .getNotifications()).map(notification => notification.data?.path))).toEqual([REMINDER_PATH]);
+    const listedPaths = () => worker.evaluate(async () => (await (globalThis as unknown as WorkerScope).registration
+      .getNotifications()).map(notification => notification.data?.path));
+    // Headless Chromium on a loaded machine sometimes never lists a notification the worker has shown: its
+    // showNotification resolved within 10 ms, yet getNotifications stayed empty for the next 19 s. Only then is
+    // the push sent again; whichever notification gets listed carries the path the worker derived.
+    await expect(async () => {
+      if ((await listedPaths()).length === 0) {
+        await cdp.send('ServiceWorker.deliverPushMessage', {
+          origin: APP_ORIGIN,
+          registrationId,
+          data: JSON.stringify({
+            notification: { title: 'SonFlash', body: '3 cards are ready' },
+            fcmOptions: { link: `${APP_ORIGIN}${REMINDER_PATH}` },
+          }),
+        });
+      }
+      await expect.poll(listedPaths, { timeout: 5_000 }).toContain(REMINDER_PATH);
+    }).toPass({ timeout: 30_000 });
+    expect(new Set(await listedPaths())).toEqual(new Set([REMINDER_PATH]));
 
     // Chromium lets a worker focus or open a window only while the browser itself delivers a click, and a
     // test cannot make it do that. The click event is therefore dispatched by the test, and the focus call
@@ -76,7 +85,8 @@ test('a reminder click makes the messaging worker hand its path to the open page
     // this worker does not control and the postMessage to the page all run for real.
     const click = await worker.evaluate(async () => {
       const scope = globalThis as unknown as WorkerScope;
-      const [notification] = await scope.registration.getNotifications();
+      const listed = await scope.registration.getNotifications();
+      const [notification] = listed;
       const originalFocus = scope.WindowClient.prototype.focus;
       scope.WindowClient.prototype.focus = function focus(this: unknown) { return Promise.resolve(this); };
       try {
@@ -85,14 +95,15 @@ test('a reminder click makes the messaging worker hand its path to the open page
         (event as unknown as { waitUntil(promise: Promise<unknown>): void }).waitUntil = promise => { settled = promise; };
         scope.dispatchEvent(event);
         await settled;
-        return { error: null, remaining: (await scope.registration.getNotifications()).length };
+        return { error: null, closed: listed.length - (await scope.registration.getNotifications()).length };
       } catch (error) {
-        return { error: String(error), remaining: -1 };
+        return { error: String(error), closed: -1 };
       } finally {
         scope.WindowClient.prototype.focus = originalFocus;
       }
     });
-    expect(click).toEqual({ error: null, remaining: 0 });
+    // The handler closes the notification it was given.
+    expect(click).toEqual({ error: null, closed: 1 });
     await page.waitForURL(url => url.searchParams.get('reminder') === 'open');
     expect(new URL(page.url()).pathname).toBe('/');
     expect(context.pages()).toHaveLength(1);
