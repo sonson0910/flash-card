@@ -680,6 +680,50 @@ describe('cloud library page controller', () => {
     expect(controller.getSnapshot().items).toEqual([card('fresh')]);
   });
 
+  it('keeps the shown page when a later emission only the SDK cache backs still holds a removed card', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({
+      items: [card('kept'), card('removed')], hasNext: false, cursor: null,
+      changeTypes: ['added'], fromCache: false, hasPendingWrites: false,
+    });
+    const shown = controller.getSnapshot().items;
+    vi.mocked(cache.writePage).mockClear();
+
+    await subscriptions[0].page({
+      items: [card('kept'), card('removed')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: true, hasPendingWrites: false,
+    });
+    expect(controller.getSnapshot().items).toBe(shown);
+    expect(controller.getSnapshot()).toMatchObject({ isLoading: false, serverConfirmed: false });
+    expect(cache.writePage).not.toHaveBeenCalled();
+
+    await subscriptions[0].page({
+      items: [card('kept')], hasNext: false, cursor: null,
+      changeTypes: ['removed'], fromCache: false, hasPendingWrites: false,
+    });
+    expect(controller.getSnapshot()).toMatchObject({ items: [card('kept')], serverConfirmed: true });
+  });
+
+  it('still shows a later cached emission that carries a pending write from this device', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: ['added'], fromCache: false, hasPendingWrites: false,
+    });
+    await subscriptions[0].page({
+      items: [card('b'), card('a')], hasNext: false, cursor: null,
+      changeTypes: ['added'], fromCache: true, hasPendingWrites: true,
+    });
+
+    expect(controller.getSnapshot().items).toEqual([card('b'), card('a')]);
+  });
+
   it('keeps the newest realtime page in cache when an older count resolves late', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const count = deferred<number>();
