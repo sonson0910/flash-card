@@ -36,6 +36,9 @@ const emptyTodayHoverContrastTest = 'empty Today primary action retains complian
 const dailyPlanTest = 'Today is the default four-part shell and completes the answer-feedback-rating transition';
 const practiceAnswerTest = 'Quiz and Spelling accept an answer and advance from the Today practice menu';
 const practiceDecorationTest = 'Practice decorations stay inside the mobile workspace';
+const todayWcagTest = 'Today and legacy Vocabulary routes satisfy serious WCAG checks';
+// These two scans check what a learner with motion on sees: a hovered action and the hero after its entrance.
+const motionStateTests = new Set([emptyTodayHoverContrastTest, todayWcagTest]);
 const dailyPlanCards = cards.map((card, index) => ({
   ...card,
   difficulty: index < 7 ? 'hard' : 'unrated',
@@ -47,6 +50,11 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }, testInfo) => {
   await page.addInitScript(() => {
     localStorage.setItem('lingoflash_theme', 'dark');
   });
+  // Every click waits for its target to stay put across two painted frames. Playwright's WebKit paints in software
+  // on Linux, and while the dark Aurora entrances and the looping XP glint run, a busy runner can go tens of seconds
+  // without a frame. The journeys here check learning flows, so they run with reduced motion; the motion itself is
+  // asserted in motion-remediation.spec.ts.
+  if (!motionStateTests.has(testInfo.title)) await page.emulateMedia({ reducedMotion: 'reduce' });
   await blockExternalNetwork(page);
   if (testInfo.title === practiceAnswerTest || testInfo.title === practiceDecorationTest) {
     await seedCards(cards.map(card => ({ ...card, difficulty: 'good', reviews: 1 })));
@@ -72,11 +80,6 @@ test(practiceDecorationTest, async ({ page, signIn }) => {
 
 test(dailyPlanTest, async ({ page, signIn }) => {
   test.setTimeout(60_000);
-  // This journey opens three practice modes and a lesson in one test, and every click waits for two
-  // painted frames. Playwright's WebKit paints in software on Linux, and while the Aurora entrances
-  // and the looping XP glint run, a busy runner can go tens of seconds without a frame. The motion
-  // itself is asserted in motion-remediation.spec.ts; this test checks the learning flow.
-  await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, '/?view=today');
 
   await expect(page.locator('#daily-today-heading')).toBeVisible();
@@ -260,7 +263,7 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
   expect(progressAxe.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 });
 
-test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ page, signIn }) => {
+test(todayWcagTest, async ({ page, signIn }) => {
   await signIn(page, '/?view=today');
   await expect(page.locator('#daily-today-heading')).toBeVisible();
   // The Today hero mounts after the heading and fades in; a scan taken mid-entrance reads the half-transparent

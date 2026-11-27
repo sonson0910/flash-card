@@ -398,6 +398,14 @@ export function createCloudLibraryPageController({
             await applyFallback(request, generation, new Error('Cloud page is not yet confirmed.'), emission);
             return;
           }
+          // A card delete runs on the server through a callable, so the SDK cache keeps the card until the
+          // server answers this listener. Once a page is shown, an emission only that cache backs can still
+          // hold a card the learner just deleted; showing it would put the card back and refuse its undo.
+          // Only a server page, or one carrying this device's own pending write, changes what is shown.
+          if (!initialPage && page.fromCache && !page.hasPendingWrites) {
+            publish({ serverConfirmed: false });
+            return;
+          }
           const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
           let total = cachedCount?.total ?? activeTotal;
           let countedAt = cachedCount?.cachedAt ?? null;

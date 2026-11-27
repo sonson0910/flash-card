@@ -183,7 +183,8 @@ async function waitForNextQuestionOrCompletion(page: Page, complete: Locator) {
   const reward = page.locator('.anime-reveal');
   const good = page.getByRole('button', { name: 'Good' });
   for (let index = 0; index < 5; index += 1) {
-    await expect(submitButton.or(complete).or(reward)).toBeVisible({ timeout: 15_000 });
+    // A reward can open over the next question, so both can match at once; waiting for any visible one is the point.
+    await expect(submitButton.or(complete).or(reward).filter({ visible: true }).first()).toBeVisible({ timeout: 15_000 });
     await dismissRewards(page);
     if (await submitButton.or(complete).isVisible()) return;
     // A rating still offered and not being saved means the reward swallowed the rating click. The
